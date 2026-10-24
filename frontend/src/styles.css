@@ -1932,3 +1932,5 @@ td button {
 .domain-pagination span {
   color: var(--muted);
 }
+
+.aggregation-details { margin: 8px 0; padding: 8px; background: var(--panel-bg, #f4f7fa); border-radius: 6px; font-size: 12px; line-height: 1.7; overflow-wrap: anywhere; }

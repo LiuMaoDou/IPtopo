@@ -254,3 +254,24 @@ def test_thousand_member_segment_evidence_and_payload_scale_linearly():
         sizes.append(len(json.dumps({"snapshot": result, "topology": project_graph({**snapshot, **result})})))
     assert sizes[1] < sizes[0] * 12
     assert sizes[1] < 4_000_000
+
+
+@pytest.mark.parametrize("membership", ["parent_list", "member_reference", "member_unit"])
+def test_aggregate_member_addresses_are_preserved_but_not_inferred(membership):
+    snapshot = topology("192.0.2.1/30", "192.0.2.2/30", "192.0.2.1/30")
+    snapshot["interfaces"][0].update(kind="aggregate", raw_name="ae0")
+    member = snapshot["interfaces"][2]
+    member["device_id"] = "d0"
+    if membership == "parent_list":
+        snapshot["interfaces"][0]["aggregate_members"] = [member["id"]]
+    elif membership == "member_reference":
+        member["aggregate_interface_id"] = "i0"
+    else:
+        member["parent_interface_id"] = "physical-member"
+        snapshot["interfaces"].append({"id": "physical-member", "device_id": "d0", "aggregate_interface_id": "i0", "addresses": []})
+    before = deepcopy(snapshot)
+    result = infer(snapshot)
+    assert len(result["links"]) == 1
+    assert "duplicate_ip" not in codes(result)
+    assert any(u["interface_id"] == member["id"] and u["reason"] == "aggregate_member" for u in result["unmatched"])
+    assert snapshot == before

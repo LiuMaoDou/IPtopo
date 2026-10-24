@@ -68,7 +68,7 @@ export default function Inspector({
     return (
       <aside className="inspector">
         <div className="panel-heading">
-          <span>聚合链路</span>
+          <span>多链路汇总</span>
           <button aria-label="关闭详情" onClick={() => onSelect(null)}><X size={17} /></button>
         </div>
         <div className="inspector-title">
@@ -121,6 +121,29 @@ export default function Inspector({
     ) : (
       <p className="empty-note">人工添加的内容没有原始配置行。</p>
     );
+  const interfacesById = new Map(s.interfaces.map((item) => [item.id, item]));
+  const interfaceName = (id?: string) => id ? interfacesById.get(id)?.raw_name || id : "—";
+  const aggregateDetails = (i: Interface) => {
+    const parent = interfacesById.get(i.aggregate_interface_id || i.parent_interface_id || "");
+    const lag = i.kind === "aggregate" ? i : parent?.kind === "aggregate" ? parent : undefined;
+    if (!lag) return null;
+    const a = lag.aggregation;
+    return <div className="aggregation-details">
+      <div>{i.id !== lag.id && <button className="text-button" onClick={() => onSelect({kind: "interface", id: lag.id})}>聚合接口 {lag.raw_name} · </button>}
+        {a?.protocol ? `${({lacp: "LACP", static: "静态聚合", pagp: "PAgP"} as Record<string, string>)[a.protocol] || a.protocol} · ${a.mode || "模式未显式配置"}` : "聚合协议未提供"}
+        {a?.periodic && ` · ${a.periodic}`}
+      </div>
+      {(a?.minimum_links !== undefined || a?.link_speed) && <div>
+        {a.minimum_links !== undefined && `最少成员 ${a.minimum_links}`}
+        {a.link_speed && ` · 成员速率 ${a.link_speed}`}
+      </div>}
+      <div>配置成员：{lag.aggregate_members?.map((id) => {
+        const member = interfacesById.get(id);
+        return `${interfaceName(id)}${member?.aggregation?.mode ? ` (${member.aggregation.mode})` : ""}`;
+      }).join(", ") || "未提供"}</div>
+      <small>协商状态与成员对端：未知</small>
+    </div>;
+  };
   const interfaceCard = (i: Interface) => (
     <div
       className={
@@ -140,6 +163,7 @@ export default function Inspector({
           "default"}{" "}
         · {statusName(i.admin_state)} · 运行态 {statusName(i.oper_state)}
       </div>
+      {aggregateDetails(i)}
       {i.addresses.map((a) => (
         <div className="address-row" key={a.id}>
           <span className={"af af" + a.family}>v{a.family}</span>
@@ -336,15 +360,20 @@ export default function Inspector({
               <dt>规范名称</dt>
               <dd>{iface.normalized_name}</dd>
               <dt>父接口</dt>
-              <dd>{iface.parent_interface_id || "—"}</dd>
+              <dd>{interfaceName(iface.parent_interface_id)}</dd>
               <dt>聚合成员</dt>
-              <dd>{iface.aggregate_members?.join(", ") || "—"}</dd>
+              <dd>{iface.aggregate_members?.map(interfaceName).join(", ") || "—"}</dd>
+              <dt>所属聚合接口</dt>
+              <dd>{interfaceName(iface.aggregate_interface_id)}</dd>
               <dt>物理端口</dt>
               <dd>{iface.physical_port_refs?.join(", ") || "—"}</dd>
             </dl>
           </>
         ) : link ? (
-          evidence(link.evidence)
+          <>
+            {[link.interface_a_id, link.interface_b_id].map((id) => interfacesById.get(id)).filter((i): i is Interface => Boolean(i)).map(interfaceCard)}
+            {evidence(link.evidence)}
+          </>
         ) : segment ? (
           <>
             {evidence(segment.evidence)}

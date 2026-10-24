@@ -7,7 +7,7 @@ from hashlib import sha256
 import ipaddress
 import json
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 
 
 def stable_id(kind: str, *parts) -> str:
@@ -99,6 +99,19 @@ def infer(snapshot: dict, domain_settings: dict | None = None) -> dict:
     interfaces = {item["id"]: item for item in snapshot.get("interfaces", [])}
     devices = {item["id"]: item for item in snapshot.get("devices", [])}
     domains = {d["id"]: d for d in settings.get("domains", [])}
+    # Membership is configuration evidence, never a physical peer mapping.
+    aggregate_members = {member for iface in interfaces.values() for member in iface.get("aggregate_members", [])}
+    aggregate_members.update(iface["id"] for iface in interfaces.values() if iface.get("aggregate_interface_id"))
+
+    def is_aggregate_member(interface):
+        seen = set()
+        while interface and interface["id"] not in seen:
+            if interface["id"] in aggregate_members:
+                return True
+            seen.add(interface["id"])
+            interface = interfaces.get(interface.get("parent_interface_id"))
+        return False
+
     buckets = defaultdict(list)
     diagnostics, unmatched, segments, links = [], [], [], []
     assumed = set()
@@ -115,7 +128,11 @@ def infer(snapshot: dict, domain_settings: dict | None = None) -> dict:
             diagnostics.append(_diagnostic("missing_routing_context", "The routing context is missing; this interface remains isolated until its domain is assigned.", interface_id=interface["id"], context_id=interface["routing_context_id"]))
         if implicit:
             assumed.add(interface.get("routing_context_id") or interface["device_id"])
+        member = is_aggregate_member(interface)
         for address in interface.get("addresses", []):
+            if member:
+                unmatch(interface, address, "aggregate_member")
+                continue
             if address.get("address") is None or address.get("prefix_length") is None:
                 unmatch(interface, address, "unresolved_address")
                 continue

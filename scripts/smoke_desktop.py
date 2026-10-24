@@ -73,6 +73,7 @@ def main():
             launch.append("--headless")
         project_id = None
         juniper_project_id = None
+        aggregation_project_id = None
         try:
             for cycle in range(2):
                 stop.unlink(missing_ok=True)
@@ -114,6 +115,14 @@ def main():
                             response.raise_for_status()
                             job_id = response.json()["id"]
                             wait_for(imported)
+                            aggregation_project = client.post("api/projects", json={"name": "Four-vendor LACP regression"}).json()
+                            aggregation_project_id = aggregation_project["id"]
+                            files = [("files", (path.name, path.read_bytes(), "application/octet-stream")) for path in sorted((repo / "samples" / "fixtures").glob("lag-*.cfg"))]
+                            assert len(files) == 4
+                            response = client.post(f"api/projects/{aggregation_project_id}/imports", files=files, data={"expected_version": str(aggregation_project["version"])})
+                            response.raise_for_status()
+                            job_id = response.json()["id"]
+                            wait_for(imported)
                             duplicate = subprocess.run(command + ["--headless", "--no-browser", "--data-dir", str(data)], env=env, cwd=root, timeout=60)
                             assert duplicate.returncode == 1, "Duplicate instance was not rejected"
                             assert client.get("api/health").status_code == 200
@@ -124,6 +133,13 @@ def main():
                         assert juniper["device_count"] == 2
                         assert len(juniper["snapshot"]["links"]) == 1
                         assert set(juniper["snapshot"]["links"][0]["families"]) == {4, 6}
+                        aggregation = client.get(f"api/projects/{aggregation_project_id}").json()["snapshot"]
+                        assert {d["vendor"] for d in aggregation["devices"]} == {"Huawei", "Cisco", "Juniper", "Nokia"}
+                        assert len(aggregation["links"]) == 2
+                        assert all(set(link["families"]) == {4, 6} for link in aggregation["links"])
+                        lags = [i for i in aggregation["interfaces"] if i["kind"] == "aggregate"]
+                        assert len(lags) == 4
+                        assert all(i["aggregation"]["protocol"] == "lacp" and len(i["aggregate_members"]) == 2 for i in lags)
                         for format in ("json", "csv", "drawio"):
                             exported = client.get(f"api/projects/{project_id}/exports/{format}")
                             assert exported.status_code == 200, exported.text
@@ -141,7 +157,7 @@ def main():
                         except subprocess.TimeoutExpired:
                             process.kill()
                             process.wait()
-            print("PASS: startup, bundled assets, metadata, eight-device multiprocess import, Junos subtree dual-stack inference, exports, single instance, shutdown and restart persistence")
+            print("PASS: startup, bundled assets, metadata, eight-device multiprocess import, Junos subtree dual-stack inference, four-vendor LACP ownership, exports, single instance, shutdown and restart persistence")
         except Exception:
             log = data / "desktop.log"
             if log.exists():

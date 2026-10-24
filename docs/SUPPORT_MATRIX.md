@@ -12,7 +12,7 @@ Interface/context/address IDs derive from the **caller-provided device identity*
 
 ## Implemented dialects
 
-Junos parsing also accepts interface-only brace exports and relative `set` statements when a `show configuration interfaces ...` command or `[edit interfaces ...]` header supplies the omitted scope. Common physical, aggregate, reth, loopback, IRB and VLAN interface subtrees can be detected without a wrapper. CLI prompts and routing-engine status markers are excluded without shifting source line numbers. Address containers (including empty `{}` blocks) retain their IPv4/IPv6 declaration and inactive state. These cases are covered by synthetic regression tests, including a real /31 + /127 inferred link; the reported user configuration has not yet been supplied for verification.
+Junos parsing also accepts interface-only brace exports and relative `set` statements when a `show configuration interfaces ...` command or `[edit interfaces ...]` header supplies the omitted scope. Common physical, aggregate, reth, loopback, IRB and VLAN interface subtrees can be detected without a wrapper. CLI prompts and routing-engine status markers are excluded without shifting source line numbers. Address containers (including empty `{}` blocks) retain their IPv4/IPv6 declaration and inactive state. These cases are covered by synthetic regression tests, including a real /31 + /127 inferred link; the subsequently supplied user interface snippet was verified locally without publishing its private description.
 
 | Selection ID | Input | Validated fields | Acceptance fixture |
 | --- | --- | --- | --- |
@@ -25,6 +25,24 @@ Junos parsing also accepts interface-only brace exports and relative `set` state
 | `nokia_classic` | SR OS Classic CLI | system name; router/Base; VPRN; named interfaces; IPv4 address/secondary; IPv6 address context; port/SAP; lag members; description; interface shutdown/no shutdown; RD/RT; basic VRRP backup address | [Classic edge](../samples/demo/04-edge-nokia-classic.cfg) and context/LAG tests |
 | `nokia_md_flat` | SR OS MD-CLI absolute `/configure` paths | system name; router/Base and service/vprn interfaces; IPv4 primary/secondary address and prefix-length; IPv6 address keys and prefix-length; port/SAP/LAG; admin-state; description | [MD-CLI flat](../samples/fixtures/nokia-md-flat.cfg) and missing-prefix tests |
 | `nokia_md_hierarchical` | SR OS MD-CLI braces | Same scoped MD fields, matching address/prefix leaf pairs and declaration provenance; brace validation | [MD-CLI access](../samples/demo/08-access-nokia-md.cfg) |
+
+
+## LAG / LACP support (v1.2)
+
+| Dialect | Explicit aggregation configuration | Membership / address ownership |
+| --- | --- | --- |
+| Huawei VRP | `mode lacp-static`, `lacp-dynamic` → LACP; `manual [load-balance]` → static; least active links; LACP timeout | `eth-trunk` member references and explicit `trunkport` ports; aggregate and subinterface addresses |
+| Cisco IOS / IOS-XE / NX-OS | channel-group `active/passive` → LACP; `on` → static; IOS `auto/desirable` → PAgP; configured timers and minimum links | Port-channel and subinterfaces; member mode retained; conflicting member protocols diagnosed |
+| Cisco IOS-XR | bundle id `active/passive/on`; bundle minimum-active links; LACP period | Bundle-Ether and subinterfaces |
+| Junos set / hierarchy | active/passive, periodic, minimum-links, link-speed | ether-options/gigether-options 802.3ad → ae; unit addresses stay on ae.unit; inactive membership excluded |
+| Nokia SR OS Classic | lacp active/passive, no lacp, lacp-xmit-interval | LAG ports; router/VPRN port/SAP references retain logical interface addresses |
+| Nokia SR OS MD flat / hierarchy | lacp mode, explicit lacp admin-state, lacp-xmit-interval | LAG port declarations including empty containers; named router/service interfaces reference their LAG |
+
+Missing protocol declarations stay unknown; the parser does not infer platform defaults. Huawei static LACP is not classified as non-LACP static aggregation. `minimum-links` and member speed do not establish active member count or total bandwidth. Explicitly disabled aggregate interfaces exclude their logical children from inferred links. Addresses configured on physical aggregate members (including their child units) are retained as facts but excluded from matching with reason `aggregate_member`. Separate addressed logical interfaces remain separate links; IPv4 and IPv6 on one interface pair remain one dual-stack link.
+
+Canvas multi-link collapsing is a display operation, independent of LACP. Link/interface inspectors show aggregation protocol, explicit configuration, named members and parent interfaces. Configuration alone does not establish partner port pairing, negotiation, collecting/distributing state, active bandwidth, or physical adjacency. MC-LAG/MLAG/vPC/stacking relationships and runtime LACP outputs are not expanded. Inheritance and member ranges still require effective, explicit configurations; unsupported Huawei trunkport ranges produce a diagnostic.
+
+Protocol references: [Huawei modes](https://info.support.huawei.com/hedex/api/pages/EDOC1100331435/AEM10132/04/resources/dc/mode.html), [Cisco channel-group modes](https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst3850/software/release/3se/layer2/command_reference/b_lay2_3se_3850_cr/b_lay2_3se_3850_cr_chapter_010.html), [Cisco XR bundles](https://www.cisco.com/c/en/us/td/docs/routers/asr9000/software/interfaces/command/reference/b-interfaces-hardware-component-cr-asr9000/link-bundling-commands.html), [Junos aggregated Ethernet](https://www.juniper.net/documentation/us/en/software/junos/interfaces-ethernet/topics/topic-map/aggregated-ethernet-interfaces-lacp-configure.html), [Nokia LAG](https://documentation.nokia.com/sr/25-3/7750-sr/books/interface-configuration/lag.html). Acceptance uses synthetic configurations, not live devices.
 
 ## Component reuse and source evidence
 

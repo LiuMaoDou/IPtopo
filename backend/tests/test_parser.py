@@ -383,3 +383,103 @@ def test_symlinked_venv_upstream_containment_bug_uses_trusted_package_resource(m
     with pytest.raises(ValueError, match="registered"):
         _platform_template("../../../../etc/passwd")
     _platform_template.cache_clear()
+
+
+def lacp_config(index=1, mode="active"):
+    return f'''interfaces {{
+ et-0/0/0 {{ ether-options {{ 802.3ad ae0; }} }}
+ et-0/0/1 {{ gigether-options {{ 802.3ad ae0; }} }}
+ ae0 {{
+  description "peer management 198.51.100.58";
+  aggregated-ether-options {{
+   minimum-links 1;
+   link-speed 100g;
+   lacp {{ {mode}; periodic fast; }}
+  }}
+  unit 930 {{ vlan-id 930; family inet {{ address 192.0.2.{index}/30; }} }}
+ }}
+}}'''
+
+
+@pytest.mark.parametrize("mode", ["active", "passive"])
+def test_junos_lacp_metadata_members_and_ip_ownership(mode):
+    result = parse(lacp_config(mode=mode))
+    lag, sub = by_name(result, "ae0"), by_name(result, "ae0.930")
+    assert result["status"] == "success"
+    assert {k: v for k, v in lag["aggregation"].items() if k != "source_refs"} == {
+        "protocol": "lacp", "mode": mode, "periodic": "fast", "minimum_links": 1, "link_speed": "100g"}
+    assert len(lag["aggregate_members"]) == 2
+    assert sub["parent_interface_id"] == lag["id"]
+    assert [a["address"] for a in addresses(result)] == ["192.0.2.1"]
+    assert lag["addresses"] == []
+    assert all(i["oper_state"] == "unknown" for i in result["interfaces"])
+    assert all(r["line"] > 0 for r in lag["aggregation"]["source_refs"])
+    for name in ("et-0/0/0", "et-0/0/1"):
+        assert by_name(result, name)["aggregate_interface_id"] == lag["id"]
+
+
+def test_junos_lacp_set_and_hierarchy_equivalence():
+    result = parse('''set interfaces et-0/0/0 ether-options 802.3ad ae0
+set interfaces et-0/0/1 gigether-options 802.3ad ae0
+set interfaces ae0 aggregated-ether-options minimum-links 1
+set interfaces ae0 aggregated-ether-options link-speed 100g
+set interfaces ae0 aggregated-ether-options lacp active
+set interfaces ae0 aggregated-ether-options lacp periodic fast
+set interfaces ae0 unit 930 vlan-id 930
+set interfaces ae0 unit 930 family inet address 192.0.2.1/30
+''')
+    hierarchy = parse(lacp_config())
+    for key in ("aggregation", "aggregate_members"):
+        a, b = by_name(result, "ae0")[key], by_name(hierarchy, "ae0")[key]
+        if isinstance(a, dict):
+            a, b = ({k: v for k, v in x.items() if k != "source_refs"} for x in (a, b))
+        assert a == b
+
+
+@pytest.mark.parametrize("config", [
+    'ae0 { aggregated-ether-options { lacp {} } }',
+    'show configuration interfaces ae0\naggregated-ether-options { lacp {} }',
+    'set interfaces ae0 aggregated-ether-options lacp',
+])
+def test_junos_lacp_only_export_detected_without_addresses(config):
+    result = parse(config)
+    assert result["vendor"] == "Juniper"
+    assert by_name(result, "ae0")["aggregation"]["protocol"] == "lacp"
+    assert "mode" not in by_name(result, "ae0")["aggregation"]
+    assert not addresses(result)
+
+
+@pytest.mark.parametrize("config", [
+    '''interfaces { et-0/0/0 { ether-options { inactive: 802.3ad ae0; } }
+    ae0 { aggregated-ether-options { inactive: lacp { active; periodic fast; } } unit 0 { family inet { address 192.0.2.1/30; } } } }''',
+    '''set interfaces et-0/0/0 ether-options 802.3ad ae0
+set interfaces ae0 aggregated-ether-options lacp active
+set interfaces ae0 unit 0 family inet address 192.0.2.1/30
+deactivate interfaces et-0/0/0 ether-options 802.3ad
+deactivate interfaces ae0 aggregated-ether-options lacp''',
+])
+def test_inactive_junos_membership_and_lacp_not_effective(config):
+    result = parse(config)
+    assert not by_name(result, "ae0")["aggregate_members"]
+    assert not by_name(result, "ae0").get("aggregation", {}).get("protocol")
+    assert not by_name(result, "et-0/0/0").get("aggregate_interface_id")
+
+
+def test_junos_8023ad_force_up_does_not_create_fake_aggregate():
+    result = parse('''set interfaces et-0/0/0 ether-options 802.3ad ae0
+set interfaces et-0/0/0 ether-options 802.3ad ae0
+set interfaces et-0/0/0 ether-options 802.3ad lacp force-up
+set interfaces ae0 aggregated-ether-options lacp active''')
+    assert {i["raw_name"] for i in result["interfaces"]} == {"et-0/0/0", "ae0"}
+    assert len(by_name(result, "ae0")["aggregate_members"]) == 1
+
+
+def test_lacp_multiple_members_do_not_multiply_logical_links():
+    from backend.app.inference import infer
+    parsed = [parse(lacp_config(index), device=f"d{index}") for index in (1, 2)]
+    snapshot = {"devices": [r["device"] for r in parsed], "interfaces": [i for r in parsed for i in r["interfaces"]], "contexts": [c for r in parsed for c in r["contexts"]]}
+    result = infer(snapshot)
+    assert len(result["links"]) == 1
+    link = result["links"][0]
+    assert {link["interface_a_id"], link["interface_b_id"]} == {by_name(r, "ae0.930")["id"] for r in parsed}
+    assert link["prefixes"] == ["192.0.2.0/30"]

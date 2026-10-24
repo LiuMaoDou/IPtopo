@@ -41,6 +41,15 @@ export type Interface = {
   addresses: Address[];
   source_refs: Ref[];
   aggregate_members?: string[];
+  aggregate_interface_id?: string;
+  aggregation?: {
+    protocol?: string;
+    mode?: string;
+    periodic?: string;
+    minimum_links?: number;
+    link_speed?: string;
+    source_refs: Ref[];
+  };
   physical_port_refs?: string[];
   parent_interface_id?: string;
 };

@@ -16,7 +16,7 @@ from pathlib import PurePath
 
 from ttp import ttp
 
-PARSER_VERSION = "1.1.0"
+PARSER_VERSION = "1.2.0"
 _JUNOS_INTERFACE = r"(?:(?:ge|xe|et|fe)-\d+/\d+/\d+(?::\d+)?|(?:ae|reth|lo|demux)\d+|irb|vlan)"
 
 
@@ -72,6 +72,7 @@ L{{ line | _start_ }} channel-group {{ aggregate }} mode {{ mode }}
 L{{ line | _start_ }} channel-group {{ aggregate }}
 L{{ line | _start_ }} eth-trunk {{ aggregate }}
 L{{ line | _start_ }} bundle id {{ aggregate }} mode {{ mode }}
+L{{ line | _start_ }} bundle id {{ aggregate }}
 L{{ line | _start_ }} encapsulation dot1Q {{ vlan }}
 L{{ line | _start_ }} encapsulation dot1q {{ vlan }}
 L{{ line | _start_ }} vlan-type dot1q {{ vlan }}
@@ -97,12 +98,12 @@ def detect_dialect(text):
         return "nokia_md_hierarchical"
     if re.search(r"(?m)^\s*(?:set|deactivate)\s+(?:system|interfaces|routing-instances)\s", text):
         return "junos_set"
-    if re.search(r"\b(?:interfaces|system)\s*\{", text) and ("family inet" in text or "host-name" in text or "unit " in text):
+    if re.search(r"\b(?:interfaces|system)\s*\{", text) and ("family inet" in text or "host-name" in text or "unit " in text or "802.3ad" in text or "aggregated-ether-options" in text):
         return "junos_hierarchical"
-    if re.search(rf"(?m)^\s*(?:inactive:\s*)?{_JUNOS_INTERFACE}\s*\{{", text) and re.search(r"\bfamily\s+inet6?\b", text):
+    if re.search(rf"(?m)^\s*(?:inactive:\s*)?{_JUNOS_INTERFACE}\s*\{{", text) and re.search(r"\bfamily\s+inet6?\b|\b802\.3ad\b|\baggregated-ether-options\b", text):
         return "junos_hierarchical"
     captured, scope = _junos_capture(text)
-    if scope and re.search(r"\bfamily\s+inet6?\b|\baddress\s+[0-9a-fA-F:.]+/\d+", captured):
+    if scope and re.search(r"\bfamily\s+inet6?\b|\baddress\s+[0-9a-fA-F:.]+/\d+|\b802\.3ad\b|\baggregated-ether-options\b", captured):
         return "junos_set" if re.search(r"(?m)^\s*set\s+", captured) else "junos_hierarchical"
     if re.search(r"(?mi)^\s*sysname\s|^\s*ip binding vpn-instance\s|^\s*interface\s+(?:Eth-Trunk|Vlanif)", text):
         return "huawei_vrp"
@@ -184,6 +185,14 @@ class _Builder:
             iface["effective_state"] = "inactive"
         return iface
 
+    def aggregation(self, iface, line, **fields):
+        metadata = iface.setdefault("aggregation", {"source_refs": []})
+        metadata.update(fields)
+        ref = self.ref(line)
+        if ref not in metadata["source_refs"]:
+            metadata["source_refs"].append(ref)
+        return metadata
+
     def address(self, iface, value, line, family=None, role="primary", acquisition="static", inactive=False):
         if value is None:
             addr = None
@@ -248,6 +257,7 @@ class _Builder:
         self.address(iface, address, line, family, role)
 
     def finish(self):
+        by_id = {i["id"]: i for i in self.interfaces.values()}
         for key, iface in list(self.interfaces.items()):
             if "." in iface["raw_name"]:
                 parent_name = iface["raw_name"].rsplit(".", 1)[0]
@@ -259,6 +269,12 @@ class _Builder:
                         iface["effective_state"] = parent["effective_state"]
                     if parent["admin_state"] == "disabled":
                         iface["admin_state"] = "disabled"
+            parent = by_id.get(iface.get("parent_interface_id"))
+            if parent:
+                if parent["admin_state"] == "disabled":
+                    iface["admin_state"] = "disabled"
+                if parent["effective_state"] in ("inactive", "unresolved"):
+                    iface["effective_state"] = parent["effective_state"]
             if iface["effective_state"] in ("inactive", "unresolved"):
                 for address in iface["addresses"]:
                     address["effective_state"] = iface["effective_state"]
@@ -383,7 +399,30 @@ def _parse_cli(b):
             if "aggregate" in field:
                 prefix = "Eth-Trunk" if b.dialect == "huawei_vrp" else "Bundle-Ether" if b.dialect == "cisco_xr" else "port-channel" if b.dialect == "cisco_nxos" else "Port-channel"
                 aggregates.append((iface, prefix + field["aggregate"], n))
+                mode = field.get("mode")
+                protocol = {"active": "lacp", "passive": "lacp", "on": "static", "auto": "pagp", "desirable": "pagp"}.get(mode)
+                if protocol and b.dialect.startswith("cisco"):
+                    b.aggregation(iface, n, protocol=protocol, mode=mode)
         for n, line in lines:
+            if b.dialect == "huawei_vrp" and iface["kind"] == "aggregate":
+                if line in ("mode lacp-static", "mode lacp-dynamic"):
+                    b.aggregation(iface, n, protocol="lacp", mode=line.split()[1])
+                elif line in ("mode manual", "mode manual load-balance"):
+                    b.aggregation(iface, n, protocol="static", mode="manual")
+                elif line.startswith("trunkport "):
+                    declaration = line[len("trunkport "):]
+                    if " to " in declaration:
+                        b.warn("unresolved_aggregate_range", "Aggregate member range requires expansion; provide explicit member interface declarations.", n, iface)
+                    else:
+                        ports = re.findall(r"([A-Za-z][A-Za-z0-9-]*?)\s*(\d+(?:/\d+)+)", declaration)
+                        for prefix, number in ports:
+                            aggregates.append((b.iface(prefix + number, n), iface["raw_name"], n))
+            minimum = re.fullmatch(r"(?:least active-linknumber|port-channel min-links|lacp min-bundle|bundle minimum-active links)\s+(\d+)", line)
+            if minimum and iface["kind"] == "aggregate":
+                b.aggregation(iface, n, minimum_links=int(minimum.group(1)))
+            timer = re.fullmatch(r"lacp (?:rate|period|timeout) (fast|slow|short|long)", line)
+            if timer:
+                b.aggregation(iface, n, periodic=timer.group(1))
             if line == "shutdown":
                 iface["admin_state"] = "disabled"
             elif line in ("no shutdown", "undo shutdown"):
@@ -406,8 +445,27 @@ def _parse_cli(b):
         if ("", name) not in b.interfaces:
             b.warn("missing_aggregate_declaration", f"Aggregate {name} is referenced by a member but has no parsed interface declaration.", n, member)
         lag = b.iface(name, n)
-        lag["aggregate_members"].append(member["id"])
+        if member["id"] not in lag["aggregate_members"]:
+            lag["aggregate_members"].append(member["id"])
         member["aggregate_interface_id"] = lag["id"]
+        if b.ref(n) not in member["source_refs"]:
+            member["source_refs"].append(b.ref(n))
+    by_id = {i["id"]: i for i in b.interfaces.values()}
+    for lag in b.interfaces.values():
+        if not lag["aggregate_members"]:
+            continue
+        member_metadata = [by_id[i].get("aggregation", {}) for i in lag["aggregate_members"]]
+        for field in ("protocol", "mode", "periodic"):
+            values = sorted({a[field] for a in member_metadata if field in a})
+            if values:
+                b.aggregation(lag, lag["source_refs"][0]["line"], **{field: " / ".join(values)})
+                if field == "protocol" and len(values) > 1:
+                    b.warn("aggregate_protocol_conflict", "Aggregate members declare conflicting aggregation protocols; review member configuration.", lag["source_refs"][0]["line"], lag)
+        if lag.get("aggregation"):
+            for metadata in member_metadata:
+                for ref in metadata.get("source_refs", []):
+                    if ref not in lag["aggregation"]["source_refs"]:
+                        lag["aggregation"]["source_refs"].append(ref)
     _upstream_check(b, "\n".join("interface " + iface["raw_name"] + "\n" + "\n".join(" " + line for _, line in lines) + "\n!" for iface, lines in blocks))
 
 
@@ -445,6 +503,11 @@ def _hierarchy(b, newline_leaves=False):
             path = [t for p, _ in stack for t in p] + current
             # An address container declares the address even when it has no leaves.
             if b.dialect.startswith("junos") and len(path) >= 4 and path[-4] == "family" and path[-3] in ("inet", "inet6") and path[-2] == "address":
+                records.append((path, first_line, inactive or any(x for _, x in stack)))
+            if b.dialect.startswith("junos") and path[-2:] == ["aggregated-ether-options", "lacp"]:
+                records.append((path, first_line, inactive or any(x for _, x in stack)))
+            md_path = path[1:] if path[:1] in (["configure"], ["/configure"]) else path
+            if b.dialect == "nokia_md_hierarchical" and len(md_path) == 4 and md_path[0] == "lag" and md_path[2] == "port":
                 records.append((path, first_line, inactive or any(x for _, x in stack)))
             stack.append((current, inactive))
             current = []
@@ -493,7 +556,7 @@ def _parse_junos(b):
             return tokens
         if tokens and re.fullmatch(_JUNOS_INTERFACE, tokens[0]):
             return ["interfaces", *tokens]
-        if scope and tokens and tokens[0] in {"unit", "family", "address", "description", "disable", "vlan-id", "ether-options", "gigether-options"}:
+        if scope and tokens and tokens[0] in {"unit", "family", "address", "description", "disable", "vlan-id", "ether-options", "gigether-options", "aggregated-ether-options"}:
             return [*scope, *tokens]
         return tokens
 
@@ -555,10 +618,27 @@ def _parse_junos(b):
             iface["admin_state"] = "disabled"
         elif rest[0] == "vlan-id" and len(rest) > 1:
             iface["encapsulation"] = {"type": "dot1q", "vlan_id": rest[1]}
-        elif "802.3ad" in rest:
-            index = rest.index("802.3ad")
-            if len(rest) > index + 1:
-                lag_members.append((base, rest[index+1], n))
+        elif rest[0] == "aggregated-ether-options" and len(rest) >= 2:
+            if address_inactive:
+                continue
+            aggregation = base.setdefault("aggregation", {"source_refs": []})
+            option = rest[1:]
+            if option[0] == "lacp":
+                aggregation["protocol"] = "lacp"
+                if len(option) > 1 and option[1] in ("active", "passive"):
+                    aggregation["mode"] = option[1]
+                elif len(option) > 2 and option[1] == "periodic":
+                    aggregation["periodic"] = option[2]
+            elif len(option) > 1 and option[0] == "minimum-links" and option[1].isdigit():
+                aggregation["minimum_links"] = int(option[1])
+            elif len(option) > 1 and option[0] == "link-speed":
+                aggregation["link_speed"] = option[1]
+            if b.ref(n) not in aggregation["source_refs"]:
+                aggregation["source_refs"].append(b.ref(n))
+        elif rest[0] in ("ether-options", "gigether-options") and len(rest) >= 3 and rest[1] == "802.3ad":
+            # Other 802.3ad leaves (e.g. lacp force-up) are not aggregate names.
+            if re.fullmatch(r"ae\d+", rest[2]) and not address_inactive:
+                lag_members.append((base, rest[2], n))
         elif rest[:1] == ["family"] and len(rest) >= 3 and rest[1] in ("inet", "inet6"):
             family = 4 if rest[1] == "inet" else 6
             cmd = rest[2:]
@@ -585,8 +665,11 @@ def _parse_junos(b):
         if ("", lag_name) not in b.interfaces:
             b.warn("missing_aggregate_declaration", f"Aggregate {lag_name} is referenced by a member but has no parsed interface declaration.", n, member)
         lag = b.iface(lag_name, n)
-        lag["aggregate_members"].append(member["id"])
+        if member["id"] not in lag["aggregate_members"]:
+            lag["aggregate_members"].append(member["id"])
         member["aggregate_interface_id"] = lag["id"]
+        if b.ref(n) not in member["source_refs"]:
+            member["source_refs"].append(b.ref(n))
     # Deactivation can be declared after the corresponding set statements.
     for iface in b.interfaces.values():
         parent, _, unit = iface["raw_name"].partition(".")
@@ -644,6 +727,22 @@ def _parse_nokia_classic(b):
             member["aggregate_interface_id"] = lag["id"]
             if member["id"] not in lag["aggregate_members"]:
                 lag["aggregate_members"].append(member["id"])
+        elif stack and stack[-1][0] == "lag":
+            lag = stack[-1][1]
+            if words[0] == "lacp":
+                fields = {"protocol": "lacp"}
+                if len(words) > 1 and words[1] in ("active", "passive"):
+                    fields["mode"] = words[1]
+                b.aggregation(lag, n, **fields)
+            elif line == "no lacp":
+                b.aggregation(lag, n, protocol="static")
+                lag["aggregation"].pop("mode", None)
+            elif words[0] == "lacp-xmit-interval" and len(words) > 1:
+                b.aggregation(lag, n, periodic=words[1])
+            elif line in ("shutdown", "no shutdown"):
+                lag["admin_state"] = "disabled" if line == "shutdown" else "enabled"
+            elif words[0] == "description":
+                lag["description"] = " ".join(words[1:])
         elif words[0] == "vprn" and len(words) > 1:
             context = "VPRN:" + words[1]
             b.context(context, n)
@@ -717,10 +816,26 @@ def _parse_nokia_md(b):
         for tokens, n, inactive in _hierarchy(b, newline_leaves=True):
             records.append((tokens[1:] if tokens and tokens[0] in ("configure", "/configure") else tokens, n, inactive))
     pending = {}
+    lacp_disabled = {tokens[1] for tokens, _, _ in records if len(tokens) >= 5 and tokens[0] == "lag" and tokens[2:5] == ["lacp", "admin-state", "disable"]}
     for tokens, n, inactive in records:
+        if len(tokens) >= 3 and tokens[0] == "lag":
+            lag_name = tokens[1] if tokens[1].startswith("lag-") else "lag-" + tokens[1]
+            lag = b.iface(lag_name, n, inactive=inactive)
+            rest = tokens[2:]
+            if rest[:1] == ["admin-state"]:
+                lag["admin_state"] = {"enable": "enabled", "disable": "disabled"}.get(rest[-1], "unknown")
+            elif rest[:1] == ["lacp"] and not inactive:
+                if tokens[1] in lacp_disabled:
+                    b.aggregation(lag, n, protocol="static")
+                elif rest[1:] == ["admin-state", "enable"]:
+                    b.aggregation(lag, n, protocol="lacp")
+                elif len(rest) > 2 and rest[1] == "mode" and rest[2] in ("active", "passive"):
+                    b.aggregation(lag, n, protocol="lacp", mode=rest[2])
+            elif len(rest) > 1 and rest[0] == "lacp-xmit-interval" and not inactive:
+                b.aggregation(lag, n, periodic=rest[1])
         if len(tokens) == 3 and tokens[:2] == ["system", "name"]:
             b.hostname, b.hostname_line = tokens[2], n
-        if len(tokens) >= 4 and tokens[0] == "lag" and tokens[2] == "port":
+        if len(tokens) >= 4 and tokens[0] == "lag" and tokens[2] == "port" and not inactive:
             lag_name = tokens[1] if tokens[1].startswith("lag-") else "lag-" + tokens[1]
             lag = b.iface(lag_name, n)
             member = b.iface(tokens[3], n)
