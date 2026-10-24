@@ -403,7 +403,7 @@ export default forwardRef<GraphHandle, Props>(function Graph(
             shape: "roundrectangle",
             width: 44,
             height: 44,
-            label: "",
+            label: "data(displayLabel)",
             "background-color": "#e4f4f5",
             "border-color": "#087f80",
             "border-width": 1,
@@ -523,7 +523,6 @@ export default forwardRef<GraphHandle, Props>(function Graph(
         {
           selector: 'node[kind="segment"]:selected',
           style: {
-            label: "data(label)",
             width: 50,
             height: 50,
             "background-width": 36,
@@ -944,7 +943,7 @@ export default forwardRef<GraphHandle, Props>(function Graph(
         {data.nodes.some((n) => n.kind === "segment") && (
           <span>
             <img src={segmentIcon} alt="" />
-            IP 网段 · 点击查看地址
+            IP 网段
           </span>
         )}
       </div>
