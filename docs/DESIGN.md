@@ -18,7 +18,7 @@ The Browser Use plugin could not reach this host’s localhost (ERR_CONNECTION_R
 | Palette and surfaces | True white panels, cool dotted canvas, navy ink, teal primary/selection, thin blue-gray borders; no added gradients. |
 | Typography | Explicit system-font sizes on app chrome, inputs, tables, forms and graph labels. Increased graph labels/node size after render review. |
 | Functional copy | Concept action labels retained; added only plan-required controls. Actual imports replace illustration names/counts. Configuration state stays separate from unknown runtime state. |
-| Icons and node treatment | Consistent thin outline UI icons, router nodes and diamond shared segments; selection has a teal border. |
+| Icons and node treatment | Consistent thin outline UI icons, vendor-symbol nodes and square shared segments; selection has a teal border. |
 | Container geometry | Flat rails and compact lists, no decorative card grid. Inspector body scrolls independently with pinned action footer. |
 | Responsive behavior | Mobile uses three explicit panels for devices/topology/details and scrollable toolbar. All tested widths had zero document overflow; edit form and inspector remain usable. |
 
@@ -36,3 +36,5 @@ The final node design follows the later user request: no vendor word on a topolo
 For large graphs, low zoom reduces devices to vendor-colored markers and suppresses overlapping labels; zooming or selecting restores detail. Existing geometry and pins are kept when new devices arrive. A quick connected-component placement gives an immediate overview, with cancellable worker layouts and one-hop focus for detailed work. Device, file and context lists use bounded visible rows. PNG exports have a bounded raster size. These are functional refinements requested after the original concept, and deliberately change its node cards.
 
 Visual QA found that ELK radial can place neighbors close together on one four-node star. The tested local fCoSE layout separates that neighborhood more clearly; arbitrary topology readability is not guaranteed by an automatic layout. The quick overview and local-layout choices remain available.
+
+The user subsequently requested square IP address icons. Subnet/prefix nodes now use equal 96 × 96 dimensions, centered wrapping labels, and 28 × 28 square markers at overview zoom. draw.io uses the same square geometry centered on saved coordinates.

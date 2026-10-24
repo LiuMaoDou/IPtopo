@@ -164,13 +164,14 @@ def drawio_export(graph: dict, view: dict | None, name: str) -> bytes:
         position = positions.get(node["id"], {"x": (index % 6) * 220 + 100, "y": (index // 6) * 160 + 100})
         segment = node.get("kind") == "segment"
         symbol = _vendor_symbol(node.get("vendor"))
-        style = ("shape=rhombus;whiteSpace=wrap;html=0;fillColor=#eef6ff;strokeColor=#7293bb;" if segment else _symbol_style(symbol[2]))
+        style = ("shape=rectangle;rounded=0;whiteSpace=wrap;html=0;fillColor=#eef6ff;strokeColor=#7293bb;" if segment else _symbol_style(symbol[2]))
         node_label = (node.get("label", node["id"]) if labels.get("names", True) else "")
         if not segment:
             used_vendors[symbol[0]] = symbol
             device_positions.append(position)
+        width, height = (96, 96) if segment else (140, 60)
         drawing.add_node(id=node["id"], label=node_label, style=style,
-                         x_pos=float(position["x"]) - 70, y_pos=float(position["y"]) - 30, width=140, height=60,
+                         x_pos=float(position["x"]) - width / 2, y_pos=float(position["y"]) - height / 2, width=width, height=height,
                          data={"kind": node.get("kind", "device")})
     for edge in graph["edges"]:
         rejected = edge.get("review_state") == "rejected"
