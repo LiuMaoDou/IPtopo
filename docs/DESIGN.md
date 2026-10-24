@@ -38,3 +38,5 @@ For large graphs, low zoom reduces devices to vendor-colored markers and suppres
 Visual QA found that ELK radial can place neighbors close together on one four-node star. The tested local fCoSE layout separates that neighborhood more clearly; arbitrary topology readability is not guaranteed by an automatic layout. The quick overview and local-layout choices remain available.
 
 The final user refinement uses moderately wide horizontal rectangles for IP subnet/prefix nodes: 140 × 48 dimensions, centered wrapping labels, and 36 × 16 markers at overview zoom. draw.io uses the same rectangular geometry centered on saved coordinates.
+
+All device icons now have a persistent rounded frame and light background. Selection changes the background to teal and enlarges the frame/icon by about 14 percent, with the same border; deselection restores the normal size. Large-network overview markers retain a compact frame and a proportional selection size. draw.io includes the normal device frame.

@@ -389,6 +389,15 @@ export default forwardRef<GraphHandle, Props>(function Graph(
           },
         },
         {
+          selector: 'node[kind="device"]',
+          style: {
+            "background-color": "#f5fafb",
+            "background-opacity": 1,
+            "border-color": "#73a7ae",
+            "border-width": 2,
+          },
+        },
+        {
           selector: 'node[kind="segment"]',
           style: {
             shape: "rectangle",
@@ -426,7 +435,7 @@ export default forwardRef<GraphHandle, Props>(function Graph(
           },
         },
         {
-          selector: "node:selected",
+          selector: 'node:selected[kind != "device"]',
           style: {
             "border-color": "#087f80",
             "border-width": 3,
@@ -485,7 +494,8 @@ export default forwardRef<GraphHandle, Props>(function Graph(
             "background-image": "none",
             "background-color": "data(vendorColor)",
             "background-opacity": 1,
-            shape: "ellipse",
+            shape: "roundrectangle",
+            "border-width": 1,
             width: 30,
             height: 30,
           },
@@ -500,6 +510,24 @@ export default forwardRef<GraphHandle, Props>(function Graph(
             label: "data(displayLabel)",
             "background-image": "data(icon)",
             "min-zoomed-font-size": 0,
+          },
+        },
+        {
+          selector: 'node[kind="device"]:selected',
+          style: {
+            "background-color": "#cfeceb",
+            width: 64,
+            height: 62,
+            "background-width": 50,
+            "background-height": 50,
+          },
+        },
+        {
+          selector: 'node.lod-overview[kind="device"]:selected',
+          style: {
+            width: 34,
+            height: 34,
+            "background-image": "none",
           },
         },
         {

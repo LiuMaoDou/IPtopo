@@ -27,13 +27,14 @@ def _vendor_symbol(vendor):
     return next((item for item in _VENDOR_SYMBOLS[:-1] if item[0].lower() in value), _VENDOR_SYMBOLS[-1])
 
 
-def _symbol_style(body):
+def _symbol_style(body, framed=False):
     svg = '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">' + body + '</svg>'
     # mxGraph separates style fields with semicolons. The valid URI form below
     # intentionally has no ;utf8 marker that would truncate the image value.
     image = "data:image/svg+xml," + quote(svg, safe="")
+    frame = "rounded=1;fillColor=#f5fafb;strokeColor=#73a7ae;strokeWidth=2;" if framed else "fillColor=none;strokeColor=none;"
     return ("shape=label;image=" + image + ";imageWidth=44;imageHeight=44;imageAlign=center;imageVerticalAlign=middle;"
-            "fillColor=none;strokeColor=none;whiteSpace=wrap;html=0;align=center;verticalLabelPosition=bottom;verticalAlign=top;"
+            + frame + "whiteSpace=wrap;html=0;align=center;verticalLabelPosition=bottom;verticalAlign=top;"
             "spacingTop=8;fontColor=#172b3a;fontSize=12;")
 
 
@@ -164,12 +165,12 @@ def drawio_export(graph: dict, view: dict | None, name: str) -> bytes:
         position = positions.get(node["id"], {"x": (index % 6) * 220 + 100, "y": (index // 6) * 160 + 100})
         segment = node.get("kind") == "segment"
         symbol = _vendor_symbol(node.get("vendor"))
-        style = ("shape=rectangle;rounded=0;whiteSpace=wrap;html=0;fillColor=#eef6ff;strokeColor=#7293bb;" if segment else _symbol_style(symbol[2]))
+        style = ("shape=rectangle;rounded=0;whiteSpace=wrap;html=0;fillColor=#eef6ff;strokeColor=#7293bb;" if segment else _symbol_style(symbol[2], framed=True))
         node_label = (node.get("label", node["id"]) if labels.get("names", True) else "")
         if not segment:
             used_vendors[symbol[0]] = symbol
             device_positions.append(position)
-        width, height = (140, 48) if segment else (140, 60)
+        width, height = (140, 48) if segment else (56, 54)
         drawing.add_node(id=node["id"], label=node_label, style=style,
                          x_pos=float(position["x"]) - width / 2, y_pos=float(position["y"]) - height / 2, width=width, height=height,
                          data={"kind": node.get("kind", "device")})

@@ -120,8 +120,8 @@ def test_drawio_keeps_group_geometry_and_label_preferences():
     assert node.find("mxCell").get("parent") == "group:Cisco"
     geo = node.find("mxCell/mxGeometry")
     group_geo = group.find("mxGeometry")
-    assert float(geo.get("x")) + float(group_geo.get("x")) == 100 - 70
-    assert float(geo.get("y")) + float(group_geo.get("y")) == 200 - 30
+    assert float(geo.get("x")) + float(group_geo.get("x")) + float(geo.get("width")) / 2 == 100
+    assert float(geo.get("y")) + float(group_geo.get("y")) + float(geo.get("height")) / 2 == 200
     link = xml.find(".//object[@id='link_id:link']")
     assert link.get("label") == ""
     labels = {c.get("value") for c in xml.findall(".//mxCell") if c.get("parent") == "link_id:link"}
