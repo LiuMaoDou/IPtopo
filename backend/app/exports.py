@@ -169,7 +169,7 @@ def drawio_export(graph: dict, view: dict | None, name: str) -> bytes:
         if not segment:
             used_vendors[symbol[0]] = symbol
             device_positions.append(position)
-        width, height = (96, 96) if segment else (140, 60)
+        width, height = (140, 48) if segment else (140, 60)
         drawing.add_node(id=node["id"], label=node_label, style=style,
                          x_pos=float(position["x"]) - width / 2, y_pos=float(position["y"]) - height / 2, width=width, height=height,
                          data={"kind": node.get("kind", "device")})

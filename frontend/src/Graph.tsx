@@ -392,14 +392,14 @@ export default forwardRef<GraphHandle, Props>(function Graph(
           selector: 'node[kind="segment"]',
           style: {
             shape: "rectangle",
-            width: 96,
-            height: 96,
+            width: 140,
+            height: 48,
             "background-color": "#e4f4f5",
             "border-color": "#a6c9d0",
             "border-width": 1,
             "background-image": "none",
             "font-size": 11,
-            "text-max-width": "84px",
+            "text-max-width": "128px",
             "text-overflow-wrap": "anywhere",
             "text-margin-x": 0,
             "text-margin-y": 0,
@@ -492,7 +492,7 @@ export default forwardRef<GraphHandle, Props>(function Graph(
         },
         {
           selector: 'node.lod-overview[kind="segment"]',
-          style: { label: "", width: 28, height: 28 },
+          style: { label: "", width: 36, height: 16 },
         },
         {
           selector: "node:selected",
