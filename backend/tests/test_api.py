@@ -203,8 +203,8 @@ def test_csv_and_drawio_match_final_graph_and_saved_coordinates(client):
     obj = xml.find(f".//object[@id='{node}']")
     assert obj is not None
     geometry = obj.find("mxCell/mxGeometry")
-    assert float(geometry.get("x")) == 350
-    assert float(geometry.get("y")) == 230
+    assert float(geometry.get("x")) + float(geometry.get("width")) / 2 == 420
+    assert float(geometry.get("y")) + float(geometry.get("height")) / 2 == 260
 
 
 def test_domain_mapping_and_confirmed_default_assumption(client):

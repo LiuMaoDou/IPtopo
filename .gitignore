@@ -15,3 +15,5 @@ frontend/playwright-report/
 *.log
 
 *.tsbuildinfo
+/build/
+/dist/

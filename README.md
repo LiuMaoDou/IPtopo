@@ -8,6 +8,10 @@
 
 ## 启动
 
+### Windows 双击启动
+
+Windows x64 可使用免安装的 `IPtopo.exe`，自带前后端及 Python 运行环境。双击后自动打开浏览器，关闭启动窗口退出。数据保存在 `%LOCALAPPDATA%\IPtopo\data`，升级 EXE 不覆盖项目。下载构建和使用说明见 [Windows 版](docs/WINDOWS.md)；构建产物位于 [Windows executable 工作流](https://github.com/LiuMaoDou/IPtopo/actions/workflows/windows.yml)。
+
 ### Docker Compose
 
 ```sh

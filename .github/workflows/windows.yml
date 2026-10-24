@@ -1,0 +1,49 @@
+name: Windows executable
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'desktop.py'
+      - 'packaging/**'
+      - 'scripts/smoke_desktop.py'
+      - '.github/workflows/windows.yml'
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-2022
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          architecture: x64
+          cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: python -m pip install -r requirements.lock -r packaging/requirements.txt
+      - run: python -m pytest backend/tests -q
+      - run: npm ci; if ($LASTEXITCODE) { exit $LASTEXITCODE }; npm test; if ($LASTEXITCODE) { exit $LASTEXITCODE }; npm run build
+        working-directory: frontend
+      - run: python -m PyInstaller --clean --noconfirm packaging/windows.spec
+      - name: Test the actual windowed executable without Python or Node on PATH
+        run: python scripts/smoke_desktop.py --exe dist/IPtopo.exe
+      - name: Prepare portable download
+        shell: pwsh
+        run: |
+          Copy-Item LICENSE dist/LICENSE.txt
+          Copy-Item docs/WINDOWS.md dist/README.md
+          git archive --format=zip --output=dist/IPtopo-source.zip HEAD
+          (Get-FileHash dist/IPtopo.exe -Algorithm SHA256).Hash + '  IPtopo.exe' | Out-File dist/SHA256SUMS.txt -Encoding ascii
+          Compress-Archive -Path dist/IPtopo.exe,dist/LICENSE.txt,dist/README.md,dist/IPtopo-source.zip,dist/SHA256SUMS.txt -DestinationPath dist/IPtopo-Windows-x64.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IPtopo-Windows-x64
+          path: dist/IPtopo-Windows-x64.zip
+          if-no-files-found: error
+          retention-days: 30
