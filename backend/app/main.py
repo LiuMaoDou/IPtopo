@@ -29,7 +29,7 @@ from .schemas import CreateProject, DomainRequest, OverrideRequest, OverrideStat
 from .store import Job, Project, Snapshot, Source, Store, job_dict, now, project_summary, uid
 
 ROOT = Path(__file__).resolve().parents[2]
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 DEFAULT_DOMAINS = {"domains": [{"id": "default", "name": "默认地址域", "confirmed": False}], "mappings": {}, "interface_mappings": {}, "segment_splits": {}}
 ACTIVE_JOBS = {"queued", "running", "cancelling"}
 

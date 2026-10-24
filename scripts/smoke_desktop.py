@@ -72,6 +72,7 @@ def main():
         if not args.exe:
             launch.append("--headless")
         project_id = None
+        juniper_project_id = None
         try:
             for cycle in range(2):
                 stop.unlink(missing_ok=True)
@@ -106,12 +107,23 @@ def main():
                                 assert job["status"] not in {"failed", "interrupted", "cancelled"}, job
                                 return job if job["status"] == "completed" else None
                             wait_for(imported)
+                            juniper_project = client.post("api/projects", json={"name": "Junos subtree regression"}).json()
+                            juniper_project_id = juniper_project["id"]
+                            files = [("files", (f"junos-{i}.cfg", f"user@edge{i}> show configuration interfaces\nge-0/0/0 {{ unit 0 {{ family inet {{ address 192.0.2.{i}/31 {{}} }} family inet6 {{ address 2001:db8::{i}/127; }} }} }}".encode(), "application/octet-stream")) for i in range(2)]
+                            response = client.post(f"api/projects/{juniper_project_id}/imports", files=files, data={"expected_version": str(juniper_project["version"])})
+                            response.raise_for_status()
+                            job_id = response.json()["id"]
+                            wait_for(imported)
                             duplicate = subprocess.run(command + ["--headless", "--no-browser", "--data-dir", str(data)], env=env, cwd=root, timeout=60)
                             assert duplicate.returncode == 1, "Duplicate instance was not rejected"
                             assert client.get("api/health").status_code == 200
                         project = client.get(f"api/projects/{project_id}").json()
                         assert project["device_count"] == 8, project
                         assert len(project["topology"]["edges"]) > 0
+                        juniper = client.get(f"api/projects/{juniper_project_id}").json()
+                        assert juniper["device_count"] == 2
+                        assert len(juniper["snapshot"]["links"]) == 1
+                        assert set(juniper["snapshot"]["links"][0]["families"]) == {4, 6}
                         for format in ("json", "csv", "drawio"):
                             exported = client.get(f"api/projects/{project_id}/exports/{format}")
                             assert exported.status_code == 200, exported.text
@@ -129,7 +141,7 @@ def main():
                         except subprocess.TimeoutExpired:
                             process.kill()
                             process.wait()
-            print("PASS: startup, bundled assets, metadata, eight-device multiprocess import, exports, single instance, shutdown and restart persistence")
+            print("PASS: startup, bundled assets, metadata, eight-device multiprocess import, Junos subtree dual-stack inference, exports, single instance, shutdown and restart persistence")
         except Exception:
             log = data / "desktop.log"
             if log.exists():

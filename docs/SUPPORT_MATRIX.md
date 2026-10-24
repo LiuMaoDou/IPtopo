@@ -12,6 +12,8 @@ Interface/context/address IDs derive from the **caller-provided device identity*
 
 ## Implemented dialects
 
+Junos parsing also accepts interface-only brace exports and relative `set` statements when a `show configuration interfaces ...` command or `[edit interfaces ...]` header supplies the omitted scope. Common physical, aggregate, reth, loopback, IRB and VLAN interface subtrees can be detected without a wrapper. CLI prompts and routing-engine status markers are excluded without shifting source line numbers. Address containers (including empty `{}` blocks) retain their IPv4/IPv6 declaration and inactive state. These cases are covered by synthetic regression tests, including a real /31 + /127 inferred link; the reported user configuration has not yet been supplied for verification.
+
 | Selection ID | Input | Validated fields | Acceptance fixture |
 | --- | --- | --- | --- |
 | `huawei_vrp` | VRP current-configuration | sysname; IPv4 mask/prefix, sub address; IPv6 prefix/link-local; VPN instance; RD/RT; Eth-Trunk members; Vlanif; description; shutdown/undo shutdown; dot1q; VRRP virtual IPv4 | [Huawei core](../samples/demo/01-core-huawei.cfg) and parameterized tests |

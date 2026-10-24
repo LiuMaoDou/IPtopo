@@ -137,6 +137,11 @@ export type GraphData = {
     link_id?: string;
     source_label?: string;
     target_label?: string;
+    bundle_id?: string;
+    member_ids?: string[];
+    member_link_ids?: string[];
+    link_count?: number;
+    bundle_width?: number;
   })[];
 };
 export type View = {
@@ -187,8 +192,9 @@ export type Project = {
 };
 export type Summary = { id: string; name: string; device_count: number };
 export type Selection = {
-  kind: "device" | "segment" | "link" | "interface";
+  kind: "device" | "segment" | "link" | "interface" | "bundle";
   id: string;
+  linkIds?: string[];
 } | null;
 export type Mutation = {
   operation: string;

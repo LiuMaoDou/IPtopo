@@ -1,5 +1,55 @@
 import type { Domains, GraphData, Snapshot, View } from "./types";
 
+/** Presentation only: keep the actual links and their review/evidence independent. */
+export function parallelLinks(data: GraphData, expanded: ReadonlySet<string>) {
+  const devices = new Set(data.nodes.filter((n) => n.kind === "device").map((n) => n.id));
+  const groups = new Map<string, GraphData["edges"]>();
+  const edges: GraphData["edges"] = [];
+  for (const edge of data.edges) {
+    if (edge.source === edge.target || !devices.has(edge.source) || !devices.has(edge.target)) {
+      edges.push(edge);
+      continue;
+    }
+    const pair = [edge.source, edge.target].sort();
+    const id = "bundle:" + JSON.stringify(pair);
+    const group = groups.get(id);
+    if (group) group.push(edge);
+    else groups.set(id, [edge]);
+  }
+  const bundles = new Map<string, GraphData["edges"]>();
+  for (const [id, members] of groups) {
+    if (members.length === 1) {
+      edges.push(members[0]);
+      continue;
+    }
+    bundles.set(id, members);
+    if (expanded.has(id)) {
+      edges.push(...members.map((e) => ({ ...e, bundle_id: id })));
+      continue;
+    }
+    const first = members[0];
+    edges.push({
+      ...first,
+      id,
+      bundle_id: id,
+      link_id: undefined,
+      member_ids: members.map((e) => e.id),
+      member_link_ids: [...new Set(members.map((e) => e.link_id || e.id))],
+      link_count: members.length,
+      bundle_width: Math.min(10, 3 + Math.log2(members.length) * 1.5),
+      label: `${members.length} 条链路`,
+      source_label: "",
+      target_label: "",
+      origin: members.every((e) => e.origin === first.origin) ? first.origin : "mixed",
+      review_state: members.every((e) => e.review_state === first.review_state) ? first.review_state : "mixed",
+      prefixes: [...new Set(members.flatMap((e) => e.prefixes || []))],
+      families: [...new Set(members.flatMap((e) => e.families || []))],
+      evidence: [],
+    });
+  }
+  return { nodes: data.nodes, edges, bundles };
+}
+
 /** Derived once per fact/domain revision, never once per device or pan event. */
 export function indexTopology(snapshot: Snapshot, domains: Domains) {
   const devices = new Map(snapshot.devices.map((d) => [d.id, d]));

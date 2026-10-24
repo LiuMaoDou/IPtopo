@@ -156,6 +156,61 @@ def test_junos_hierarchy_truncation_keeps_partial_facts():
     assert any(d["code"] == "truncated_configuration" for d in result["diagnostics"])
 
 
+@pytest.mark.parametrize("wrapper", ["full", "subtree", "command", "edit", "relative_set"])
+def test_junos_interface_exports_keep_dual_stack_addresses_and_source_lines(wrapper):
+    body = """ge-0/0/0 {
+    unit 0 {
+        family inet { address 192.0.2.0/31 {} }
+        family inet6 { address 2001:db8::/127 { preferred; } }
+    }
+}"""
+    if wrapper == "full":
+        text = "user@edge> show configuration\n{master:0}\nsystem { host-name edge; }\ninterfaces {\n" + body + "\n}\nuser@edge>"
+    elif wrapper == "subtree":
+        text = body
+    elif wrapper == "command":
+        text = "user@edge> show configuration interfaces ge-0/0/0\n" + body.split("{", 1)[1].rsplit("}", 1)[0]
+    elif wrapper == "edit":
+        text = "[edit interfaces ge-0/0/0 unit 0]\nuser@edge# show configuration interfaces ge-0/0/0 unit 0\nfamily inet { address 192.0.2.0/31 {} }\nfamily inet6 { address 2001:db8::/127; }"
+    else:
+        text = "[edit interfaces ge-0/0/0]\nset unit 0 family inet address 192.0.2.0/31\nset unit 0 family inet6 address 2001:db8::/127"
+    result = parse(text)
+    assert result["status"] == "success", result["diagnostics"]
+    found = by_name(result, "ge-0/0/0.0")["addresses"]
+    assert [(a["address"], a["prefix_length"]) for a in found] == [("192.0.2.0", 31), ("2001:db8::", 127)]
+    for address in found:
+        ref = address["source_refs"][0]
+        assert ref["text"] == text.splitlines()[ref["line"] - 1]
+        assert address["address"] in ref["text"]
+
+
+def test_junos_empty_address_blocks_respect_inactive_and_ignore_unrelated_addresses():
+    result = parse("""interfaces {
+    ge-0/0/0 { unit 0 { family inet {
+        inactive: address 192.0.2.0/31 {}
+        address 192.0.2.2/31 {}
+    } } }
+}
+routing-options { static { route 203.0.113.0/24 { next-hop 192.0.2.3; } } }
+groups { TEMPLATE { interfaces { ge-0/0/1 { unit 0 { family inet { address 198.51.100.1/24 {} } } } } } }
+""")
+    assert [(a["address"], a["effective_state"]) for a in addresses(result)] == [("192.0.2.0", "inactive"), ("192.0.2.2", "active")]
+
+
+def test_junos_subtree_addresses_form_actual_dual_stack_interconnection():
+    from backend.app.inference import infer
+    parsed = [parse(f"""user@edge{index}> show configuration interfaces
+ge-0/0/0 {{ unit 0 {{
+    family inet {{ address 192.0.2.{index}/31 {{}} }}
+    family inet6 {{ address 2001:db8::{index}/127; }}
+}} }}
+""", device=f"d{index}") for index in range(2)]
+    snapshot = {"devices": [r["device"] for r in parsed], "interfaces": [i for r in parsed for i in r["interfaces"]], "contexts": [c for r in parsed for c in r["contexts"]], "diagnostics": []}
+    result = infer(snapshot)
+    assert len(result["links"]) == 1
+    assert set(result["links"][0]["families"]) == {4, 6}
+
+
 def test_vrf_context_aggregation_and_subinterface():
     result = parse("""hostname r1
 vrf definition BLUE

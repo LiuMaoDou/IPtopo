@@ -2,6 +2,7 @@ import {
   forwardRef,
   useEffect,
   useImperativeHandle,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -25,7 +26,7 @@ import {
   X,
 } from "lucide-react";
 import type { GraphData, View, Selection } from "./types";
-import { placeMissingNodes } from "./graphModel";
+import { parallelLinks, placeMissingNodes } from "./graphModel";
 import { segmentIcon, vendorStyle, vendors } from "./vendorIcons";
 cytoscape.use(edgehandles);
 cytoscape.use(undoRedo);
@@ -86,6 +87,10 @@ export default forwardRef<GraphHandle, Props>(function Graph(
   const [zoom, setZoom] = useState(100),
     [busy, setBusy] = useState(false),
     [drawing, setDrawing] = useState(false);
+  const [expandedBundles, setExpandedBundles] = useState<Set<string>>(() => new Set());
+  const display = useMemo(() => parallelLinks(data, expandedBundles), [data, expandedBundles]);
+  const bundleRef = useRef(display.bundles);
+  bundleRef.current = display.bundles;
   callbacks.current = { onSelect, onChange, onConnect, onError };
   viewRef.current = view;
   const capture = (): Partial<View> => {
@@ -579,6 +584,26 @@ export default forwardRef<GraphHandle, Props>(function Graph(
           },
         },
         {
+          selector: "edge[bundle_id]",
+          style: { "curve-style": "bezier", "control-point-step-size": 60 },
+        },
+        {
+          selector: "edge[link_count]",
+          style: {
+            width: "data(bundle_width)",
+            label: "data(displayLabel)",
+            "font-size": 13,
+            "font-weight": "bold",
+            "text-background-opacity": 1,
+            "text-margin-y": -12,
+            "min-zoomed-font-size": 7,
+          },
+        },
+        {
+          selector: "edge[link_count]:selected",
+          style: { "min-zoomed-font-size": 0 },
+        },
+        {
           selector: ".eh-preview, .eh-ghost-edge",
           style: { "line-color": "#087f80", "target-arrow-color": "#087f80" },
         },
@@ -628,12 +653,31 @@ export default forwardRef<GraphHandle, Props>(function Graph(
           id: e.target.id(),
         });
     });
-    cy.on("tap", "edge", (e) => {
-      if (!e.target.hasClass("eh-preview"))
+    cy.on("onetap", "edge", (e) => {
+      if (e.target.data("link_count")) {
+        callbacks.current.onSelect({
+          kind: "bundle", id: e.target.id(), linkIds: e.target.data("member_link_ids"),
+        });
+      } else if (!e.target.hasClass("eh-preview"))
         callbacks.current.onSelect({
           kind: "link",
           id: e.target.data("link_id") || e.target.id(),
         });
+    });
+    cy.on("dbltap", "edge", (e) => {
+      const id = e.target.data("bundle_id") as string | undefined;
+      if (!id) return;
+      const members = bundleRef.current.get(id);
+      if (!members) return;
+      setExpandedBundles((previous) => {
+        const next = new Set(previous);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+      });
+      callbacks.current.onSelect({
+        kind: "bundle", id, linkIds: members.map((member) => member.link_id || member.id),
+      });
     });
     cy.on("tap", (e) => {
       if (e.target === cy) callbacks.current.onSelect(null);
@@ -703,7 +747,7 @@ export default forwardRef<GraphHandle, Props>(function Graph(
       if (n.data("kind") !== "group") existing[n.id()] = { ...n.position() };
     });
     const planned = placeMissingNodes(data, existing);
-    const ids = new Set([...allNodes, ...data.edges].map((n) => n.id));
+    const ids = new Set([...allNodes, ...display.edges].map((n) => n.id));
     const sources = new Map(data.nodes.map((n) => [n.id, n]));
     cy.batch(() => {
       cy.elements()
@@ -754,7 +798,7 @@ export default forwardRef<GraphHandle, Props>(function Graph(
         if (view.pinned.includes(n.id)) cy.$id(n.id).lock();
         rendered.current.set(n.id, { source, presentation });
       }
-      for (const e of data.edges) {
+      for (const e of display.edges) {
         if (!cy.$id(e.source).length || !cy.$id(e.target).length) continue;
         const edge = cy.$id(e.id),
           previous = rendered.current.get(e.id);
@@ -771,10 +815,14 @@ export default forwardRef<GraphHandle, Props>(function Graph(
           link_id: e.link_id,
           origin: e.origin,
           review_state: e.review_state,
+          bundle_id: e.bundle_id,
+          member_link_ids: e.member_link_ids,
+          link_count: e.link_count,
+          bundle_width: e.bundle_width,
           source_label: e.source_label || "",
           target_label: e.target_label || "",
           displayLabel:
-            view.labels.prefixes === false
+            e.link_count ? e.label : view.labels.prefixes === false
               ? ""
               : e.prefixes?.join("\n") || e.label || "",
         };
@@ -796,7 +844,7 @@ export default forwardRef<GraphHandle, Props>(function Graph(
         }
       }
     }
-  }, [data, view.labels, view.groups]);
+  }, [data, display, view.labels, view.groups]);
   useEffect(() => {
     if (previousFocus.current === focusId) return;
     previousFocus.current = focusId;
@@ -829,12 +877,20 @@ export default forwardRef<GraphHandle, Props>(function Graph(
     if (!cy) return;
     cy.elements().unselect();
     if (selection) {
+      if (selection.kind === "link") {
+        for (const [id, members] of display.bundles) {
+          if (!expandedBundles.has(id) && members.some((member) => (member.link_id || member.id) === selection.id)) {
+            setExpandedBundles((previous) => new Set(previous).add(id));
+            return;
+          }
+        }
+      }
       cy.$id(selection.id).select();
       cy.edges()
         .filter((e) => e.data("link_id") === selection.id)
         .select();
     }
-  }, [selection]);
+  }, [selection, display]);
   return (
     <div className="graph-wrap">
       <div ref={container} className="graph" aria-label="可交互 IP 拓扑画布" />
@@ -948,6 +1004,7 @@ export default forwardRef<GraphHandle, Props>(function Graph(
         )}
       </div>
       <div className="graph-legend">
+        {display.bundles.size > 0 && <span>粗线：多链路 · 双击展开 / 收起</span>}
         <span>
           <i />
           推断关系

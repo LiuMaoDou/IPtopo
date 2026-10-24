@@ -4,7 +4,48 @@ import {
   placeMissingNodes,
   indexTopology,
   filterTopology,
+  parallelLinks,
 } from "../src/graphModel.ts";
+
+test("parallel links collapse without losing direction, status, members or dual-stack identity", () => {
+  const data = {
+    nodes: [{id:"a",kind:"device"},{id:"b",kind:"device"},{id:"s",kind:"segment"}],
+    edges: [
+      {id:"one",source:"a",target:"b",origin:"inferred",review_state:"confirmed",prefixes:["10.0.0.0/31","2001:db8::/127"],families:[4,6]},
+      {id:"two",source:"b",target:"a",origin:"manual",review_state:"pending",prefixes:["10.0.1.0/31"],families:[4]},
+      {id:"member",source:"a",target:"s"},
+      {id:"member2",source:"a",target:"s"},
+    ],
+  };
+  const original = structuredClone(data);
+  const collapsed = parallelLinks(data,new Set());
+  assert.equal(collapsed.edges.length,3);
+  const bundle = collapsed.edges.find(e=>e.link_count);
+  assert.equal(bundle.link_count,2);
+  assert.ok(bundle.bundle_width>3);
+  assert.equal(bundle.review_state,"mixed");
+  assert.equal(bundle.origin,"mixed");
+  assert.deepEqual(bundle.member_link_ids,["one","two"]);
+  const expanded = parallelLinks(data,new Set([bundle.id]));
+  assert.equal(expanded.edges.length,4);
+  assert.equal(expanded.edges.find(e=>e.id==="two").source,"b");
+  assert.equal(expanded.edges.find(e=>e.id==="two").review_state,"pending");
+  assert.deepEqual(data,original);
+  const filtered = parallelLinks({...data,edges:[data.edges[0]]},new Set());
+  assert.equal(filtered.edges[0].id,"one");
+  assert.equal(filtered.bundles.size,0);
+  assert.equal(parallelLinks({...data,edges:[...data.edges].reverse()},new Set()).edges.find(e=>e.link_count).id,bundle.id);
+});
+
+test("1000 devices with three parallel links per pair reduce to one edge per pair", () => {
+  const data = graph(1000);
+  data.edges = data.edges.flatMap(edge=>[0,1,2].map(n=>({...edge,id:`${edge.id}-${n}`})));
+  const result = parallelLinks(data,new Set());
+  assert.equal(result.edges.length,999);
+  assert.equal(result.nodes.length,1000);
+  assert.ok(result.edges.every(e=>e.link_count===3 && e.member_ids.length===3));
+  assert.equal(data.edges.length,2997);
+});
 function graph(n) {
   return {
     nodes: Array.from({ length: n }, (_, i) => ({

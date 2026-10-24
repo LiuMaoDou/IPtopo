@@ -60,6 +60,35 @@ export default function Inspector({
         </div>
       </aside>
     );
+  if (selection.kind === "bundle") {
+    const ids = new Set(selection.linkIds || []);
+    const members = s.links.filter((link) => ids.has(link.id) && link.review_state !== "rejected");
+    const devices = new Map(s.devices.map((device) => [device.id, device.hostname]));
+    const interfaces = new Map(s.interfaces.map((iface) => [iface.id, iface.raw_name]));
+    return (
+      <aside className="inspector">
+        <div className="panel-heading">
+          <span>聚合链路</span>
+          <button aria-label="关闭详情" onClick={() => onSelect(null)}><X size={17} /></button>
+        </div>
+        <div className="inspector-title">
+          <Link2 size={31} />
+          <div><h2>{members.length} 条互联链路</h2><p>双击画布链路展开 / 收起；点击下方条目查看详情。</p></div>
+        </div>
+        <div className="inspector-content">
+          {members.map((link) => (
+            <button className="bundle-member" key={link.id} onClick={() => onSelect({ kind: "link", id: link.id })}>
+              <strong>{devices.get(link.device_a_id)} ↔ {devices.get(link.device_b_id)}</strong>
+              <span>{interfaces.get(link.interface_a_id || "") || "设备"} ↔ {interfaces.get(link.interface_b_id || "") || "设备"}</span>
+              <span>{link.prefixes.join(" · ") || "手工连接"}</span>
+              <small>{statusName(link.origin)} · {statusName(link.review_state)}</small>
+            </button>
+          ))}
+          {!members.length && <p>这些链路已不在当前拓扑中。</p>}
+        </div>
+      </aside>
+    );
+  }
   const device = s.devices.find((d) => d.id === selection.id),
     link = s.links.find((l) => l.id === selection.id),
     segment = s.segments.find((g) => g.id === selection.id),

@@ -4,6 +4,10 @@ on:
   push:
     branches: [main]
     paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'requirements*.txt'
+      - 'requirements.lock'
       - 'desktop.py'
       - 'packaging/**'
       - 'scripts/smoke_desktop.py'

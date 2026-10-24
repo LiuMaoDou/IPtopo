@@ -16,7 +16,32 @@ from pathlib import PurePath
 
 from ttp import ttp
 
-PARSER_VERSION = "1.0.0"
+PARSER_VERSION = "1.1.0"
+_JUNOS_INTERFACE = r"(?:(?:ge|xe|et|fe)-\d+/\d+/\d+(?::\d+)?|(?:ae|reth|lo|demux)\d+|irb|vlan)"
+
+
+def _junos_capture(text):
+    """Remove CLI framing without shifting evidence lines; retain explicit scope."""
+    scope = []
+    lines = []
+    for line in text.split("\n"):
+        stripped = line.strip()
+        command = re.sub(r"^\S+@\S+[>#]\s*", "", stripped).split("|", 1)[0].strip()
+        if re.match(r"^show\s+configuration(?:\s|$)", command):
+            path = _tokens(command)[2:]
+            if path[:1] == ["interfaces"]:
+                scope = path
+            lines.append("")
+        elif re.fullmatch(r"\[edit(?:\s+[^\]]+)?\]", stripped):
+            path = _tokens(stripped[1:-1])[1:]
+            if path[:1] == ["interfaces"]:
+                scope = path
+            lines.append("")
+        elif re.fullmatch(r"\S+@\S+[>#]", stripped) or re.fullmatch(r"\{(?:master|backup|primary|secondary)(?::\d+)?\}", stripped):
+            lines.append("")
+        else:
+            lines.append(line)
+    return "\n".join(lines), scope
 SUPPORTED_DIALECTS = [
     {"id": "huawei_vrp", "label": "Huawei VRP", "vendor": "Huawei", "os": "VRP", "format": "current-configuration", "notes": "Interface IPv4/IPv6, VPN instance, Eth-Trunk, VLAN and subinterfaces"},
     {"id": "cisco_ios", "label": "Cisco IOS / IOS-XE", "vendor": "Cisco", "os": "IOS/IOS-XE", "format": "running-config", "notes": "Interface IPv4/IPv6, VRF, Port-channel, SVI, HSRP/VRRP"},
@@ -74,6 +99,11 @@ def detect_dialect(text):
         return "junos_set"
     if re.search(r"\b(?:interfaces|system)\s*\{", text) and ("family inet" in text or "host-name" in text or "unit " in text):
         return "junos_hierarchical"
+    if re.search(rf"(?m)^\s*(?:inactive:\s*)?{_JUNOS_INTERFACE}\s*\{{", text) and re.search(r"\bfamily\s+inet6?\b", text):
+        return "junos_hierarchical"
+    captured, scope = _junos_capture(text)
+    if scope and re.search(r"\bfamily\s+inet6?\b|\baddress\s+[0-9a-fA-F:.]+/\d+", captured):
+        return "junos_set" if re.search(r"(?m)^\s*set\s+", captured) else "junos_hierarchical"
     if re.search(r"(?mi)^\s*sysname\s|^\s*ip binding vpn-instance\s|^\s*interface\s+(?:Eth-Trunk|Vlanif)", text):
         return "huawei_vrp"
     if re.search(r"(?mi)IOS[ -]XR|^\s*interface\s+Bundle-Ether|^\s*ipv4 address\s", text):
@@ -412,6 +442,10 @@ def _hierarchy(b, newline_leaves=False):
             if inactive:
                 b.inactive_paths.append([t for p, _ in stack for t in p] + current)
             b.path_sources[tuple([t for p, _ in stack for t in p] + current)] = first_line
+            path = [t for p, _ in stack for t in p] + current
+            # An address container declares the address even when it has no leaves.
+            if b.dialect.startswith("junos") and len(path) >= 4 and path[-4] == "family" and path[-3] in ("inet", "inet6") and path[-2] == "address":
+                records.append((path, first_line, inactive or any(x for _, x in stack)))
             stack.append((current, inactive))
             current = []
         elif token in (";", "}"):
@@ -437,9 +471,11 @@ def _hierarchy(b, newline_leaves=False):
 
 def _parse_junos(b):
     inactive_paths = []
+    original = b.text
+    b.text, scope = _junos_capture(b.text)
     if b.dialect == "junos_set":
         records = []
-        for n, line in enumerate(b.lines, 1):
+        for n, line in enumerate(b.text.splitlines(), 1):
             tokens = _tokens(line.strip())
             if tokens and tokens[0] == "set":
                 records.append((tokens[1:], n, False))
@@ -450,6 +486,19 @@ def _parse_junos(b):
     else:
         records = _hierarchy(b)
         inactive_paths.extend(b.inactive_paths)
+    b.text = original
+
+    def qualified(tokens):
+        if tokens[:1] == ["interfaces"]:
+            return tokens
+        if tokens and re.fullmatch(_JUNOS_INTERFACE, tokens[0]):
+            return ["interfaces", *tokens]
+        if scope and tokens and tokens[0] in {"unit", "family", "address", "description", "disable", "vlan-id", "ether-options", "gigether-options"}:
+            return [*scope, *tokens]
+        return tokens
+
+    records = [(qualified(tokens), n, inactive) for tokens, n, inactive in records]
+    inactive_paths = [qualified(path) for path in inactive_paths]
     mappings = {}
     unresolved_members = set()
     inherited_paths = []
