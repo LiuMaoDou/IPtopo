@@ -393,7 +393,7 @@ export default forwardRef<GraphHandle, Props>(function Graph(
           style: {
             "background-color": "#f5fafb",
             "background-opacity": 1,
-            "border-color": "#73a7ae",
+            "border-color": "data(vendorColor)",
             "border-width": 2,
           },
         },

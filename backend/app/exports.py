@@ -27,12 +27,15 @@ def _vendor_symbol(vendor):
     return next((item for item in _VENDOR_SYMBOLS[:-1] if item[0].lower() in value), _VENDOR_SYMBOLS[-1])
 
 
-def _symbol_style(body, framed=False):
+_VENDOR_COLORS = {"Huawei": "#d94b4b", "Cisco": "#2585b5", "Juniper": "#3b9d72", "Nokia": "#4659b9", "Other": "#718797"}
+
+
+def _symbol_style(body, framed=False, frame_color="#718797"):
     svg = '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">' + body + '</svg>'
     # mxGraph separates style fields with semicolons. The valid URI form below
     # intentionally has no ;utf8 marker that would truncate the image value.
     image = "data:image/svg+xml," + quote(svg, safe="")
-    frame = "rounded=1;fillColor=#f5fafb;strokeColor=#73a7ae;strokeWidth=2;" if framed else "fillColor=none;strokeColor=none;"
+    frame = f"rounded=1;fillColor=#f5fafb;strokeColor={frame_color};strokeWidth=2;" if framed else "fillColor=none;strokeColor=none;"
     return ("shape=label;image=" + image + ";imageWidth=44;imageHeight=44;imageAlign=center;imageVerticalAlign=middle;"
             + frame + "whiteSpace=wrap;html=0;align=center;verticalLabelPosition=bottom;verticalAlign=top;"
             "spacingTop=8;fontColor=#172b3a;fontSize=12;")
@@ -165,7 +168,7 @@ def drawio_export(graph: dict, view: dict | None, name: str) -> bytes:
         position = positions.get(node["id"], {"x": (index % 6) * 220 + 100, "y": (index // 6) * 160 + 100})
         segment = node.get("kind") == "segment"
         symbol = _vendor_symbol(node.get("vendor"))
-        style = ("shape=rectangle;rounded=0;whiteSpace=wrap;html=0;fillColor=#eef6ff;strokeColor=#7293bb;" if segment else _symbol_style(symbol[2], framed=True))
+        style = ("shape=rectangle;rounded=0;whiteSpace=wrap;html=0;fillColor=#eef6ff;strokeColor=#7293bb;" if segment else _symbol_style(symbol[2], framed=True, frame_color=_VENDOR_COLORS[symbol[0]]))
         node_label = (node.get("label", node["id"]) if labels.get("names", True) else "")
         if not segment:
             used_vendors[symbol[0]] = symbol

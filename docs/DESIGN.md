@@ -39,4 +39,4 @@ Visual QA found that ELK radial can place neighbors close together on one four-n
 
 The final user refinement uses moderately wide horizontal rectangles for IP subnet/prefix nodes: 140 × 48 dimensions, centered wrapping labels, and 36 × 16 markers at overview zoom. draw.io uses the same rectangular geometry centered on saved coordinates.
 
-All device icons now have a persistent rounded frame and light background. Selection changes the background to teal and enlarges the frame/icon by about 14 percent, with the same border; deselection restores the normal size. Large-network overview markers retain a compact frame and a proportional selection size. draw.io includes the normal device frame.
+All device icons now have a persistent rounded frame and light background. Each frame matches its vendor icon color, including in draw.io exports. Selection changes the background to teal and enlarges the frame/icon by about 14 percent, with the same border; deselection restores the normal size. Large-network overview markers retain a compact frame and a proportional selection size. draw.io includes the normal device frame.
