@@ -49,7 +49,18 @@ export const vendors = [
       '<g fill="none" stroke="#718797" stroke-width="3"><ellipse cx="32" cy="18" rx="23" ry="10"/><path d="M9 18v25c0 14 46 14 46 0V18M20 14l24 8m0-8-24 8"/></g>',
     ),
   },
-];
+].map((vendor) => ({
+  ...vendor,
+  selectedBackground: `#${vendor.color
+    .slice(1)
+    .match(/.{2}/g)!
+    .map((channel) =>
+      Math.round(parseInt(channel, 16) * 0.2 + 255 * 0.8)
+        .toString(16)
+        .padStart(2, "0"),
+    )
+    .join("")}`,
+}));
 export function vendorStyle(vendor: unknown) {
   const value = String(vendor || "").toLowerCase();
   return (

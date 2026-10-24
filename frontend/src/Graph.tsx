@@ -549,7 +549,7 @@ export default forwardRef<GraphHandle, Props>(function Graph(
         {
           selector: 'node[kind="device"]:selected',
           style: {
-            "background-color": "#cfeceb",
+            "background-color": "data(vendorSelectedBackground)",
             width: 64,
             height: 62,
             "background-width": 50,
@@ -778,6 +778,7 @@ export default forwardRef<GraphHandle, Props>(function Graph(
                 ? segmentIcon
                 : "none",
           vendorColor: vendor.color,
+          vendorSelectedBackground: vendor.selectedBackground,
           displayLabel:
             n.kind === "group"
               ? n.label
