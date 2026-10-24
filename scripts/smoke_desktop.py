@@ -1,6 +1,7 @@
 """Exercise the shipped executable, real parser processes and persisted data."""
 import argparse
 import ctypes
+from ctypes import wintypes
 import json
 import os
 from pathlib import Path
@@ -29,6 +30,9 @@ def visible_launcher(pid):
         return True
     matches = []
     user32 = ctypes.windll.user32
+    user32.GetWindowThreadProcessId.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.DWORD)]
+    user32.GetWindowTextW.argtypes = [wintypes.HWND, wintypes.LPWSTR, ctypes.c_int]
+    user32.IsWindowVisible.argtypes = [wintypes.HWND]
     callback_type = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)
 
     @callback_type
@@ -62,7 +66,8 @@ def main():
             env.pop(key, None)
         if args.exe and sys.platform == "win32":
             # No Python or Node executable can be found by the standalone app.
-            env["PATH"] = os.pathsep.join([env["SystemRoot"], str(Path(env["SystemRoot"]) / "System32")])
+            windows_root = os.environ["SYSTEMROOT"]
+            env["PATH"] = os.pathsep.join([windows_root, str(Path(windows_root) / "System32")])
         launch = command + ["--no-browser", "--data-dir", str(data), "--ready-file", str(ready), "--stop-file", str(stop)]
         if not args.exe:
             launch.append("--headless")
