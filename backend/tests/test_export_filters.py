@@ -215,3 +215,13 @@ def test_drawio_uses_distinct_vendor_symbols_names_below_and_separate_legend():
     assert legend.get("value") == "厂商标识"
     labels = {node.get("value") for node in xml.findall(".//mxCell") if node.get("parent") == "iptopo:vendor-legend"}
     assert labels == {"Huawei", "Cisco", "Juniper", "Nokia", "其他厂商"}
+
+
+def test_default_domain_export_keeps_cross_vrf_subnet_endpoints():
+    snapshot=topology('192.0.2.1/30','192.0.2.2/30')
+    snapshot['contexts'][0].update(kind='vrf',local_name='BLUE')
+    snapshot['contexts'][1].update(kind='vrf',local_name='RED')
+    snapshot.update(infer(snapshot))
+    graph=filter_graph(snapshot,{'filters':{'domain':'default'}},'device')
+    assert visible_devices(graph)=={'d0','d1'}
+    assert len(graph['edges'])==1

@@ -6,6 +6,7 @@ merge devices by hostname, or turn configured addresses into operational-state c
 from __future__ import annotations
 
 import hashlib
+from fnmatch import fnmatchcase
 import ipaddress
 import re
 import shlex
@@ -16,7 +17,7 @@ from pathlib import PurePath
 
 from ttp import ttp
 
-PARSER_VERSION = "1.2.0"
+PARSER_VERSION = "1.3.0"
 _JUNOS_INTERFACE = r"(?:(?:ge|xe|et|fe)-\d+/\d+/\d+(?::\d+)?|(?:ae|reth|lo|demux)\d+|irb|vlan)"
 
 
@@ -223,6 +224,10 @@ class _Builder:
     def field_address(self, iface, value, line, family):
         words = value.split()
         if not words:
+            return
+        if words[:2] == ["unnumbered", "interface"] and len(words) > 2:
+            self.address(iface, None, line, family, "unknown", "unnumbered")
+            iface["borrowed_interface"] = words[2]
             return
         if words[0] in ("dhcp", "dhcp-alloc", "negotiated", "autoconfig", "auto"):
             acquisition = "slaac" if words[0] in ("autoconfig", "auto") else "unresolved" if words[0] == "negotiated" else "dhcp"
@@ -532,6 +537,120 @@ def _hierarchy(b, newline_leaves=False):
     return records
 
 
+def _junos_inheritance_targets(b, records, inactive_paths):
+    """Bound unresolved inheritance to topology-relevant interface scopes.
+
+    This is impact analysis, not group expansion: inherited addresses and RE-specific
+    values are never invented. QoS/system/protocol-only templates cannot suppress IPs.
+    """
+    groups, applications, exceptions = {}, [], []
+
+    def active(tokens, inactive):
+        return not inactive and not any(tokens[:len(p)] == p for p in inactive_paths)
+
+    def directive(tokens, keyword):
+        if keyword not in tokens:
+            return None
+        index = tokens.index(keyword)
+        return tokens[:index], [t.strip("[]") for t in tokens[index+1:] if t.strip("[]")]
+
+    for tokens, n, inactive in records:
+        if tokens[:1] == ["groups"] and len(tokens) >= 2:
+            groups.setdefault(tokens[1], [])
+            if active(tokens, inactive):
+                groups[tokens[1]].append(tokens[2:])
+        elif active(tokens, inactive):
+            for keyword, destination in (("apply-groups", applications), ("apply-groups-except", exceptions)):
+                entry = directive(tokens, keyword)
+                if entry:
+                    scope, names = entry
+                    destination.extend((scope, name, n) for name in names)
+    for path in b.path_sources:
+        if len(path) >= 2 and path[0] == "groups":
+            groups.setdefault(path[1], [])
+
+    def token_matches(pattern, value):
+        if pattern.startswith("<") and pattern.endswith(">"):
+            return fnmatchcase(value, pattern[1:-1])
+        return pattern == value
+
+    def compatible(left, right):
+        return all(token_matches(a, c) or token_matches(c, a) for a, c in zip(left, right))
+
+    def selector(path):
+        if not path:
+            return ["interfaces"]
+        if path[0] == "routing-instances":
+            # Unknown routing-instance inheritance can move any referenced interface.
+            return ["interfaces"]
+        if path[0] != "interfaces":
+            return None
+        if len(path) > 1 and path[1] == "interface-range":
+            return ["interfaces"]
+        return path[:4] if len(path) >= 4 and path[2] == "unit" else path[:2]
+
+    def relevant(path):
+        if path[:1] == ["interfaces"]:
+            offset = 4 if len(path) >= 4 and path[2] == "unit" else 2
+            rest = path[offset:]
+            if rest[:1] == ["disable"] or (rest[:1] in (["ether-options"], ["gigether-options"]) and "802.3ad" in rest):
+                return selector(path)
+            if len(rest) >= 3 and rest[0] == "family" and rest[1] in ("inet", "inet6") and rest[2] in ("address", "unnumbered-address", "dhcp", "dhcp-client", "dhcpv6-client"):
+                return selector(path)
+            if len(path) > 1 and path[1] == "interface-range":
+                return ["interfaces"]
+        if len(path) >= 4 and path[0] == "routing-instances" and path[2] == "interface":
+            parent, dot, unit = path[3].partition(".")
+            return ["interfaces", parent] + (["unit", unit] if dot else [])
+        return None
+
+    def impacts(name, scope, seen):
+        if name in seen or name not in groups:
+            target = selector(scope)
+            return [target] if target else []
+        result = []
+        for path in groups[name]:
+            if not compatible(path, scope):
+                continue
+            nested = directive(path, "apply-groups")
+            if nested:
+                nested_scope, names = nested
+                nested_scope = nested_scope if len(nested_scope) > len(scope) else scope
+                for child in names:
+                    result.extend(impacts(child, nested_scope, seen | {name}))
+                continue
+            target = relevant(path)
+            if target:
+                scoped = selector(scope)
+                if scoped and compatible(scoped, target):
+                    target = list(target)
+                    for index, token in enumerate(scoped):
+                        if index >= len(target):
+                            target.append(token)
+                        elif not (token.startswith("<") and token.endswith(">")):
+                            target[index] = token
+                result.append(target)
+        return result
+
+    targets = []
+    for scope, name, n in applications:
+        found = impacts(name, scope, set())
+        if found:
+            b.warn("unresolved_inheritance", f"Group {name} has unexpanded address, state or membership configuration; only matching interface scopes require review.", n)
+            targets.extend((name, target) for target in found)
+
+    def affected(prefix):
+        for name, target in targets:
+            if len(target) > len(prefix) or not all(token_matches(t, p) for t, p in zip(target, prefix)):
+                continue
+            if any(group == name and len(scope) <= len(prefix) and all(token_matches(t, p) for t, p in zip(scope, prefix)) for scope, group, _ in exceptions):
+                continue
+            return True
+        return False
+
+    return affected
+
+
 def _parse_junos(b):
     inactive_paths = []
     original = b.text
@@ -556,7 +675,7 @@ def _parse_junos(b):
             return tokens
         if tokens and re.fullmatch(_JUNOS_INTERFACE, tokens[0]):
             return ["interfaces", *tokens]
-        if scope and tokens and tokens[0] in {"unit", "family", "address", "description", "disable", "vlan-id", "ether-options", "gigether-options", "aggregated-ether-options"}:
+        if scope and tokens and tokens[0] in {"unit", "family", "address", "description", "disable", "vlan-id", "ether-options", "gigether-options", "aggregated-ether-options", "apply-groups", "apply-groups-except"}:
             return [*scope, *tokens]
         return tokens
 
@@ -564,14 +683,9 @@ def _parse_junos(b):
     inactive_paths = [qualified(path) for path in inactive_paths]
     mappings = {}
     unresolved_members = set()
-    inherited_paths = []
+    inherited = _junos_inheritance_targets(b, records, inactive_paths)
     lag_members = []
     for tokens, n, inactive in records:
-        if "apply-groups" in tokens or "apply-groups-except" in tokens or (tokens and tokens[0] == "groups"):
-            # Inherited values must not silently appear as complete effective facts.
-            if "apply-groups" in tokens:
-                inherited_paths.append(tokens[:tokens.index("apply-groups")])
-            b.warn("unresolved_inheritance", "Junos groups/apply-groups are not expanded; affected effective configuration requires review.", n)
         if tokens[:2] == ["system", "host-name"] and len(tokens) > 2:
             b.hostname, b.hostname_line = tokens[2], n
         if len(tokens) >= 4 and tokens[0] == "routing-instances":
@@ -606,8 +720,6 @@ def _parse_junos(b):
         iface = b.iface(name, n, mappings.get(name, "default"), interface_inactive)
         if name in mappings:
             iface["routing_context_id"] = b.context(mappings[name])["id"]
-        if any(tokens[:len(p)] == p for p in inherited_paths):
-            iface["effective_state"] = "unresolved"
         if name in unresolved_members:
             iface["effective_state"] = "unresolved"
         if not rest:
@@ -676,7 +788,7 @@ def _parse_junos(b):
         prefix = ["interfaces", parent] + (["unit", unit] if unit else [])
         if any(prefix[:len(p)] == p for p in inactive_paths):
             iface["effective_state"] = "inactive"
-        if any(prefix[:len(p)] == p for p in inherited_paths):
+        if iface["effective_state"] != "inactive" and inherited(prefix):
             iface["effective_state"] = "unresolved"
     _upstream_check(b, "\n".join(line for line in b.lines if line.startswith("set interfaces ")))
 

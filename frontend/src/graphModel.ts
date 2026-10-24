@@ -78,9 +78,7 @@ export function indexTopology(snapshot: Snapshot, domains: Domains) {
     const domain =
       domains.interface_mappings[i.id] ||
       domains.mappings[i.routing_context_id] ||
-      (contexts.get(i.routing_context_id)?.kind === "default"
-        ? "default"
-        : `isolated:${i.routing_context_id}`);
+      "default";
     interfaceDomains.set(i.id, domain);
     const set = deviceDomains.get(i.device_id) || new Set<string>();
     set.add(domain);

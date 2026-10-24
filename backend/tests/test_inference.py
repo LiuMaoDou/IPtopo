@@ -62,21 +62,22 @@ def test_at_04_shared_prefix_is_never_clique():
         assert {e["target"] for e in graph["edges"]} == {result["segments"][0]["id"]}
 
 
-def test_at_05_same_named_vrfs_isolated_then_explicit_customer_domains():
+def test_at_05_duplicate_vrf_addresses_share_subnet_until_explicitly_separated():
     snapshot = topology("10.0.0.1/30", "10.0.0.2/30", "10.0.0.1/30", "10.0.0.2/30")
     for context in snapshot["contexts"]:
         context.update(kind="vrf", local_name="customer", rd="1:1", rt=["1:1"])
-    assert infer(snapshot)["links"] == []
+    assert "duplicate_ip" in codes(infer(snapshot))
+    assert {s["domain_id"] for s in infer(snapshot)["segments"]} == {"default"}
     settings = {"mappings": {"c0": "customer-a", "c1": "customer-a", "c2": "customer-b", "c3": "customer-b"}}
     result = infer(snapshot, settings)
     assert len(result["links"]) == 2
     assert "duplicate_ip" not in codes(result)
 
 
-def test_at_06_pe_vrf_ce_default_mapped_explicitly():
+def test_at_06_pe_vrf_ce_default_match_by_subnet_without_mapping():
     snapshot = topology("10.0.0.1/30", "10.0.0.2/30")
     snapshot["contexts"][0].update(kind="vrf", local_name="customer")
-    assert not infer(snapshot)["links"]
+    assert len(infer(snapshot)["links"]) == 1
     assert len(infer(snapshot, {"interface_mappings": {"i0": "ce", "i1": "ce"}})["links"]) == 1
 
 
@@ -227,13 +228,13 @@ def test_dual_stack_segment_projection_has_only_its_own_family_evidence():
         assert edge["link_id"] == result["links"][0]["id"]
 
 
-def test_missing_routing_context_does_not_join_default_or_other_device():
+def test_missing_routing_context_does_not_prevent_subnet_grouping():
     snapshot = topology("10.0.0.1/30", "10.0.0.2/30")
     snapshot["contexts"] = []
     for interface in snapshot["interfaces"]:
         interface["routing_context_id"] = "missing-vrf"
     result = infer(snapshot)
-    assert not result["links"]
+    assert len(result["links"]) == 1
     assert "missing_routing_context" in codes(result)
 
 
@@ -275,3 +276,12 @@ def test_aggregate_member_addresses_are_preserved_but_not_inferred(membership):
     assert "duplicate_ip" not in codes(result)
     assert any(u["interface_id"] == member["id"] and u["reason"] == "aggregate_member" for u in result["unmatched"])
     assert snapshot == before
+
+
+@pytest.mark.parametrize('names', [('BLUE','RED'),('BLUE','BLUE'),('default','BLUE')])
+def test_subnet_grouping_ignores_vrf_name_and_rd(names):
+    snapshot=topology('192.0.2.1/30','192.0.2.2/30')
+    for index,context in enumerate(snapshot['contexts']):
+        context.update(kind='vrf',local_name=names[index],rd=f'{index+1}:1')
+    assert len(infer(snapshot)['links'])==1
+    assert not infer(snapshot, {'mappings': {'c0':'separate-a','c1':'separate-b'}})['links']

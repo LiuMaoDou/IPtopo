@@ -209,7 +209,8 @@ def test_csv_and_drawio_match_final_graph_and_saved_coordinates(client):
 
 def test_domain_mapping_and_confirmed_default_assumption(client):
     _, p = upload(client, project(client), [("pe.cfg", config("PE", "10.0.0.1", "Customer")), ("ce.cfg", config("CE", "10.0.0.2"))])
-    assert not p["topology"]["edges"]
+    assert len(p["topology"]["edges"]) == 1
+    assert p["topology"]["edges"][0]["evidence"][0]["domain_id"] == "default"
     context_ids = [c["id"] for c in p["snapshot"]["contexts"]]
     domains = {"domains": [{"id": "customer", "name": "Customer", "confirmed": True}], "mappings": {c: "customer" for c in context_ids}, "interface_mappings": {}, "segment_splits": {}}
     response = client.put(f"/api/projects/{p['id']}/domains", json={"version": p["version"], "domains": domains})

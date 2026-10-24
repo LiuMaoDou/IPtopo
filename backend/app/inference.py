@@ -7,7 +7,7 @@ from hashlib import sha256
 import ipaddress
 import json
 
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 
 
 def stable_id(kind: str, *parts) -> str:
@@ -34,15 +34,10 @@ def _diagnostic(code, message, **details):
 
 def _domain(interface, contexts, settings):
     context_id = interface.get("routing_context_id")
-    context = contexts.get(context_id, {})
     explicit = settings.get("interface_mappings", {}).get(interface["id"])
     explicit = explicit or settings.get("mappings", {}).get(context_id)
     if explicit:
         return explicit, False
-    if context_id and context_id not in contexts:
-        return f"isolated:{interface['device_id']}:{context_id}", False
-    if context.get("kind") == "vrf" or (context.get("local_name", "default").lower() not in ("default", "global", "master", "base")):
-        return f"isolated:{context_id or interface['device_id']}", False
     return "default", True
 
 
@@ -125,7 +120,7 @@ def infer(snapshot: dict, domain_settings: dict | None = None) -> dict:
     for interface in sorted(interfaces.values(), key=lambda i: i["id"]):
         domain, implicit = _domain(interface, contexts, settings)
         if interface.get("routing_context_id") and interface["routing_context_id"] not in contexts:
-            diagnostics.append(_diagnostic("missing_routing_context", "The routing context is missing; this interface remains isolated until its domain is assigned.", interface_id=interface["id"], context_id=interface["routing_context_id"]))
+            diagnostics.append(_diagnostic("missing_routing_context", "Routing-context metadata is missing; subnet grouping still uses the configured prefix.", interface_id=interface["id"], context_id=interface["routing_context_id"]))
         if implicit:
             assumed.add(interface.get("routing_context_id") or interface["device_id"])
         member = is_aggregate_member(interface)
@@ -155,8 +150,8 @@ def infer(snapshot: dict, domain_settings: dict | None = None) -> dict:
 
     if assumed:
         confirmed = domains.get("default", {}).get("confirmed", False)
-        item = _diagnostic("default_domain_assumption", "Default routing contexts share the project default address domain; confirm or adjust this assumption.", context_ids=sorted(assumed), confirmed=confirmed)
-        item["severity"] = "info" if confirmed else "warning"
+        item = _diagnostic("default_domain_assumption", "Configured subnets are grouped across devices and VRFs unless explicitly assigned to separate address domains.", context_ids=sorted(assumed), confirmed=confirmed)
+        item["severity"] = "info"
         diagnostics.append(item)
 
     # Duplicate IPs conflict even when their masks differ. Manual split labels

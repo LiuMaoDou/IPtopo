@@ -124,7 +124,7 @@ export function DomainDialog({
         }}
       >
         <p className="form-note">
-          仅把属于同一逻辑网络的上下文映射到共同地址域。默认地址域是一项导入假设。
+          默认跨设备、跨 VRF 按网段匹配。需要隔离重复地址空间时，可映射到不同地址域。
         </p>
         <div className="domain-create">
           <input
@@ -231,7 +231,7 @@ export function DomainDialog({
                         setDomains({ ...domains, mappings });
                       }}
                     >
-                      <option value="">独立 / 自动默认域</option>
+                      <option value="">自动按网段归组</option>
                       {domains.domains.map((d) => (
                         <option value={d.id} key={d.id}>
                           {d.name}

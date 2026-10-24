@@ -177,7 +177,8 @@ def test_domain_mapping_recomputes_and_undo_uses_base_domain_settings():
     assert result["domain_settings"]["mappings"]["c0"] == "default"
     records[0]["status"] = "undone"
     result, records = apply_overrides(snapshot, records)
-    assert not result["links"]
+    assert len(result["links"]) == 1
+    assert not result["domain_settings"].get("mappings")
 
 
 def test_split_segment_produces_two_exact_endpoint_pairs():

@@ -172,14 +172,14 @@ export default function Inventory({
       {tab === "domains" && (
         <div className="inventory-domain-summary">
           <p className="empty-note">
-            同名 VRF 不会自动合并；请确认跨设备的地址域映射。
+            默认跨设备、跨 VRF 按同一网段归组；需要隔离时可指定地址域。
           </p>
           {project.domains.domains.map((d) => (
             <div className="domain-row" key={d.id}>
               <Globe2 size={19} />
               <span>
                 <strong>{d.name}</strong>
-                <small>{d.confirmed ? "已确认" : "导入假设 · 待核对"}</small>
+                <small>{d.id === "default" ? "按网段自动归组" : d.confirmed ? "已确认" : "待核对"}</small>
               </span>
               {d.confirmed && <CheckCircle2 size={15} />}
             </div>

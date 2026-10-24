@@ -9,7 +9,7 @@ import xml.etree.ElementTree as ET
 from collections import defaultdict
 from urllib.parse import quote
 from N2G import drawio_diagram
-from .inference import project_graph
+from .inference import project_graph, _domain
 
 # Original identifiers shared visually with frontend/src/vendorIcons.ts, not
 # downloaded vendor artwork. Package these inline so exports work offline.
@@ -69,10 +69,7 @@ def filter_graph(snapshot: dict, view: dict | None, mode: str):
         by_device.setdefault(interface["device_id"], []).append(interface)
 
     def domain_for(interface):
-        ctx = contexts.get(interface.get("routing_context_id"), {})
-        return (settings.get("interface_mappings", {}).get(interface["id"])
-                or settings.get("mappings", {}).get(interface.get("routing_context_id"))
-                or ("default" if ctx.get("kind") == "default" else f"isolated:{interface.get('routing_context_id') or interface['id']}"))
+        return _domain(interface, contexts, settings)[0]
 
     visible = set()
     for device in snapshot.get("devices", []):

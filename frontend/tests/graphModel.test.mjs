@@ -163,3 +163,18 @@ test("indexed AF/domain/prefix filters and shared-segment neighborhood retain ex
   );
   assert.equal(filterTopology(data, index, { family: "6" }).nodes.length, 0);
 });
+
+test("VRF names do not exclude devices from the default subnet domain", () => {
+  const snapshot = {
+    devices: [{ id: "a", hostname: "a", vendor: "Juniper" }, { id: "b", hostname: "b", vendor: "Huawei" }],
+    contexts: [{ id: "ca", kind: "vrf", local_name: "BLUE" }, { id: "cb", kind: "vrf", local_name: "RED" }],
+    interfaces: ["a", "b"].map((id) => ({ id: `i${id}`, device_id: id, routing_context_id: `c${id}`, raw_name: "uplink", addresses: [] })),
+    segments: [], links: [],
+  };
+  const index = indexTopology(snapshot, { mappings: {}, interface_mappings: {} });
+  assert.equal(index.interfaceDomains.get("ia"), "default");
+  assert.equal(index.interfaceDomains.get("ib"), "default");
+  const separated = indexTopology(snapshot, { mappings: { ca: "private" }, interface_mappings: {} });
+  assert.equal(separated.interfaceDomains.get("ia"), "private");
+  assert.equal(separated.interfaceDomains.get("ib"), "default");
+});
