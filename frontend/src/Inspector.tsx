@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { segmentIcon } from "./vendorIcons";
 import {
   Server,
   X,
@@ -183,7 +184,11 @@ export default function Inspector({
         </button>
       </div>
       <div className="inspector-title">
-        <Server size={31} />
+        {segment ? (
+          <img src={segmentIcon} alt="IP 网段" width={31} height={31} />
+        ) : (
+          <Server size={31} />
+        )}
         <div>
           <h2>{title}</h2>
           <p>

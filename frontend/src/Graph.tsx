@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import type { GraphData, View, Selection } from "./types";
 import { placeMissingNodes } from "./graphModel";
-import { vendorStyle, vendors } from "./vendorIcons";
+import { segmentIcon, vendorStyle, vendors } from "./vendorIcons";
 cytoscape.use(edgehandles);
 cytoscape.use(undoRedo);
 export type GraphHandle = {
@@ -400,19 +400,21 @@ export default forwardRef<GraphHandle, Props>(function Graph(
         {
           selector: 'node[kind="segment"]',
           style: {
-            shape: "rectangle",
-            width: 140,
-            height: 48,
+            shape: "roundrectangle",
+            width: 44,
+            height: 44,
+            label: "",
             "background-color": "#e4f4f5",
-            "border-color": "#a6c9d0",
+            "border-color": "#087f80",
             "border-width": 1,
-            "background-image": "none",
-            "font-size": 11,
-            "text-max-width": "128px",
+            "background-width": 32,
+            "background-height": 32,
+            "font-size": 16,
+            "text-max-width": "280px",
             "text-overflow-wrap": "anywhere",
             "text-margin-x": 0,
-            "text-margin-y": 0,
-            "text-valign": "center",
+            "text-margin-y": 10,
+            "text-valign": "bottom",
             "background-opacity": 1,
           },
         },
@@ -502,7 +504,13 @@ export default forwardRef<GraphHandle, Props>(function Graph(
         },
         {
           selector: 'node.lod-overview[kind="segment"]',
-          style: { label: "", width: 36, height: 16 },
+          style: {
+            label: "",
+            width: 28,
+            height: 28,
+            "background-width": 20,
+            "background-height": 20,
+          },
         },
         {
           selector: "node:selected",
@@ -510,6 +518,28 @@ export default forwardRef<GraphHandle, Props>(function Graph(
             label: "data(displayLabel)",
             "background-image": "data(icon)",
             "min-zoomed-font-size": 0,
+          },
+        },
+        {
+          selector: 'node[kind="segment"]:selected',
+          style: {
+            label: "data(label)",
+            width: 50,
+            height: 50,
+            "background-width": 36,
+            "background-height": 36,
+            "text-background-color": "#fff",
+            "text-background-opacity": 0.95,
+            "text-background-padding": "5px",
+          },
+        },
+        {
+          selector: 'node.lod-overview[kind="segment"]:selected',
+          style: {
+            width: 32,
+            height: 32,
+            "background-width": 24,
+            "background-height": 24,
           },
         },
         {
@@ -698,7 +728,12 @@ export default forwardRef<GraphHandle, Props>(function Graph(
           label: n.label,
           kind: n.kind,
           parent: n.parent ? String(n.parent) : undefined,
-          icon: n.kind === "device" ? vendor.icon : "none",
+          icon:
+            n.kind === "device"
+              ? vendor.icon
+              : n.kind === "segment"
+                ? segmentIcon
+                : "none",
           vendorColor: vendor.color,
           displayLabel:
             n.kind === "group"
@@ -893,7 +928,7 @@ export default forwardRef<GraphHandle, Props>(function Graph(
           <Maximize size={17} />
         </button>
       </div>
-      <div className="vendor-legend" aria-label="厂商图标图例">
+      <div className="vendor-legend" aria-label="节点图标图例">
         {vendors
           .filter((v) =>
             data.nodes.some(
@@ -906,6 +941,12 @@ export default forwardRef<GraphHandle, Props>(function Graph(
               {v.name}
             </span>
           ))}
+        {data.nodes.some((n) => n.kind === "segment") && (
+          <span>
+            <img src={segmentIcon} alt="" />
+            IP 网段 · 点击查看地址
+          </span>
+        )}
       </div>
       <div className="graph-legend">
         <span>

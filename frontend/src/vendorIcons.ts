@@ -4,6 +4,10 @@ const svg = (body: string) =>
   encodeURIComponent(
     `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">${body}</svg>`,
   );
+export const segmentIcon = svg(
+  '<g fill="none" stroke="#087f80" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><rect x="23" y="6" width="18" height="16" rx="3"/><path d="M32 22v12M14 42v-8h36v8"/><rect x="5" y="42" width="18" height="16" rx="3"/><rect x="41" y="42" width="18" height="16" rx="3"/></g>',
+);
+
 export const vendors = [
   {
     key: "Huawei",

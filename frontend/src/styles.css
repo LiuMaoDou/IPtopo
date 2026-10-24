@@ -680,7 +680,8 @@ p {
   gap: 13px;
   padding: 20px 18px 15px;
 }
-.inspector-title svg {
+.inspector-title svg,
+.inspector-title > img {
   flex: none;
   color: #33525f;
   stroke-width: 1.5;
