@@ -1,0 +1,16 @@
+services:
+  iptopo:
+    build: .
+    ports:
+      - "${IPTOPO_BIND:-127.0.0.1}:8765:8765"
+    volumes:
+      - iptopo-data:/data
+    environment:
+      IPTOPO_MAX_FILES: "2500"
+      IPTOPO_MAX_FILE_BYTES: "4194304"
+      IPTOPO_MAX_TOTAL_BYTES: "67108864"
+      IPTOPO_MAX_ZIP_DEPTH: "3"
+    restart: unless-stopped
+    init: true
+volumes:
+  iptopo-data:

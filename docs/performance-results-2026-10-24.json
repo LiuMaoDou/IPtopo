@@ -1,0 +1,259 @@
+{
+  "hardware": [
+    "Mac18,5",
+    "Apple M6",
+    "17179869184"
+  ],
+  "cpu_count": 12,
+  "method": "real HTTP; Uvicorn and actual spawned import workers; isolated temporary databases; 50ms process-tree RSS sampling",
+  "python": "3.12.14",
+  "system": "Darwin",
+  "machine": "arm64",
+  "results": [
+    {
+      "generator_version": 1,
+      "synthetic": true,
+      "dialect": "cisco_ios",
+      "devices": 100,
+      "interfaces": 400,
+      "ipv4_addresses": 400,
+      "ipv6_addresses": 76,
+      "logical_links": 150,
+      "ring_links": 100,
+      "chord_links": 50,
+      "dual_stack_links": 38,
+      "segments": 188,
+      "routing_contexts": 100,
+      "address_domain": "default",
+      "shape": "connected ring plus opposite-side chords; three routed interfaces and one loopback per device",
+      "source_bytes": 48371,
+      "zip_bytes": 29893,
+      "import_wall_seconds": 0.5461,
+      "import_worker_seconds": 0.3849,
+      "upload_request": {
+        "seconds": 0.0142,
+        "decoded_bytes": 321,
+        "wire_content_length": 321,
+        "content_encoding": "identity"
+      },
+      "cold_get": {
+        "seconds": 0.0258,
+        "decoded_bytes": 1088276,
+        "wire_content_length": 159125,
+        "content_encoding": "gzip"
+      },
+      "warm_get": {
+        "seconds": 0.0084,
+        "decoded_bytes": 1088276,
+        "wire_content_length": 159125,
+        "content_encoding": "gzip"
+      },
+      "view_save": {
+        "seconds": 0.003,
+        "decoded_bytes": 6365,
+        "wire_content_length": 2727,
+        "content_encoding": "gzip"
+      },
+      "after_view_get": {
+        "seconds": 0.0076,
+        "decoded_bytes": 1094524,
+        "wire_content_length": 160868,
+        "content_encoding": "gzip"
+      },
+      "infer": {
+        "seconds": 0.008,
+        "decoded_bytes": 1094524,
+        "wire_content_length": 160867,
+        "content_encoding": "gzip"
+      },
+      "exports": {
+        "json": {
+          "seconds": 0.0225,
+          "decoded_bytes": 820454,
+          "wire_content_length": 70637,
+          "content_encoding": "gzip"
+        },
+        "csv": {
+          "seconds": 0.0227,
+          "decoded_bytes": 119150,
+          "wire_content_length": 119150,
+          "content_encoding": "identity"
+        },
+        "drawio": {
+          "seconds": 0.0144,
+          "decoded_bytes": 256265,
+          "wire_content_length": 20173,
+          "content_encoding": "gzip"
+        }
+      },
+      "server_peak_rss_mib": 94.72,
+      "process_tree_peak_rss_mib": 157.25,
+      "memory_samples": 11,
+      "max_worker_descendants": 2
+    },
+    {
+      "generator_version": 1,
+      "synthetic": true,
+      "dialect": "cisco_ios",
+      "devices": 1000,
+      "interfaces": 4000,
+      "ipv4_addresses": 4000,
+      "ipv6_addresses": 750,
+      "logical_links": 1500,
+      "ring_links": 1000,
+      "chord_links": 500,
+      "dual_stack_links": 375,
+      "segments": 1875,
+      "routing_contexts": 1000,
+      "address_domain": "default",
+      "shape": "connected ring plus opposite-side chords; three routed interfaces and one loopback per device",
+      "source_bytes": 485363,
+      "zip_bytes": 300908,
+      "import_wall_seconds": 4.2982,
+      "import_worker_seconds": 4.0947,
+      "upload_request": {
+        "seconds": 0.0716,
+        "decoded_bytes": 323,
+        "wire_content_length": 323,
+        "content_encoding": "identity"
+      },
+      "cold_get": {
+        "seconds": 0.2963,
+        "decoded_bytes": 10864440,
+        "wire_content_length": 1643946,
+        "content_encoding": "gzip"
+      },
+      "warm_get": {
+        "seconds": 0.0684,
+        "decoded_bytes": 10864440,
+        "wire_content_length": 1643946,
+        "content_encoding": "gzip"
+      },
+      "view_save": {
+        "seconds": 0.0042,
+        "decoded_bytes": 62567,
+        "wire_content_length": 26073,
+        "content_encoding": "gzip"
+      },
+      "after_view_get": {
+        "seconds": 0.0687,
+        "decoded_bytes": 10926890,
+        "wire_content_length": 1669643,
+        "content_encoding": "gzip"
+      },
+      "infer": {
+        "seconds": 0.0699,
+        "decoded_bytes": 10926890,
+        "wire_content_length": 1669642,
+        "content_encoding": "gzip"
+      },
+      "exports": {
+        "json": {
+          "seconds": 0.1546,
+          "decoded_bytes": 8185486,
+          "wire_content_length": 708978,
+          "content_encoding": "gzip"
+        },
+        "csv": {
+          "seconds": 0.2506,
+          "decoded_bytes": 1203434,
+          "wire_content_length": 1203434,
+          "content_encoding": "identity"
+        },
+        "drawio": {
+          "seconds": 0.1754,
+          "decoded_bytes": 2551262,
+          "wire_content_length": 203248,
+          "content_encoding": "gzip"
+        }
+      },
+      "server_peak_rss_mib": 293.95,
+      "process_tree_peak_rss_mib": 311.73,
+      "memory_samples": 84,
+      "max_worker_descendants": 2
+    },
+    {
+      "generator_version": 1,
+      "synthetic": true,
+      "dialect": "cisco_ios",
+      "devices": 2000,
+      "interfaces": 8000,
+      "ipv4_addresses": 8000,
+      "ipv6_addresses": 1500,
+      "logical_links": 3000,
+      "ring_links": 2000,
+      "chord_links": 1000,
+      "dual_stack_links": 750,
+      "segments": 3750,
+      "routing_contexts": 2000,
+      "address_domain": "default",
+      "shape": "connected ring plus opposite-side chords; three routed interfaces and one loopback per device",
+      "source_bytes": 973829,
+      "zip_bytes": 602242,
+      "import_wall_seconds": 8.2787,
+      "import_worker_seconds": 7.9314,
+      "upload_request": {
+        "seconds": 0.132,
+        "decoded_bytes": 323,
+        "wire_content_length": 323,
+        "content_encoding": "identity"
+      },
+      "cold_get": {
+        "seconds": 0.6349,
+        "decoded_bytes": 21750290,
+        "wire_content_length": 3289799,
+        "content_encoding": "gzip"
+      },
+      "warm_get": {
+        "seconds": 0.1394,
+        "decoded_bytes": 21750290,
+        "wire_content_length": 3289799,
+        "content_encoding": "gzip"
+      },
+      "view_save": {
+        "seconds": 0.0062,
+        "decoded_bytes": 125342,
+        "wire_content_length": 51480,
+        "content_encoding": "gzip"
+      },
+      "after_view_get": {
+        "seconds": 0.1384,
+        "decoded_bytes": 21875515,
+        "wire_content_length": 3340989,
+        "content_encoding": "gzip"
+      },
+      "infer": {
+        "seconds": 0.1387,
+        "decoded_bytes": 21875515,
+        "wire_content_length": 3340990,
+        "content_encoding": "gzip"
+      },
+      "exports": {
+        "json": {
+          "seconds": 0.3351,
+          "decoded_bytes": 16375443,
+          "wire_content_length": 1413745,
+          "content_encoding": "gzip"
+        },
+        "csv": {
+          "seconds": 0.5644,
+          "decoded_bytes": 2408169,
+          "wire_content_length": 2408169,
+          "content_encoding": "identity"
+        },
+        "drawio": {
+          "seconds": 0.4413,
+          "decoded_bytes": 5104543,
+          "wire_content_length": 407745,
+          "content_encoding": "gzip"
+        }
+      },
+      "server_peak_rss_mib": 543.28,
+      "process_tree_peak_rss_mib": 560.8,
+      "memory_samples": 165,
+      "max_worker_descendants": 2
+    }
+  ],
+  "measured_date": "2026-10-24",
+  "run_context": "One local run per size in an active development session; browser QA was running concurrently on a separate server."
+}

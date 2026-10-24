@@ -1,0 +1,201 @@
+{
+  "date": "2026-10-24",
+  "environment": {
+    "browser": "Google Chrome, Playwright headless",
+    "viewport": {
+      "width": 1536,
+      "height": 1024
+    },
+    "source": "Real local API projects imported from generated Cisco ZIP files",
+    "frontend_bundle": "index-vX_6naXK.js"
+  },
+  "methodology": {
+    "ready_ms": "Wall time from before page.goto through HTML/JS/API load, expected Cytoscape node count, and two requestAnimationFrame callbacks. ZIP parsing/import excluded.",
+    "search_ms": "Wall time from before Playwright fills hostname search through Cytoscape showing exactly one matching device.",
+    "tabs_ms": "Wall time to click tab and observe rows; includes deliberate 50ms observation wait. Not a CPU duration.",
+    "long_tasks": "PerformanceObserver long tasks across page loading and all actions in the run; includes graph interactions, view save, and PNG generation.",
+    "limits": "Single warm local development machine run, indicative and not a hardware-independent SLA."
+  },
+  "results": [
+    {
+      "n": 100,
+      "ready_ms": 169,
+      "search_ms": 15,
+      "inventory_rows": 100,
+      "tabs": {
+        "文件": {
+          "ms": 92,
+          "rows": 100
+        },
+        "地址域": {
+          "ms": 80,
+          "rows": 100
+        },
+        "设备": {
+          "ms": 81,
+          "rows": 100
+        }
+      },
+      "focus_nodes": 4,
+      "focus_reset_positions": true,
+      "long_tasks": {
+        "count": 0,
+        "max_ms": 0
+      },
+      "puts": [],
+      "errors": []
+    },
+    {
+      "n": 1000,
+      "ready_ms": 319,
+      "search_ms": 31,
+      "inventory_rows": 20,
+      "tabs": {
+        "文件": {
+          "ms": 89,
+          "rows": 18
+        },
+        "地址域": {
+          "ms": 83,
+          "rows": 18
+        },
+        "设备": {
+          "ms": 83,
+          "rows": 20
+        }
+      },
+      "focus_nodes": 4,
+      "focus_reset_positions": true,
+      "hidden_undo_positions": true,
+      "long_tasks": {
+        "count": 5,
+        "max_ms": 93
+      },
+      "puts": [
+        {
+          "bytes": 251195,
+          "status": 200,
+          "endpoint": "/api/projects/:project_id/views/:view_id?summary=true"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "n": 2000,
+      "ready_ms": 555,
+      "search_ms": 29,
+      "inventory_rows": 20,
+      "tabs": {
+        "文件": {
+          "ms": 85,
+          "rows": 18
+        },
+        "地址域": {
+          "ms": 84,
+          "rows": 18
+        },
+        "设备": {
+          "ms": 82,
+          "rows": 20
+        }
+      },
+      "focus_nodes": 4,
+      "focus_reset_positions": true,
+      "worker_cancelled_by_filter": true,
+      "data_events_on_view_save": 0,
+      "domain_dialog_rows": 50,
+      "png": {
+        "bytes": 913975,
+        "width": 4096,
+        "height": 2403,
+        "signature": "PNG"
+      },
+      "long_tasks": {
+        "count": 7,
+        "max_ms": 179
+      },
+      "puts": [
+        {
+          "bytes": 125676,
+          "status": 200,
+          "endpoint": "/api/projects/:project_id/views/:view_id?summary=true"
+        },
+        {
+          "bytes": 125676,
+          "status": 200,
+          "endpoint": "/api/projects/:project_id/views/:view_id?summary=true"
+        }
+      ],
+      "errors": []
+    }
+  ],
+  "regressions": {
+    "a": {
+      "pos": {
+        "x": 100,
+        "y": 200
+      },
+      "locked": true
+    },
+    "b": {
+      "pos": {
+        "x": 600,
+        "y": 750
+      },
+      "locked": true
+    },
+    "c": {
+      "pos": {
+        "x": 1100,
+        "y": 850
+      },
+      "locked": false
+    },
+    "focus_reset_positions": true,
+    "focus_diff": [],
+    "view_switch_cancelled_worker": true,
+    "after_worker": {
+      "pos": {
+        "x": 100,
+        "y": 200
+      },
+      "locked": true
+    },
+    "after_worker_late": {
+      "pos": {
+        "x": 100,
+        "y": 200
+      },
+      "locked": true
+    },
+    "fcose_guard": true,
+    "errors": []
+  },
+  "first_import": {
+    "devices": 1000,
+    "renderer_before": {
+      "hideEdgesOnViewport": false,
+      "textureOnViewport": false,
+      "pixelRatio": null
+    },
+    "renderer_after": {
+      "hideEdgesOnViewport": true,
+      "textureOnViewport": true,
+      "pixelRatio": 1
+    },
+    "same_cytoscape_instance_after_filter": true,
+    "page_errors": []
+  },
+  "incremental_add": {
+    "before": 1000,
+    "after": 1001,
+    "all_existing_coordinates_preserved": true
+  },
+  "mobile": {
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "page_horizontal_overflow": false
+  }
+}

@@ -1,0 +1,11 @@
+# Runtime dependencies; exact versions and transitive dependencies in requirements.lock.
+fastapi==0.162.0
+uvicorn==0.54.0
+SQLAlchemy==2.1.6
+python-multipart==0.0.32
+pydantic==2.14.1
+ttp==0.10.1
+ttp-templates==0.6.18
+netutils==1.19.2
+N2G==0.3.3
+charset-normalizer==3.5.2
