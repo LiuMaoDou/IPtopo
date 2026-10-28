@@ -207,4 +207,3 @@ IPTOPO_AI_CALLBACK_URL=http://iptopo:8765 ./scripts/dev.sh
 - **模型目录可达但对话失败**：检查模型 ID、协议选择、额度和工具调用支持；检测不会自动切换模型或降级为无工具猜测。
 - **停止 / 超时**：界面停止会调用 Codex `turn/interrupt` 或 OpenCode 原生 abort/interrupt；不会仅丢弃流式文字。已收到的部分回答可保留并标记取消或错误。
 - **问题无法唯一定位**：说明候选设备名称、VRF / 协议范围、Area/Level 或 LSDB 批次后继续提问。工具返回 `incomplete`、`unsupported`、`unreachable` 时保留其原意。
-

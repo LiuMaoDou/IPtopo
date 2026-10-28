@@ -1,0 +1,3 @@
+# Public vendor captures are byte-verified against manifest SHA-256 values.
+# Preserve their original newlines and whitespace on Windows checkouts.
+samples/public-network/** -text whitespace=-blank-at-eol,-blank-at-eof
