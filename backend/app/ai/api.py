@@ -19,9 +19,10 @@ from fastapi import HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import delete, func, select, text as sql_text
+from sqlalchemy import delete, func, literal_column, select, text as sql_text
 
 from ..store import ChatMessage, ChatSession, Observation, Project, Source, now, uid
+from ..source_io import read_source_text
 from .config import ConfigStore, Settings
 
 
@@ -213,7 +214,7 @@ def register(app, store, require_project, effective):
             path = (store.root/"sources"/key).resolve()
             if path.parent != (store.root/"sources").resolve() or not path.is_file():
                 raise ValueError("原始来源文件不可用。")
-            return {"filename": filename, "text": path.read_text(encoding="utf-8")}
+            return {"filename": filename, "text": read_source_text(path)}
 
         engine = QueryEngine(frozen, project_id=project_id, revision=context["revision"], project_version=context["project_version"],
                              batches=metadata, batch_loader=load_batch, source_loader=load_source, mappings=mappings)
@@ -287,8 +288,10 @@ def register(app, store, require_project, effective):
     def read_session(project_id: str, session_id: str):
         with store.session() as s:
             row = require_session(s, project_id, session_id)
+            # Wall clocks may repeat on Windows or move backwards. UUIDs are
+            # identities, so use SQLite's insertion order for conversation order.
             messages = list(s.scalars(select(ChatMessage).where(ChatMessage.session_id == session_id)
-                .order_by(ChatMessage.created_at.desc(), ChatMessage.id.desc()).limit(501)))
+                .order_by(literal_column("chat_messages.rowid").desc()).limit(501)))
             truncated = len(messages) > 500
             messages = list(reversed(messages[:500]))
             return {"session": session_data(row), "messages": [message_data(item) for item in messages], "messages_truncated": truncated,
@@ -372,7 +375,7 @@ def register(app, store, require_project, effective):
                 ], sort_keys=True).encode()).hexdigest()
                 native_thread = session.runtime_thread_id if session.runtime_revision == fingerprint else None
                 prior = list(s.scalars(select(ChatMessage).where(ChatMessage.session_id == session_id, ChatMessage.status == "completed")
-                                       .order_by(ChatMessage.created_at.desc()).limit(16)))
+                                       .order_by(literal_column("chat_messages.rowid").desc()).limit(16)))
                 history = [{"role": row.role, "content": row.content[:6000]} for row in reversed(prior)]
                 user = ChatMessage(id=uid("msg_"), project_id=project_id, session_id=session_id, role="user", content=text,
                                    status="completed", context=context, cards=[], tool_calls=[], usage={}, created_at=now())

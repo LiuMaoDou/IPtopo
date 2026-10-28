@@ -9,6 +9,7 @@ import time
 from sqlalchemy import select
 from .store import Job, Project, Snapshot, Source, Store, now, uid
 from .routing.model import RoutingFacts, merge_facts
+from .source_io import read_source_text, write_source_text
 
 PROGRESS_BATCH_SIZE = 25
 PROGRESS_INTERVAL_SECONDS = 0.25
@@ -89,7 +90,7 @@ def import_worker(data_dir: str, job_id: str):
             filename = upload["filename"]
             source_id = uid("src_")
             device_id = identities.get(filename, uid("dev_"))
-            raw = (store.root / "uploads" / job_id / upload["storage_key"]).read_text(encoding="utf-8")
+            raw = read_source_text(store.root / "uploads" / job_id / upload["storage_key"])
             try:
                 parsed = parse_config(raw, filename, source_id, device_id, job_data.get("dialect") or None)
                 # A filename is an explicit input mapping, not proof that a replacement is the same device.
@@ -141,7 +142,7 @@ def import_worker(data_dir: str, job_id: str):
                 result["source_files"].append(meta)
                 result["diagnostics"].extend(meta["diagnostics"])
             storage_key = uid() + ".txt"
-            (store.root / "sources" / storage_key).write_text(raw, encoding="utf-8")
+            write_source_text(store.root / "sources" / storage_key, raw)
             source_rows.append({"key": uid(), "project_id": project_id, "source_id": source_id, "filename": filename,
                                 "storage_key": storage_key, "encoding": upload["encoding"]})
             pending_results.append(meta)

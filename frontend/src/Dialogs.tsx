@@ -48,6 +48,12 @@ export function SourceDialog({
   onClose: () => void;
 }) {
   const active = useRef<HTMLDivElement>(null);
+  const lines = useMemo(() => {
+    const rows = source.text.split(/\r\n|\r|\n/);
+    // A final line terminator does not create an extra source line in splitlines().
+    if (rows[rows.length - 1] === "") rows.pop();
+    return rows;
+  }, [source.text]);
   useEffect(() => {
     active.current?.scrollIntoView({ block: "center" });
   }, [source, line]);
@@ -58,7 +64,7 @@ export function SourceDialog({
         {endLine && endLine !== line ? "–" + endLine : ""} 行
       </p>
       <div className="source-code">
-        {source.text.split("\n").map((text, i) => (
+        {lines.map((text, i) => (
           <div
             key={i}
             ref={i + 1 === line ? active : undefined}

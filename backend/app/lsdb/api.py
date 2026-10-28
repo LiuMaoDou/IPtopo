@@ -7,6 +7,7 @@ from sqlalchemy import select
 from pydantic import ValidationError
 from ..store import Observation, Source, now, uid
 from ..schemas import VersionRequest
+from ..source_io import read_source_text, write_source_text
 from .model import AnalyzeRequest, Batch
 from .adapters import parse, VENDORS
 from .analysis import build
@@ -44,7 +45,7 @@ def register(app,store,require_project,check_version,effective,bump):
                 project.settings={**project.settings,"lsdb_revision":batch.id}
                 for f in files:
                     key=uid()+".txt"; path=store.root/"sources"/key
-                    path.write_text(f["text"],encoding="utf-8");paths.append(path)
+                    write_source_text(path,f["text"]);paths.append(path)
                     s.add(Source(key=uid(),project_id=project_id,source_id=f["id"],filename=f["filename"],storage_key=key,encoding="utf-8"))
                 bump(project);new_version=project.version
         except BaseException:
@@ -84,7 +85,7 @@ def register(app,store,require_project,check_version,effective,bump):
     @app.post("/api/projects/{project_id}/lsdb/demo",status_code=201)
     def demo(project_id:str,body:VersionRequest,protocol:Literal["ospf","isis"]="ospf",vendor:Literal["huawei","cisco","juniper","nokia"]="huawei"):
         folder=Path(__file__).resolve().parents[3]/"samples"/"multi-vendor-lsdb"
-        text=(folder/f"{vendor}-{protocol}.txt").read_text(encoding="utf-8")
+        text=read_source_text(folder/f"{vendor}-{protocol}.txt")
         return save(project_id,body.version,[dict(id=uid("lsrc_"),filename=f"synthetic-{protocol}.txt",text=text)],
             dict(name=f"{VENDORS[vendor]} · 合成 {protocol.upper()} LSDB 示例",protocol=protocol,process_id="6" if vendor=="huawei" else "default" if vendor=="juniper" else "CORE" if vendor=="cisco" and protocol=="isis" else "1",scope="0.0.0.0" if protocol=="ospf" else "2",
                  collector={"huawei":"IGP-D","cisco":"IGP-S","juniper":"IGP-A","nokia":"IGP-B"}[vendor]+"（合成示例）",declared_complete=True,vendor=vendor))

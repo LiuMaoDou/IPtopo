@@ -220,3 +220,20 @@ def test_mcp_batch_metadata_and_lazy_observation_query(setup):
     assert targets["status"] in {"ok", "incomplete"}
     assert targets["data"]["nodes"]
     assert targets["context"]["lsdb_batch_id"] == batch["id"]
+
+
+def test_conversation_order_and_native_history_do_not_depend_on_clock_or_uuid(setup, monkeypatch):
+    app, client, project, base, session, calls = setup
+    import backend.app.ai.api as chat_api
+    monkeypatch.setattr(chat_api, "now", lambda: "2026-10-28T00:00:00+00:00")
+    serial = iter(range(10000, 0, -1))
+    monkeypatch.setattr(chat_api, "uid", lambda prefix="": prefix+f"{next(serial):032x}")
+    path = base+f"/chat/sessions/{session['id']}/messages"
+    for question in ("第一轮", "第二轮"):
+        final = events(client.post(path, json={"text":question}))[-1]["message"]
+        assert final["status"] == "completed"
+    saved = client.get(base+f"/chat/sessions/{session['id']}").json()["messages"]
+    assert [row["role"] for row in saved] == ["user", "assistant", "user", "assistant"]
+    assert [row["content"] for row in saved if row["role"] == "user"] == ["第一轮", "第二轮"]
+    assert calls[1]["history"] == [{"role":"user", "content":"第一轮"},
+                                    {"role":"assistant", "content":"已查询当前项目。"}]

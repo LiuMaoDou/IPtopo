@@ -28,6 +28,7 @@ from .ingest import MAX_FILES, MAX_FILE_BYTES, MAX_TOTAL_BYTES, MAX_UPLOAD_BYTES
 from .jobs import empty_snapshot, import_worker
 from .overrides import apply_overrides
 from .schemas import CreateProject, DomainRequest, OverrideRequest, OverrideStatus, VersionRequest, ViewRequest
+from .source_io import read_source_text, write_source_text
 from .store import Job, Project, Snapshot, Source, Observation, Store, job_dict, now, project_summary, uid
 from .routing.model import SimulationRequest, validate_snapshot_routing
 from .routing.simulation import simulate
@@ -214,7 +215,7 @@ def create_app(data_dir: str | Path | None = None, worker_mode="process") -> Fas
         folder.mkdir()
         for item in ingested.files:
             storage_key = uid() + ".txt"
-            (folder / storage_key).write_text(item["content"], encoding="utf-8")
+            write_source_text(folder / storage_key, item["content"])
             prepared.append({k: v for k, v in item.items() if k != "content"} | {"storage_key": storage_key})
         with store.session(write=True) as s:
             project = require_project(s, project_id)
@@ -316,7 +317,7 @@ def create_app(data_dir: str | Path | None = None, worker_mode="process") -> Fas
             s.add(project)
             for src_id, item in bundle.get("sources", {}).items():
                 key = uid() + ".txt"
-                (store.root / "sources" / key).write_text(item["text"], encoding="utf-8")
+                write_source_text(store.root / "sources" / key, item["text"])
                 s.add(Source(key=uid(), source_id=src_id, project_id=new_id, filename=item["filename"], storage_key=key, encoding="utf-8"))
         return JSONResponse(payload(new_id), status_code=201)
 
@@ -387,7 +388,7 @@ def create_app(data_dir: str | Path | None = None, worker_mode="process") -> Fas
             src = s.scalar(select(Source).where(Source.project_id == project_id, Source.source_id == source_id))
             if not src:
                 raise HTTPException(404, "此项目未包含原配置。可重新导入，或使用包含原文的 JSON 备份恢复。")
-            text = (store.root / "sources" / src.storage_key).read_text(encoding="utf-8")
+            text = read_source_text(store.root / "sources" / src.storage_key)
             return {"filename": src.filename, "text": text, "line_count": len(text.splitlines())}
 
     @app.post("/api/projects/{project_id}/infer")
@@ -489,7 +490,7 @@ def create_app(data_dir: str | Path | None = None, worker_mode="process") -> Fas
                     "lsdb_batches": [x.data for x in s.scalars(select(Observation).where(Observation.project_id == project_id).order_by(Observation.created_at))],
                     "sources": {}, "include_sources": include_sources}
                 if include_sources:
-                    bundle["sources"] = {src.source_id: {"filename": src.filename, "text": (store.root / "sources" / src.storage_key).read_text(encoding="utf-8")}
+                    bundle["sources"] = {src.source_id: {"filename": src.filename, "text": read_source_text(store.root / "sources" / src.storage_key)}
                         for src in s.scalars(select(Source).where(Source.project_id == project_id))}
                 else:
                     bundle = without_source_text(bundle)
