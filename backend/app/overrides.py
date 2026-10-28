@@ -8,13 +8,14 @@ from __future__ import annotations
 from copy import deepcopy
 import ipaddress
 import json
+import math
 from .inference import infer, stable_id, _refs
 
 FACT_OPERATIONS = {"add_device", "add_interface", "override_field", "assign_domain", "split_segment"}
 RELATION_OPERATIONS = {"force_link", "confirm_link", "suppress_link", "rebind_endpoint"}
 ALLOWED_FIELDS = {
     "device": {"hostname", "vendor", "os", "site", "role", "description"},
-    "interface": {"raw_name", "normalized_name", "kind", "description", "admin_state", "effective_state", "routing_context_id", "encapsulation"},
+    "interface": {"raw_name", "normalized_name", "kind", "description", "admin_state", "effective_state", "routing_context_id", "encapsulation", "assumed_bandwidth_mbps"},
     "address": {"address", "prefix_length", "role", "effective_state", "acquisition_method"},
 }
 
@@ -181,7 +182,10 @@ def _fact(snapshot, settings, record):
         if field not in ALLOWED_FIELDS.get(kind, set()):
             raise OverrideConflict("That field cannot be overridden; use a dedicated identity or relation operation")
         desired = value.get("value")
-        if field == "prefix_length":
+        if field == "assumed_bandwidth_mbps":
+            if desired is not None and (isinstance(desired, bool) or not isinstance(desired, (int, float)) or not math.isfinite(desired) or not 0 < desired <= 1_000_000_000):
+                raise OverrideConflict("Assumed bandwidth must be a positive finite number in Mbit/s")
+        elif field == "prefix_length":
             if not isinstance(desired, int) or isinstance(desired, bool):
                 raise OverrideConflict("Prefix length must be an integer")
         elif field == "encapsulation":
@@ -330,7 +334,7 @@ def apply_overrides(snapshot: dict, overrides: list, domain_settings: dict | Non
         if not kind:
             kind = next((k for k in ("device", "interface", "address") if target.get(f"{k}_id")), None)
         field = target.get("field", value.get("field"))
-        return (kind == "device" and field in ALLOWED_FIELDS["device"]) or (kind == "interface" and field in {"description", "raw_name", "normalized_name"})
+        return (kind == "device" and field in ALLOWED_FIELDS["device"]) or (kind == "interface" and field in {"description", "raw_name", "normalized_name", "assumed_bandwidth_mbps"})
 
     # Apply factual corrections first, then review their resulting relationships.
     # Re-evaluate earlier records on every import; an undone record is never replayed.

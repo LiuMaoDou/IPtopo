@@ -171,7 +171,9 @@ V2 目前依据官方契约实现并经过本地 HTTP 协议夹具测试，尚�
 
 ## 模型 API
 
-选择“模型 API”，填写模型服务支持的模型 ID、基础地址和 API Key 环境变量名。默认基础地址为 `https://api.openai.com/v1`，默认环境变量名为 `OPENAI_API_KEY`。密钥必须位于 **IPtopo 后端进程**的环境中；终端、服务管理器或容器的环境不会自动互相继承。修改凭据环境后重启对应后端进程。
+选择“自定义 API”，可选 OpenAI、DeepSeek 或其他兼容服务。填写模型服务支持的模型 ID、基础地址和 API Key 环境变量名。默认基础地址为 `https://api.openai.com/v1`，默认环境变量名为 `OPENAI_API_KEY`。密钥必须位于 **IPtopo 后端进程**的环境中；终端、服务管理器或容器的环境不会自动互相继承。修改凭据环境后重启对应后端进程。
+
+DeepSeek 预设填入 `https://api.deepseek.com`、`deepseek-flash`、Chat Completions 和 `DEEPSEEK_API_KEY`，模型 ID 可自行修改。官方 DeepSeek 地址使用非思考模式（`thinking.type=disabled`），支持流式回答、查询工具续轮及多轮对话；当前不保存其思考模式所需的完整历史 reasoning 状态。其他兼容服务自行填写地址与模型，需支持流式工具调用。依据：[DeepSeek 接入说明](https://api-docs.deepseek.com/)、[思考模式协议](https://api-docs.deepseek.com/guides/thinking_mode/)。DeepSeek 已通过隔离 HTTP 协议测试，尚未使用真实密钥进行联网模型验证。
 
 - `auto`：官方 `api.openai.com` 使用 Responses，其他地址使用 Chat Completions。
 - `responses`：显式调用 `/responses`，发送 `store=false`，保留工具续轮需要的加密 reasoning 项；reasoning 不显示到界面。

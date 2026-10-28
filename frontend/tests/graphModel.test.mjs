@@ -5,7 +5,17 @@ import {
   indexTopology,
   filterTopology,
   parallelLinks,
+  deviceView,
 } from "../src/graphModel.ts";
+
+test("legacy subnet views reopen as device views without losing coordinates, pins or filters", () => {
+  const saved = { id: "saved", positions: { a: { x: 123, y: 456 } }, pinned: ["a"],
+    zoom: 0.7, pan: { x: 10, y: -30 }, filters: { mode: "segment", family: "6", search: "router" }, labels: { costs: false } };
+  const original = structuredClone(saved);
+  assert.deepEqual(deviceView(saved), { ...original, filters: { ...original.filters, mode: "device" } });
+  assert.deepEqual(saved, original);
+  assert.deepEqual(deviceView({ ...saved, filters: {} }).filters, { mode: "device" });
+});
 
 test("parallel links collapse without losing direction, status, members or dual-stack identity", () => {
   const data = {

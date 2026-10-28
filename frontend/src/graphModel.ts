@@ -1,5 +1,10 @@
 import type { Domains, GraphData, Snapshot, View } from "./types";
 
+/** Retain saved layout and filters while retiring the subnet projection from the UI. */
+export function deviceView(view: View): View {
+  return { ...view, filters: { ...view.filters, mode: "device" } };
+}
+
 /** Presentation only: keep the actual links and their review/evidence independent. */
 export function parallelLinks(data: GraphData, expanded: ReadonlySet<string>) {
   const devices = new Set(data.nodes.filter((n) => n.kind === "device").map((n) => n.id));

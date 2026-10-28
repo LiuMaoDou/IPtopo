@@ -50,7 +50,8 @@ export default function Inventory({
       : tab === "files"
         ? files.length
         : contexts.length;
-  const rowHeight = tab === "files" ? 88 : 68,
+  const rowHeight = tab === "devices" ? 46 : tab === "files" ? 88 : 68,
+    rowGap = tab === "devices" ? 2 : 4,
     windowed = count > 150,
     visible = Math.ceil(height / rowHeight) + 10;
   const start = windowed
@@ -77,7 +78,7 @@ export default function Inventory({
           position: "absolute" as const,
           top: index * rowHeight,
           left: 0,
-          height: rowHeight - 4,
+          height: rowHeight - rowGap,
           width: "100%",
         }
       : undefined;
@@ -93,7 +94,7 @@ export default function Inventory({
           onClick={() => onSelect({ kind: "device", id: d.id })}
         >
           <span className="device-icon">
-            <Server size={23} />
+            <Server size={20} />
           </span>
           <span>
             <strong>{d.hostname}</strong>

@@ -9,6 +9,7 @@ export type RoutingBinding = {
   id: string; device_id: string; instance_id: string; interface_id: string;
   scope: string; passive: boolean; network_type: string;
   cost: number | null; cost_origin: string; metric_limit: number; source_refs: Ref[];
+  bandwidth_mbps?: number | null;
 };
 export type RoutingAdvertisement = {
   id: string; device_id: string; binding_id: string; interface_id: string;
@@ -29,6 +30,12 @@ export type SimulationHighlight = {
   source_device_id: string; destination_device_id: string; hops: SimulationHop[];
 };
 export type SimulationResult = SimulationHighlight & {
+  protocol: "ospf" | "isis";
+  scope: string;
+  source_interface_id?: string;
+  destination_interface_id?: string;
+  destination_address?: string;
+  source_addresses?: string[];
   status: "ok" | "unreachable" | "incomplete" | "unsupported";
   snapshot_id: string; project_version: number; total_cost: number | null;
   path_count: string; paths_truncated: boolean; forwarding_status: string;
@@ -36,3 +43,5 @@ export type SimulationResult = SimulationHighlight & {
   assumptions: string[];
   diagnostics: { code: string; message: string; source_refs?: Ref[]; interface_id?: string; ignored?: boolean; blocking?: boolean }[];
 };
+
+export type PortSimulationResult = { results: SimulationResult[]; project_version: number };

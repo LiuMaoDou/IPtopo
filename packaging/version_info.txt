@@ -1,9 +1,9 @@
 # UTF-8
-# Windows file properties for the v1.4.1 portable executable.
+# Windows file properties for the v1.4.2 portable executable.
 VSVersionInfo(
   ffi=FixedFileInfo(
-    filevers=(1, 4, 1, 0),
-    prodvers=(1, 4, 1, 0),
+    filevers=(1, 4, 2, 0),
+    prodvers=(1, 4, 2, 0),
     mask=0x3f,
     flags=0x0,
     OS=0x40004,
@@ -16,12 +16,12 @@ VSVersionInfo(
       StringTable('040904B0', [
         StringStruct('CompanyName', 'IPtopo contributors'),
         StringStruct('FileDescription', 'IPtopo network topology workbench'),
-        StringStruct('FileVersion', '1.4.1.0'),
+        StringStruct('FileVersion', '1.4.2.0'),
         StringStruct('InternalName', 'IPtopo'),
         StringStruct('LegalCopyright', 'GPL-3.0; see LICENSE.txt and bundled source'),
         StringStruct('OriginalFilename', 'IPtopo.exe'),
         StringStruct('ProductName', 'IPtopo'),
-        StringStruct('ProductVersion', '1.4.1')
+        StringStruct('ProductVersion', '1.4.2')
       ])
     ]),
     VarFileInfo([VarStruct('Translation', [1033, 1200])])

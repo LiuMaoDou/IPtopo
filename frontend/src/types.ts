@@ -50,6 +50,8 @@ export type Interface = {
     link_speed?: string;
     source_refs: Ref[];
   };
+  configured_bandwidth_mbps?: number;
+  assumed_bandwidth_mbps?: number | null;
   physical_port_refs?: string[];
   parent_interface_id?: string;
 };

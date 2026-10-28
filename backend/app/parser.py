@@ -1064,7 +1064,23 @@ def parse_config(text: str, filename: str, source_file_id: str, device_id: str, 
             b.warn("parser_error", f"Parser could not complete this file ({type(exc).__name__}). Parsed facts are retained for review.", severity="error")
         if pagination_seen or re.search(r"(?mi)truncated|output omitted|-- ?more ?--", clean):
             b.warn("truncated_configuration", "Source contains a truncation or pagination marker; verify completeness.")
-        if len(re.findall(r'(?<!\\)"', clean)) % 2:
+        # CLI cipher tokens can contain literal quotes. Only a quote opening at
+        # a token boundary is a string delimiter; arbitrary cipher bytes are not.
+        quote_check = clean
+        if dialect.startswith(("cisco", "huawei")):
+            unterminated = False
+            for raw in clean.splitlines():
+                quoted = False
+                for index, char in enumerate(raw):
+                    if char == '"' and (index == 0 or raw[index - 1] != '\\'):
+                        if quoted:
+                            quoted = False
+                        elif index == 0 or raw[index - 1].isspace():
+                            quoted = True
+                unterminated |= quoted
+        else:
+            unterminated = bool(len(re.findall(r'(?<!\\)"', quote_check)) % 2)
+        if unterminated:
             b.warn("unterminated_quote", "Configuration contains an unmatched quote; verify backup completeness.")
     result = b.finish()
     from .routing.adapters import extract_routing

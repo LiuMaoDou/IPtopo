@@ -8,8 +8,9 @@ import re
 
 from ..model import Advertisement, Binding, Instance, Issue, RoutingFacts, SourceRef, identity, IGNORED_SEMANTIC_CODES
 from .semantics import classify_statement
+from .auto_cost import automatic_cost, bandwidth_resolver
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 
 
 def extract(text: str, parsed: dict) -> RoutingFacts:
@@ -66,7 +67,8 @@ def extract(text: str, parsed: dict) -> RoutingFacts:
         instances[key] = inst
         facts.instances.append(inst)
         cfg = {"networks": [], "silent": set(), "unsilent": set(), "silent_all": False,
-               "costs": {}, "style": "narrow"}
+               "costs": {}, "style": "narrow", "auto_cost": False, "auto_compatible": False,
+               "reference_bandwidth": None, "auto_line": n, "reference_line": n}
         configs[inst.id] = cfg
         area = None
         for ln, line in lines:
@@ -110,22 +112,31 @@ def extract(text: str, parsed: dict) -> RoutingFacts:
                     inst.router_id = net[-14:-2]
                     if net[:-14] not in inst.areas:
                         inst.areas.append(net[:-14])
-            elif protocol == "isis" and (m := re.fullmatch(r"cost-style\s+(wide|narrow)", line)):
+            elif protocol == "isis" and (m := re.fullmatch(r"cost-style\s+(wide|narrow|wide-compatible|narrow-compatible|compatible)", line)):
                 cfg["style"] = m[1]
             elif protocol == "isis" and (m := re.fullmatch(r"circuit-cost\s+(\d+)(?:\s+level-([12]))?", line)):
                 for level in [m[2]] if m[2] else ["1", "2"]:
                     cfg["costs"][level] = (int(m[1]), ln)
-            elif line.startswith(("description ", "bandwidth-reference ")) or line == "opaque-capability enable":
+            elif protocol == "isis" and (m := re.fullmatch(r"(undo )?auto-cost enable( compatible)?", line)):
+                cfg.update(auto_cost=not bool(m[1]), auto_compatible=bool(m[2]), auto_line=ln)
+            elif protocol == "isis" and (m := re.fullmatch(r"bandwidth-reference\s+(\d+)", line)):
+                cfg.update(reference_bandwidth=int(m[1]) or None, reference_line=ln)
+            elif line.startswith("description ") or line == "opaque-capability enable":
                 pass
             else:
                 issue("unsupported_protocol_command", f"{protocol.upper()} 存在尚未支持的配置语义，请查看来源行。", ln, inst, statement=line)
         if protocol == "isis" and not inst.router_id:
             issue("missing_net", "IS-IS 缺少有效 network-entity。", n, inst)
         if protocol == "isis":
-            inst.metric_style = cfg["style"]
+            inst.metric_style = {"wide-compatible":"wide", "narrow-compatible":"narrow", "compatible":"both"}.get(cfg["style"], cfg["style"])
 
     interface_blocks = {header.split(maxsplit=1)[1].lower(): (n, lines)
                         for n, header, lines in blocks if header.startswith("interface ")}
+    resolve_bandwidth = bandwidth_resolver(parsed["interfaces"], interface_blocks)
+    # Retain explicit bandwidth metadata, including LAG members without an IGP
+    # binding, so portable backups can replay later bandwidth assumptions.
+    for iface in parsed["interfaces"]:
+        resolve_bandwidth(iface)
     for name, iface in interfaces.items():
         n, lines = interface_blocks.get(name, (1, []))
         options = {"ospf": {}, "isis": {"costs": {}}}
@@ -223,16 +234,29 @@ def extract(text: str, parsed: dict) -> RoutingFacts:
                 explicit = scope in opt["costs"] or scope in cfg["costs"]
                 cost, cost_line = opt["costs"].get(scope, cfg["costs"].get(scope, (0 if loopback else 10, ln)))
                 passive = loopback or opt.get("passive", False)
-            upper = 65535 if proto == "ospf" else 63 if cfg["style"] == "narrow" else 16777214
+            bandwidth, assumptions = None, []
+            derived_cost = proto == "isis" and cfg["auto_cost"] and not explicit and not loopback
+            if derived_cost:
+                bandwidth, assumptions = resolve_bandwidth(iface)
+                cost = automatic_cost(bandwidth, cfg["reference_bandwidth"], cfg["style"], cfg["auto_compatible"])
+                cost_line = cfg["auto_line"]
+                if cost is not None:
+                    assumptions += ([f"自动开销依据配置 bandwidth-reference={cfg['reference_bandwidth']} Mbit/s，"
+                                     f"{'compatible 模式' if cfg['auto_compatible'] else '普通模式'}计算，取整数且最低为 1。"]
+                                    if cfg["style"] in ("wide", "wide-compatible") else ["窄度量自动开销按已确认的带宽分档表推演。"])
+            upper = 65535 if proto == "ospf" else 16777214 if cfg["style"] in ("wide", "wide-compatible") else 63
             if cost is not None and (cost > upper or cost < (0 if loopback else 1)):
                 issue("invalid_cost", "接口开销超出当前协议支持范围。", cost_line, inst, iface)
                 cost = None
             binding = Binding(id=identity(inst.id, iface["id"], scope), device_id=device, instance_id=inst.id,
                               interface_id=iface["id"], scope=scope, passive=passive, network_type=network_type,
-                              cost=cost, metric_limit=upper, cost_origin="explicit" if explicit else "profile_default" if cost is not None else "unknown",
+                              cost=cost, metric_limit=upper, cost_origin="explicit" if explicit else "bandwidth_derived" if derived_cost and cost is not None else "profile_default" if cost is not None else "unknown",
+                              bandwidth_mbps=float(bandwidth) if bandwidth else None, cost_assumptions=assumptions,
+                              automatic_cost={"reference_bandwidth_mbps": cfg["reference_bandwidth"], "style": cfg["style"], "compatible": cfg["auto_compatible"]} if derived_cost else None,
                               hello=opt.get("hello", 10) if proto == "ospf" else None,
                               dead=opt.get("dead", 40) if proto == "ospf" else None,
-                              source_refs=list({r.line: r for r in [ref(ln), ref(cost_line), ref(type_line)]}.values()))
+                              source_refs=list({r.line: r for r in [ref(ln), ref(cost_line), ref(type_line)] +
+                                                ([ref(cfg["reference_line"])] if derived_cost else [])}.values()))
             facts.bindings.append(binding)
             for badline,statement in unsupported[proto]:
                 issue("unsupported_interface_command", f"{proto.upper()} 接口存在尚未支持的配置语义。", badline, inst, iface, statement=statement)

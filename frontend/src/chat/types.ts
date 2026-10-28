@@ -2,7 +2,7 @@ import type { Ref, Selection, GraphData } from "../types";
 import type { SimulationHighlight } from "../routingTypes";
 
 export type AgentBackend = "codex" | "opencode" | "openai";
-export const agentLabels: Record<AgentBackend, string> = { codex: "Codex", opencode: "OpenCode", openai: "OpenAI API" };
+export const agentLabels: Record<AgentBackend, string> = { codex: "Codex", opencode: "OpenCode", openai: "自定义 API" };
 export type AISettings = {
   backend: AgentBackend;
   model: string;

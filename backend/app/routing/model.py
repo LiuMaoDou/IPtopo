@@ -61,6 +61,12 @@ class Instance(Fact):
     source_refs: list[SourceRef] = Field(default_factory=list)
 
 
+class AutomaticCost(Fact):
+    reference_bandwidth_mbps: int | None = Field(default=None, gt=0)
+    style: Literal["wide", "wide-compatible", "narrow", "narrow-compatible", "compatible"]
+    compatible: bool = False
+
+
 class Binding(Fact):
     id: str
     device_id: str
@@ -70,7 +76,10 @@ class Binding(Fact):
     passive: bool = False
     network_type: Literal["p2p", "broadcast", "loopback", "unsupported"]
     cost: int | None = Field(default=None, ge=0, le=16777214)
-    cost_origin: Literal["explicit", "profile_default", "unknown"] = "unknown"
+    cost_origin: Literal["explicit", "profile_default", "bandwidth_derived", "unknown"] = "unknown"
+    bandwidth_mbps: float | None = Field(default=None, gt=0)
+    cost_assumptions: list[str] = Field(default_factory=list)
+    automatic_cost: AutomaticCost | None = None
     metric_limit: int = Field(default=16777214, ge=1, le=16777214)
     hello: int | None = None
     dead: int | None = None
@@ -127,6 +136,17 @@ class SimulationRequest(Fact):
     destination_advertisement_id: str
     scope: str = Field(min_length=1, max_length=64)
     scenario: Scenario = Field(default_factory=Scenario)
+    path_limit: int = Field(default=64, ge=1, le=256)
+
+
+class PortSimulationRequest(Fact):
+    """Manual interface endpoints; routing scope is resolved from saved facts."""
+    version: int = Field(ge=1)
+    source_device_id: str
+    source_interface_id: str
+    destination_device_id: str
+    destination_interface_id: str
+    protocol: Literal["ospf", "isis"] | None = None
     path_limit: int = Field(default=64, ge=1, le=256)
 
 

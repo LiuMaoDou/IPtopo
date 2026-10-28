@@ -1,6 +1,6 @@
 {
   "name": "iptopo-frontend",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "private": true,
   "type": "module",
   "scripts": {
@@ -17,7 +17,9 @@
     "cytoscape-edgehandles": "^4.0.1",
     "cytoscape-undo-redo": "^1.3.3",
     "elkjs": "^0.11.0",
-    "lucide-react": "^0.468.0"
+    "lucide-react": "^0.468.0",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "typescript": "^5.9.3",

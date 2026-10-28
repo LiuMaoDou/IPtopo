@@ -3,6 +3,7 @@ import { CheckCircle2, Copy, Plug, RefreshCw, Save } from "lucide-react";
 import { Modal } from "../Dialogs";
 import { api } from "../types";
 import { agentLabels, type AgentBackend, type AgentStatus, type AISettings } from "./types";
+import { applyApiPreset, detectApiPreset, type ApiPreset } from "./apiPresets";
 
 type MCPConnection = { url: string; token: string; expires_at: string; instructions: string; config: Record<string, unknown> };
 
@@ -10,6 +11,7 @@ export default function AgentSettings({ settings, projectId, onSaved, onStatus, 
   settings: AISettings; projectId: string; onSaved: (settings: AISettings) => void; onStatus: (status: AgentStatus) => void; onClose: () => void;
 }) {
   const [draft, setDraft] = useState(settings);
+  const [preset, setPreset] = useState<ApiPreset>(() => detectApiPreset(settings.api_url));
   const [saving, setSaving] = useState(false);
   const [probing, setProbing] = useState(false);
   const [error, setError] = useState("");
@@ -60,6 +62,9 @@ export default function AgentSettings({ settings, projectId, onSaved, onStatus, 
     <form className="chat-settings" onSubmit={event => void save(event)}>
       <p className="chat-help">Agent 通过只读查询工具获取当前项目事实，路径由 IPtopo 计算。配置、证据片段和对话可能发送到所选模型服务。</p>
       <label>默认 Agent<select aria-label="默认 AI Agent" value={draft.backend} onChange={event => update("backend", event.target.value as AgentBackend)}>{Object.entries(agentLabels).map(([id, label]) => <option value={id} key={id}>{label}</option>)}</select></label>
+      {draft.backend === "openai" && <label>服务商<select aria-label="API 服务商" value={preset} onChange={event => {
+        const selected = event.target.value as ApiPreset; setPreset(selected); setDraft(previous => applyApiPreset(previous, selected)); setStatus(null); setNotice("");
+      }}><option value="openai">OpenAI</option><option value="deepseek">DeepSeek</option><option value="custom">其他兼容服务</option></select></label>}
       <label>模型<input aria-label="AI 模型" value={draft.model} onChange={event => update("model", event.target.value)} placeholder={draft.backend === "openai" ? "填写服务支持的模型 ID" : "留空使用 Agent 默认模型"} /></label>
       <p className="chat-help">更换模型或默认 Agent 后，请新建对话。已有会话保留其 Agent 与模型。</p>
       {draft.backend === "codex" && <>
@@ -73,10 +78,11 @@ export default function AgentSettings({ settings, projectId, onSaved, onStatus, 
         <p className="chat-help">连接你已运行的 OpenCode 服务；服务端从指定环境变量读取口令。</p>
       </>}
       {draft.backend === "openai" && <>
-        <label>API 地址<input aria-label="OpenAI API 地址" type="url" value={draft.api_url} onChange={event => update("api_url", event.target.value)} required /></label>
+        <label>API 地址<input aria-label="模型 API 地址" type="url" value={draft.api_url} onChange={event => { update("api_url", event.target.value); setPreset(detectApiPreset(event.target.value)); }} required /></label>
         <label>API 协议<select aria-label="AI API 协议" value={draft.api_protocol} onChange={event => update("api_protocol", event.target.value as AISettings["api_protocol"])}><option value="auto">自动选择</option><option value="responses">Responses</option><option value="chat_completions">Chat Completions</option></select></label>
         <label>API Key 环境变量名<input aria-label="API Key 环境变量" value={draft.api_key_env} onChange={event => update("api_key_env", event.target.value)} pattern="[A-Za-z_][A-Za-z0-9_]*" required /></label>
-        <p className="chat-help">填环境变量名，无需在网页输入密钥。自建兼容服务需通过检测确认模型和工具调用能力。</p>
+        <p className="chat-help">支持 DeepSeek 及其他兼容 Responses / Chat Completions 的服务。密钥从 IPtopo 后端的环境变量读取。</p>
+        {preset === "deepseek" && <p className="chat-help">DeepSeek 使用非思考模式查询项目，模型可修改为服务支持的其他 ID。<a href="https://api-docs.deepseek.com/" target="_blank" rel="noopener noreferrer">官方接入说明</a></p>}
       </>}
       <label>单轮超时（秒）<input aria-label="AI 超时秒数" type="number" min={15} max={600} value={draft.timeout_seconds} onChange={event => update("timeout_seconds", Number(event.target.value))} required /></label>
       {error && <p className="chat-error" role="alert">{error}</p>}

@@ -886,8 +886,13 @@ async def _openai_chat(config, prompt, history, execute_tool, cancel, catalog):
                                  timeout=httpx.Timeout(config["timeout_seconds"], connect=10), trust_env=True) as client:
         for _ in range(8):
             calls, text, finished = {}, "", False
-            async with client.stream("POST", "chat/completions", json={"model": config["model"], "messages": messages,
-                        "tools": tools, "stream": True, "tool_choice": "auto"}) as response:
+            body = {"model": config["model"], "messages": messages,
+                    "tools": tools, "stream": True, "tool_choice": "auto"}
+            if urlsplit(config["api_url"]).hostname == "api.deepseek.com":
+                # This adapter stores final answers across turns, not private
+                # reasoning state required by DeepSeek's thinking tool protocol.
+                body["thinking"] = {"type": "disabled"}
+            async with client.stream("POST", "chat/completions", json=body) as response:
                 if response.status_code in {401, 403}:
                     raise ProviderError("模型服务认证失败，请检查配置的凭据环境变量", "authentication")
                 if response.is_error:

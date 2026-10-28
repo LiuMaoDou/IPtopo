@@ -22,6 +22,8 @@ import type {
   Evidence,
 } from "./types";
 import { statusName } from "./types";
+import InterfaceSpeed from "./InterfaceSpeed";
+import { interfaceLinkLabel } from "./linkEndpoints";
 export type Action = {
   type: string;
   target?: Record<string, unknown>;
@@ -35,6 +37,8 @@ type Props = {
   onSource: (r: Ref) => void;
   onAction: (a: Action) => void;
   onMutate: (m: Mutation) => void;
+  onSpeedChange: (interfaceId: string, mbps: number | null) => Promise<void>;
+  busy: boolean;
 };
 export default function Inspector({
   project,
@@ -43,8 +47,12 @@ export default function Inspector({
   onSource,
   onAction,
   onMutate,
+  onSpeedChange,
+  busy,
 }: Props) {
   const [tab, setTab] = useState("interfaces");
+  const [interfaceFilter, setInterfaceFilter] = useState({ selectionId: "", value: "" });
+  const interfaceQuery = interfaceFilter.selectionId === selection?.id ? interfaceFilter.value : "";
   const s = project.snapshot;
   if (!s || !selection)
     return (
@@ -64,7 +72,7 @@ export default function Inspector({
     const ids = new Set(selection.linkIds || []);
     const members = s.links.filter((link) => ids.has(link.id) && link.review_state !== "rejected");
     const devices = new Map(s.devices.map((device) => [device.id, device.hostname]));
-    const interfaces = new Map(s.interfaces.map((iface) => [iface.id, iface.raw_name]));
+    const interfaces = new Map(s.interfaces.map((iface) => [iface.id, iface]));
     return (
       <aside className="inspector">
         <div className="panel-heading">
@@ -78,9 +86,11 @@ export default function Inspector({
         <div className="inspector-content">
           {members.map((link) => (
             <button className="bundle-member" key={link.id} onClick={() => onSelect({ kind: "link", id: link.id })}>
-              <strong>{devices.get(link.device_a_id)} ↔ {devices.get(link.device_b_id)}</strong>
-              <span>{interfaces.get(link.interface_a_id || "") || "设备"} ↔ {interfaces.get(link.interface_b_id || "") || "设备"}</span>
-              <span>{link.prefixes.join(" · ") || "手工连接"}</span>
+              <span className="bundle-endpoint"><strong>{devices.get(link.device_a_id)}</strong>
+                <span>{interfaceLinkLabel(interfaces.get(link.interface_a_id), link.prefixes, link.families) || "设备"}</span></span>
+              <span className="bundle-endpoint"><strong>{devices.get(link.device_b_id)}</strong>
+                <span>{interfaceLinkLabel(interfaces.get(link.interface_b_id), link.prefixes, link.families) || "设备"}</span></span>
+              <small>{link.prefixes.length ? `网段 ${link.prefixes.join(" · ")}` : "手工连接"}</small>
               <small>{statusName(link.origin)} · {statusName(link.review_state)}</small>
             </button>
           ))}
@@ -164,6 +174,10 @@ export default function Inspector({
         · {statusName(i.admin_state)} · 运行态 {statusName(i.oper_state)}
       </div>
       {aggregateDetails(i)}
+      {kind === "interface" && iface?.id === i.id && i.kind !== "loopback" && <InterfaceSpeed
+        key={i.id} iface={i} bindings={s.routing?.bindings.filter(binding => binding.interface_id === i.id) || []}
+        disabled={busy} onSave={mbps => onSpeedChange(i.id, mbps)} />}
+      {kind !== "interface" && i.assumed_bandwidth_mbps && <small className="interface-speed-summary">仿真速率 {i.assumed_bandwidth_mbps / 1000} Gbit/s · 人工设置</small>}
       {i.addresses.map((a) => (
         <div className="address-row" key={a.id}>
           <span className={"af af" + a.family}>v{a.family}</span>
@@ -350,9 +364,12 @@ export default function Inspector({
             </button>
           </>
         ) : device ? (
-          s.interfaces
-            .filter((i) => i.device_id === device.id)
-            .map(interfaceCard)
+          <>
+            <input aria-label="筛选设备接口" className="interface-filter" placeholder="筛选接口名称或地址"
+              value={interfaceQuery} onChange={event => setInterfaceFilter({ selectionId: selection.id, value: event.target.value })} />
+            {s.interfaces.filter(i => i.device_id === device.id && (!interfaceQuery ||
+              `${i.raw_name} ${i.addresses.map(address => address.address).join(" ")}`.toLowerCase().includes(interfaceQuery.toLowerCase()))).map(interfaceCard)}
+          </>
         ) : iface ? (
           <>
             {interfaceCard(iface)}

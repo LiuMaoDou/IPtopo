@@ -5,22 +5,19 @@ import {
   Download,
   Plus,
   CheckCircle2,
-  Save,
-  LayoutGrid,
   GitBranch,
   ChevronDown,
-  RefreshCw,
   FolderOpen,
   X,
-  Link2,
   Play,
   AlertCircle,
   Route,
   MessageSquare,
 } from "lucide-react";
 import Graph, { type GraphHandle } from "./Graph";
-import { indexTopology, filterTopology } from "./graphModel";
+import { deviceView, indexTopology, filterTopology } from "./graphModel";
 import Inventory from "./Inventory";
+import ResizableWorkspace from "./ResizableWorkspace";
 import Inspector, { type Action } from "./Inspector";
 import ActionDialog, { DomainDialog, Modal, SourceDialog } from "./Dialogs";
 import Diagnostics from "./Diagnostics";
@@ -93,7 +90,6 @@ export default function App() {
     [onlySelected, setOnlySelected] = useState(false),
     [saved, setSaved] = useState(true),
     [exportOpen, setExportOpen] = useState(false),
-    [viewSettings, setViewSettings] = useState(false),
     [includeSources, setIncludeSources] = useState(false),
     [history, setHistory] = useState<{
       title: string;
@@ -109,21 +105,19 @@ export default function App() {
     viewRef = useRef(view),
     queue = useRef<Promise<unknown>>(Promise.resolve()),
     saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null),
-    modeRef = useRef("device"),
     loadToken = useRef(0),
     pollToken = useRef(0),
     transientGeneration = useRef(0);
   projectRef.current = project;
   viewRef.current = view;
-  modeRef.current = filters.mode;
   const importing = !!job && ["running", "queued", "pending", "cancelling"].includes(job.status);
   const contextUpdating = importStarting || importing;
   const simulationRevision = `${simulationContextKey(project)}:${simulationEpoch}`;
-  const resetTransientContext = useCallback(() => {
+  const resetTransientContext = useCallback((preserveSelection = false) => {
     transientGeneration.current++;
     setSimulationEpoch(value => value + 1);
-    setSimulationEndpoints(emptySimulationEndpoints());
-    setSimulation(null); setSelection(null); setSource(null); setHistory(null);
+    if (!preserveSelection) { setSimulationEndpoints(emptySimulationEndpoints()); setSelection(null); }
+    setSimulation(null); setSource(null); setHistory(null);
     setLsdbGraph(null); setLsdbHighlight(null); setLsdbBatchId(""); setLsdbView(blankView("lsdb"));
     setChatHighlight(null); setChatGraph(null); setChatFocus(null); setChatBatchId("");
     setFilters(previous => previous.focus ? { ...previous, focus: "" } : previous);
@@ -132,6 +126,7 @@ export default function App() {
     const current = projectRef.current;
     if (contextUpdating || !current?.snapshot?.devices.some(device => device.id === deviceId)) return;
     setSimulationEndpoints(previous => assignSimulationDevice(previous, role, deviceId));
+    setFilters(previous => ({ ...initialFilters, mode: previous.mode }));
     setSimulation(null); setChatHighlight(null); setChatFocus(null); setChatGraph(null); setChatBatchId("");
     setSelection({ kind: "device", id: deviceId });
     setChatOpen(false); setLsdbOpen(false); setSimulationOpen(true);
@@ -162,8 +157,8 @@ export default function App() {
     setToast(message);
     setTimeout(() => setToast(""), 3500);
   };
-  const updateProject = (p: Project) => {
-    if (simulationContextKey(projectRef.current) !== simulationContextKey(p)) resetTransientContext();
+  const updateProject = (p: Project, preserveSelection = false) => {
+    if (simulationContextKey(projectRef.current) !== simulationContextKey(p)) resetTransientContext(preserveSelection);
     projectRef.current = p;
     setProject(p);
     setProjects((prev) =>
@@ -187,31 +182,22 @@ export default function App() {
           ],
     );
   };
-  const loadProject = async (id: string, mode?: string) => {
+  const loadProject = async (id: string) => {
     const token = ++loadToken.current;
     if (projectRef.current?.id !== id) resetTransientContext();
     setBusy(true);
     setError("");
     try {
       const p = await api<Project>(
-        `/api/projects/${id}?mode=${mode || modeRef.current}`,
+        `/api/projects/${id}?mode=device`,
       );
       if (token !== loadToken.current) return;
       updateProject(p);
       setSelection(null);
-      if (!mode) {
-        const v = p.views[0] || blankView();
-        setView(v);
-        viewRef.current = v;
-        const f = { ...initialFilters, ...v.filters };
-        setFilters(f);
-        if (f.mode !== (mode || modeRef.current)) {
-          const corrected = await api<Project>(
-            `/api/projects/${id}?mode=${f.mode}`,
-          );
-          if (token === loadToken.current) updateProject(corrected);
-        }
-      }
+      const v = deviceView(p.views[0] || blankView());
+      setView(v);
+      viewRef.current = v;
+      setFilters({ ...initialFilters, ...v.filters, mode: "device" });
       const running = p.jobs?.find((j) =>
         ["running", "queued", "pending", "cancelling"].includes(j.status),
       );
@@ -268,14 +254,10 @@ export default function App() {
               version: projectRef.current.version,
             }),
           });
-          if (modeRef.current === "segment") {
-            const corrected = await api<Project>(
-              `/api/projects/${id}?mode=segment`,
-            );
-            updateProject(corrected);
-            return corrected;
-          }
-          updateProject(p);
+          if (projectRef.current?.id !== id) throw new Error("项目已切换，修改已保存到原项目。");
+          const preserveSelection = body.operation === "override_field"
+            && (body.target as { field?: string } | undefined)?.field === "assumed_bandwidth_mbps";
+          updateProject(p, preserveSelection);
           return p;
         });
       queue.current = task;
@@ -301,6 +283,15 @@ export default function App() {
         notify("人工修正已保存");
       })
       .catch(showError);
+  };
+  const saveInterfaceSpeed = async (interfaceId: string, mbps: number | null) => {
+    if (contextUpdating) throw new Error("项目正在更新，请完成后再修改速率。");
+    const changed = await mutate("/overrides", {
+      operation: "override_field", target: { kind: "interface", id: interfaceId, field: "assumed_bandwidth_mbps" },
+      value: { value: mbps }, reason: mbps === null ? "界面恢复自动速率推演" : `界面人工确认仿真速率 ${mbps / 1000} Gbit/s，作为配置推演假设`,
+    });
+    checkOverride(changed);
+    notify("速率已保存，开销已重算");
   };
   const saveView = useCallback(async (v: View) => {
     const id = projectRef.current?.id;
@@ -370,9 +361,6 @@ export default function App() {
     const f = { ...filters, [key]: value };
     setFilters(f);
     viewChanged({ ...graph.current?.capture(), filters: f });
-    if (key === "mode" && project) {
-      void loadProject(project.id, value);
-    }
   };
   const ensureProject = async () => {
     if (projectRef.current) return projectRef.current;
@@ -414,7 +402,7 @@ export default function App() {
           try {
             if (projectRef.current?.id === id) {
               const p = await api<Project>(
-                `/api/projects/${id}?mode=${modeRef.current}`,
+                `/api/projects/${id}?mode=device`,
               );
               if (token !== pollToken.current || projectRef.current?.id !== id) return;
               updateProject(p);
@@ -504,18 +492,6 @@ export default function App() {
       });
       await loadProject(p.id);
       notify("项目已恢复");
-      return;
-    }
-    if (a.type === "view") {
-      const next = {
-        ...viewRef.current,
-        ...graph.current?.capture(),
-        id: crypto.randomUUID(),
-        name: v.name,
-        filters,
-      };
-      await saveView(next);
-      setView(next);
       return;
     }
     let target = a.target || {},
@@ -667,7 +643,7 @@ export default function App() {
       };
       await saveView(latest);
       const a = document.createElement("a");
-      a.href = `/api/projects/${project.id}/exports/${format}?view_id=${encodeURIComponent(latest.id)}&include_sources=${includeSources}&mode=${filters.mode}`;
+      a.href = `/api/projects/${project.id}/exports/${format}?view_id=${encodeURIComponent(latest.id)}&include_sources=${includeSources}&mode=device`;
       a.download = "";
       a.click();
     } catch (e) {
@@ -710,9 +686,6 @@ export default function App() {
       if (token === transientGeneration.current) showError(e);
     }
   };
-  const activeViewOptions = project?.views.some((v) => v.id === view.id)
-    ? project.views
-    : [view, ...(project?.views || [])];
   return (
     <div className="app-shell">
       <header className="app-header">
@@ -815,24 +788,6 @@ export default function App() {
         <button disabled={!project} className={simulationOpen && !chatOpen ? "active" : ""} onClick={() => { setChatOpen(false); clearChatHighlight(); setChatGraph(null); setSimulationOpen(!simulationOpen); setLsdbOpen(false); setSimulation(null); }}><Route size={16} />路径仿真</button>
         <button disabled={!project} className={lsdbOpen && !chatOpen ? "active" : ""} onClick={() => { setLsdbOpen(chatOpen ? true : !lsdbOpen); setChatOpen(false); clearChatHighlight(); setChatGraph(null); setSimulationOpen(false); setSelection(null); }}>LSDB 拓扑</button>
         <button disabled={!project} className={chatOpen ? "active" : ""} onClick={() => { setChatOpen(!chatOpen); setSimulationOpen(false); setSimulation(null); clearChatHighlight(); setChatGraph(null); setChatBatchId(""); }}><MessageSquare size={16} />AI 对话</button>
-        <div className="segmented">
-          <button
-            disabled={lsdbOpen}
-            className={filters.mode === "device" ? "active" : ""}
-            onClick={() => setFilter("mode", "device")}
-          >
-            <LayoutGrid size={16} />
-            设备视图
-          </button>
-          <button
-            disabled={lsdbOpen}
-            className={filters.mode === "segment" ? "active" : ""}
-            onClick={() => setFilter("mode", "segment")}
-          >
-            <GitBranch size={16} />
-            网段视图
-          </button>
-        </div>
         <select
           aria-label="地址族筛选"
           disabled={lsdbOpen}
@@ -870,25 +825,6 @@ export default function App() {
           ))}
         </select>
         <div className="toolbar-spacer" />
-        <button
-          title="重新推断拓扑"
-          aria-label="重新推断拓扑"
-          disabled={lsdbOpen || !project?.snapshot || importing}
-          onClick={() =>
-            void mutate("/infer", {})
-              .then(() => notify("推断已更新"))
-              .catch(showError)
-          }
-        >
-          <RefreshCw size={16} />
-        </button>
-        <button
-          title="手工添加链路"
-          onClick={() => openAction({ type: "force_link" })}
-          disabled={lsdbOpen || !project?.snapshot}
-        >
-          <Link2 size={16} />
-        </button>
         <div className="layout-control">
           <select
             aria-label="布局算法"
@@ -921,13 +857,6 @@ export default function App() {
           />
           选中
         </label>
-        <button
-          onClick={() => openAction({ type: "view" })}
-          disabled={!project || lsdbOpen}
-        >
-          <Save size={15} />
-          <span>保存视图</span>
-        </button>
       </div>
       {error && (
         <div className="error-banner" role="alert">
@@ -981,7 +910,7 @@ export default function App() {
           )}
         </div>
       )}
-      <main className={`workspace ${simulationOpen || lsdbOpen ? "simulating" : ""} ${chatOpen ? "chatting" : ""}`}>
+      <ResizableWorkspace mode={chatOpen ? "chat" : lsdbOpen ? "lsdb" : simulationOpen ? "simulation" : "inspector"}>
         {project ? (
           <Inventory
             devices={inventoryDevices}
@@ -1027,97 +956,18 @@ export default function App() {
                 台设备 · {lsdbOpen ? displayedLsdbGraph?.edges.length || 0 : filtered.edges.length} 条{lsdbOpen ? "有向关系" : "关系"}
               </small>
             </div>
-            <button
-              className="text-button"
-              disabled={
-                lsdbOpen || !filters.focus &&
-                (!selection || !["device", "segment"].includes(selection.kind))
-              }
-              onClick={() =>
-                setFilter("focus", filters.focus ? "" : selection?.id || "")
-              }
-            >
-              {filters.focus ? "显示全部" : "聚焦相邻"}
-            </button>
-            <button
-              className="text-button view-settings-button"
-              disabled={lsdbOpen}
-              onClick={() => setViewSettings(!viewSettings)}
-            >
-              显示设置
-            </button>
-            <select
-              aria-label="切换命名视图"
-          disabled={lsdbOpen}
-              value={view.id}
-              onChange={(e) => {
-                const selected = project?.views.find(
-                  (v) => v.id === e.target.value,
-                );
-                if (selected)
-                  void flushView()
-                    .then(() => {
-                      setView(selected);
-                      viewRef.current = selected;
-                      const f = { ...initialFilters, ...selected.filters };
-                      setFilters(f);
-                      if (f.mode !== filters.mode && project)
-                        void loadProject(project.id, f.mode);
-                    })
-                    .catch(showError);
-              }}
-            >
-              {activeViewOptions.map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.name}
-                </option>
-              ))}
-            </select>
           </div>
-          {viewSettings && !lsdbOpen && (
-            <div className="view-settings">
-              <label>
-                分组
-                <select
-                  aria-label="节点分组"
-                  value={String(view.groups.mode || "none")}
-                  onChange={(e) =>
-                    viewChanged({ groups: { mode: e.target.value } })
-                  }
-                >
-                  <option value="none">不分组</option>
-                  <option value="vendor">按厂商</option>
-                  <option value="site">按站点</option>
-                </select>
-              </label>
-              {[
-                ["names", "设备名称"],
-
-                ["prefixes", "链路前缀"],
-              ].map(([key, label]) => (
-                <label key={key}>
-                  <input
-                    type="checkbox"
-                    checked={view.labels[key] !== false}
-                    onChange={(e) =>
-                      viewChanged({
-                        labels: { ...view.labels, [key]: e.target.checked },
-                      })
-                    }
-                  />
-                  {label}
-                </label>
-              ))}
-            </div>
-          )}
           <Graph
             ref={graph}
             key={`${project?.id || "empty"}:${lsdbOpen ? "lsdb" : "config"}:${(project?.topology.nodes.length || 0) > 300 ? "large" : "normal"}`}
             data={lsdbOpen ? displayedLsdbGraph || { nodes: [], edges: [] } : filtered}
+            snapshot={lsdbOpen ? null : project?.snapshot}
             readOnly={lsdbOpen}
             simulation={chatOpen ? chatHighlight : lsdbOpen ? lsdbHighlight : simulationOpen ? simulation : null}
+            simulationEndpoints={!chatOpen && !lsdbOpen ? simulationEndpoints : null}
             emphasis={chatOpen ? chatFocus : null}
             focusId={lsdbOpen ? undefined : filters.focus}
+            onToggleFocus={lsdbOpen ? undefined : () => setFilter("focus", filters.focus ? "" : selection?.id || "")}
             largeGraph={(project?.topology.nodes.length || 0) > 300}
             view={lsdbOpen ? lsdbView : view}
             selection={selection}
@@ -1161,11 +1011,11 @@ export default function App() {
             onSource={reference => void openSource(reference)} onAction={chatAction} onClearHighlight={clearChatHighlight}
             onClose={() => { setChatOpen(false); clearChatHighlight(); setChatGraph(null); setChatBatchId(""); }} />
         </Suspense> : project && lsdbOpen ? null : project && simulationOpen ? (
-          <SimulationPanel key={simulationRevision} project={project} endpoints={simulationEndpoints} onEndpoints={setSimulationEndpoints} busy={busy || contextUpdating}
-            onHighlight={setSimulation} onSource={(r) => void openSource(r)}
-            onClose={() => { setSimulationOpen(false); setSimulation(null); }}
-            onReveal={() => { setFilters({ ...initialFilters, mode: filters.mode }); }}
-            onDemo={() => void igpDemo()} />
+          <SimulationPanel key={simulationRevision} project={project} endpoints={simulationEndpoints}
+            onEndpoints={value => { setSimulationEndpoints(value); setFilters(previous => ({ ...initialFilters, mode: previous.mode })); }} busy={busy || contextUpdating}
+            onHighlight={value => { setSimulation(value); if (value) setFilters(previous => ({ ...initialFilters, mode: previous.mode })); }} onSource={(r) => void openSource(r)}
+            onInterface={id => { setSimulationOpen(false); setSimulation(null); setSelection({ kind: "interface", id }); }}
+            onClose={() => { setSimulationOpen(false); setSimulation(null); }} />
         ) : project ? (
           <Inspector
             project={project}
@@ -1174,6 +1024,8 @@ export default function App() {
             onSource={(r) => void openSource(r)}
             onAction={openAction}
             onMutate={mutateSafe}
+            onSpeedChange={saveInterfaceSpeed}
+            busy={busy || contextUpdating}
           />
         ) : (
           <aside className="inspector empty-inspector">
@@ -1185,7 +1037,7 @@ export default function App() {
             </div>
           </aside>
         )}
-      </main>
+      </ResizableWorkspace>
       {project && (
         <Diagnostics
           project={project}

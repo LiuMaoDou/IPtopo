@@ -349,7 +349,6 @@ export default function ActionDialog({
         {
           import: "导入设备配置",
           project: "新建项目",
-          view: "保存命名视图",
           force_link: "添加手工链路",
           add_device: "添加设备",
           restore: "恢复 JSON 项目",
@@ -448,8 +447,6 @@ export default function ActionDialog({
             {field("description", "说明", "可选", false)}
           </>
         )}
-        {action.type === "view" &&
-          field("name", "视图名称", "例如：双栈核心拓扑")}
         {action.type === "add_device" && (
           <>
             {field("hostname", "设备名称")}

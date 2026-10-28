@@ -234,6 +234,7 @@ def test_chat_api_executes_only_registered_tools_and_continues_with_result(monke
     def handler(request):
         body=json.loads(request.content);calls.append(body)
         assert request.url.path == "/v1/chat/completions"
+        assert "thinking" not in body
         if len(calls)==1:
             events=[{"choices":[{"delta":{"tool_calls":[{"index":0,"id":"tool-1","function":{"name":"network_","arguments":"{"}}]}}]},
                     {"choices":[{"delta":{"tool_calls":[{"index":0,"function":{"name":"summary","arguments":"}"}}]},"finish_reason":"tool_calls"}]}]
@@ -246,6 +247,38 @@ def test_chat_api_executes_only_registered_tools_and_continues_with_result(monke
     events=asyncio.run(collect(Settings(backend="openai",model="example",api_url="https://models.example/v1").model_dump()))
     assert "".join(e.get("text","") for e in events)=="6 台设备"
     assert [e["status"] for e in events if e["type"]=="tool"]==["running","completed"]
+
+
+@pytest.mark.parametrize("base_path", ["", "/v1"])
+def test_deepseek_auto_protocol_streaming_tool_loop_and_followup(monkeypatch, base_path):
+    calls=[]
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "DEEPSEEK-TEST-KEY")
+    def handler(request):
+        body=json.loads(request.content); calls.append(body)
+        assert request.url.host == "api.deepseek.com"
+        assert request.url.path == base_path + "/chat/completions"
+        assert request.headers["Authorization"] == "Bearer DEEPSEEK-TEST-KEY"
+        assert body["model"] == "deepseek-flash"
+        assert body["thinking"] == {"type": "disabled"}
+        assert body["stream"] and body["tools"][0]["function"]["name"] == "network_summary"
+        if len(calls) == 1:
+            events=[{"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call-ds","type":"function","function":{"name":"network_summary","arguments":"{}"}}]},"finish_reason":"tool_calls"}]}]
+        else:
+            if len(calls) == 2:
+                assert body["messages"][-1]["tool_call_id"] == "call-ds"
+                assert json.loads(body["messages"][-1]["content"])["data"]["device_count"] == 6
+            else:
+                assert body["messages"][-2] == {"role":"assistant", "content":"6 台设备"}
+            events=[{"choices":[{"delta":{"content":"6 台设备"},"finish_reason":"stop"}]}]
+        return httpx.Response(200, text=chat_sse(events))
+    mock_http(monkeypatch, handler)
+    config=Settings(backend="openai", model="deepseek-flash", api_url="https://api.deepseek.com"+base_path,
+                    api_key_env="DEEPSEEK_API_KEY").model_dump()
+    first=asyncio.run(collect(config))
+    followup=asyncio.run(collect(config, history=[{"role":"assistant", "content":"6 台设备"}]))
+    assert first[-1] == followup[-1] == {"type":"done"}
+    assert "".join(e.get("text", "") for e in first) == "6 台设备"
+    assert len(calls) == 3
 
 
 @pytest.mark.parametrize("name,arguments,code",[("shell","{}","tool_scope"),("network_summary","[]","tool_arguments"),("network_summary","broken","tool_arguments")])

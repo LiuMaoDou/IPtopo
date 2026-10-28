@@ -10,28 +10,37 @@ import cytoscape, {
   type Core,
   type Layouts,
   type NodeSingular,
+  type EdgeSingular,
 } from "cytoscape";
 import edgehandles from "cytoscape-edgehandles";
 import undoRedo from "cytoscape-undo-redo";
 import {
   Plus,
   Minus,
-  Maximize,
+  LocateFixed,
   Undo2,
   Redo2,
   Pin,
   Link2,
   MousePointer2,
+  Focus,
+  SlidersHorizontal,
   Network,
   X,
 } from "lucide-react";
-import type { GraphData, View, Selection } from "./types";
+import type { GraphData, View, Selection, Snapshot } from "./types";
 import { parallelLinks, placeMissingNodes } from "./graphModel";
+import { indexInterfaceCosts, linkCostLabels } from "./linkCosts";
+import { canvasEndpointLabel, linkEndpointLabels } from "./linkEndpoints";
 import { segmentIcon, vendorStyle, vendors } from "./vendorIcons";
 import type { SimulationHighlight } from "./routingTypes";
-import type { SimulationEndpointRole } from "./simulationModel";
+import { simulationHopsByEdge, type SimulationEndpointRole, type SimulationEndpoints } from "./simulationModel";
 cytoscape.use(edgehandles);
 cytoscape.use(undoRedo);
+const endpointOffset = (edge: EdgeSingular) => {
+  const a = edge.source().position(), b = edge.target().position();
+  return Math.max(25, Math.hypot(a.x - b.x, a.y - b.y) * 0.18);
+};
 export type GraphHandle = {
   layout: (name: string, selected?: boolean) => void;
   png: () => void;
@@ -42,10 +51,13 @@ export type GraphHandle = {
 };
 type Props = {
   data: GraphData;
+  snapshot?: Snapshot | null;
   readOnly?: boolean;
   simulation?: SimulationHighlight | null;
+  simulationEndpoints?: SimulationEndpoints | null;
   emphasis?: { deviceIds: string[]; linkIds: string[] } | null;
   focusId?: string;
+  onToggleFocus?: () => void;
   largeGraph?: boolean;
   view: View;
   selection: Selection;
@@ -59,10 +71,13 @@ type Props = {
 export default forwardRef<GraphHandle, Props>(function Graph(
   {
     data,
+    snapshot,
     readOnly = false,
     simulation = null,
+    simulationEndpoints = null,
     emphasis = null,
     focusId,
+    onToggleFocus,
     largeGraph = false,
     view,
     selection,
@@ -102,11 +117,16 @@ export default forwardRef<GraphHandle, Props>(function Graph(
   const [expandedBundles, setExpandedBundles] = useState<Set<string>>(() => new Set());
   const [contextMenu, setContextMenu] = useState<{ deviceId: string; label: string; x: number; y: number } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const settingsRef = useRef<HTMLDivElement>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const display = useMemo(() => {
     if (readOnly) return { ...data, bundles: new Map<string, GraphData["edges"]>() };
-    const normal = parallelLinks(data, expandedBundles);
-    return simulation ? parallelLinks(data, new Set(normal.bundles.keys())) : normal;
-  }, [data, expandedBundles, simulation, readOnly]);
+    return parallelLinks(data, expandedBundles);
+  }, [data, expandedBundles, readOnly]);
+  const interfaceCosts = useMemo(() => indexInterfaceCosts(readOnly ? null : snapshot), [snapshot, readOnly]);
+  const costLabels = useMemo(() => linkCostLabels(display.edges, display.bundles, interfaceCosts), [display, interfaceCosts]);
+  const interfaces = useMemo(() => new Map(snapshot?.interfaces.map(iface => [iface.id, iface])), [snapshot]);
+  const endpointLabels = useMemo(() => linkEndpointLabels(display.edges, interfaces), [display, interfaces]);
   const bundleRef = useRef(display.bundles);
   bundleRef.current = display.bundles;
   callbacks.current = { onSelect, onChange, onConnect, onError, onSimulationEndpoint };
@@ -121,6 +141,14 @@ export default forwardRef<GraphHandle, Props>(function Graph(
     return () => { document.removeEventListener("pointerdown", dismiss); document.removeEventListener("keydown", escape); };
   }, [contextMenu]);
   const canChooseEndpoint = !!onSimulationEndpoint;
+  useEffect(() => {
+    if (!settingsOpen) return;
+    const dismiss = (event: PointerEvent) => {
+      if (!settingsRef.current?.contains(event.target as Node)) setSettingsOpen(false);
+    };
+    document.addEventListener("pointerdown", dismiss);
+    return () => document.removeEventListener("pointerdown", dismiss);
+  }, [settingsOpen]);
   useEffect(() => { setContextMenu(null); }, [data, canChooseEndpoint]);
   const capture = (): Partial<View> => {
     const cy = cyRef.current;
@@ -624,6 +652,26 @@ export default forwardRef<GraphHandle, Props>(function Graph(
           style: { "curve-style": "bezier", "control-point-step-size": 60 },
         },
         {
+          selector: "edge[expanded_bundle = 1]",
+          style: {
+            "control-point-step-size": edge => edge.data("parallel_spacing"),
+            label: "data(displayLabel)",
+            "font-size": 13,
+            "min-zoomed-font-size": 0,
+            "text-background-color": "#fff",
+            "text-background-opacity": 1,
+            "text-background-padding": "5px",
+            "text-background-shape": "roundrectangle",
+            "text-border-color": "#d5e2e7",
+            "text-border-width": 1,
+            "text-border-opacity": 1,
+            "text-margin-y": 0,
+            color: "#24424f",
+          },
+        },
+        { selector: "edge.lod-compact[expanded_bundle = 1]", style: { "font-size": 16 } },
+        { selector: "edge.lod-overview[expanded_bundle = 1]", style: { label: "" } },
+        {
           selector: "edge[link_count]",
           style: {
             width: "data(bundle_width)",
@@ -640,6 +688,45 @@ export default forwardRef<GraphHandle, Props>(function Graph(
           style: { "min-zoomed-font-size": 0 },
         },
         {
+          selector: "edge[cost_visible = 1]",
+          style: {
+            label: "data(displayLabel)",
+            "source-label": "data(source_cost_label)", "target-label": "data(target_cost_label)",
+            "source-text-offset": 65, "target-text-offset": 65,
+            "source-text-margin-y": -12, "target-text-margin-y": -12,
+            "source-text-rotation": "autorotate", "target-text-rotation": "autorotate",
+            "min-zoomed-font-size": 0, "font-size": 13,
+          },
+        },
+        { selector: "edge.lod-compact[cost_visible = 1]", style: { "font-size": 16 } },
+        { selector: "edge.large-graph[cost_visible = 1], edge.lod-overview[cost_visible = 1]", style: {
+          label: "", "source-label": "", "target-label": "",
+        } },
+        { selector: "edge[cost_visible = 1]:selected", style: {
+          label: "data(displayLabel)", "source-label": "data(source_detail_label)", "target-label": "data(target_detail_label)",
+          "min-zoomed-font-size": 0,
+        } },
+        {
+          selector: "edge[endpoint_visible = 1], edge[has_endpoints = 1]:selected",
+          style: {
+            label: "data(endpoint_center_label)",
+            "source-label": "data(source_detail_label)", "target-label": "data(target_detail_label)",
+            "source-text-offset": (edge: EdgeSingular) => edge.data("endpoint_offset"), "target-text-offset": (edge: EdgeSingular) => edge.data("endpoint_offset"),
+            "source-text-margin-y": 0, "target-text-margin-y": 0,
+            "source-text-rotation": "autorotate", "target-text-rotation": "autorotate",
+            "text-max-width": "200px", "text-overflow-wrap": "anywhere",
+            "text-background-color": "#fff", "text-background-opacity": 1,
+            "text-background-padding": "4px", "text-margin-y": 0,
+            "min-zoomed-font-size": 0,
+          },
+        },
+        { selector: "edge.lod-overview[endpoint_visible = 1]:unselected, edge.large-graph[endpoint_visible = 1]:unselected", style: {
+          label: "", "source-label": "", "target-label": "",
+        } },
+        { selector: "edge[has_endpoints = 1][expanded_bundle = 0]:selected", style: {
+          "source-text-margin-y": -60, "target-text-margin-y": 60,
+        } },
+        {
           selector: ".eh-preview, .eh-ghost-edge",
           style: { "line-color": "#087f80", "target-arrow-color": "#087f80" },
         },
@@ -649,6 +736,13 @@ export default forwardRef<GraphHandle, Props>(function Graph(
         { selector: 'node[mapping_status="config_only"]', style: { "border-style": "dashed", "opacity": 0.65 } },
         { selector: ".simulation-muted", style: { opacity: 0.22 } },
         { selector: "node.simulation-endpoint", style: { "border-width": 4, "border-color": "#087f80", "background-color": "#d6f4ed" } },
+        { selector: "node.simulation-source, node.simulation-destination", style: {
+          "border-width": 4, label: "data(simulationEndpointLabel)", "min-zoomed-font-size": 0,
+          "text-background-color": "#fff", "text-background-opacity": 0.95, "text-background-padding": "3px",
+        } },
+        { selector: "node.simulation-source", style: { "border-color": "#087f80", "background-color": "#d6f4ed" } },
+        { selector: "node.simulation-destination", style: { "border-color": "#bb642b", "background-color": "#fff0dd" } },
+        { selector: "node.simulation-source.simulation-destination", style: { "border-color": "#7960a8", "background-color": "#eee7fa" } },
         { selector: "edge.simulation-route", style: {
           "line-color": "#087f80", "target-arrow-color": "#087f80", "source-arrow-color": "#087f80",
           width: 4, label: "data(simulationLabel)", "font-size": 12, "min-zoomed-font-size": 0,
@@ -657,6 +751,9 @@ export default forwardRef<GraphHandle, Props>(function Graph(
         } },
         { selector: "edge.simulation-forward", style: { "target-arrow-shape": "triangle" } },
         { selector: "edge.simulation-reverse", style: { "source-arrow-shape": "triangle" } },
+        { selector: "edge.simulation-route[endpoint_visible = 1], edge.simulation-route[has_endpoints = 1]:selected", style: {
+          "source-label": "data(source_endpoint_label)", "target-label": "data(target_endpoint_label)",
+        } },
         { selector: ".chat-emphasis-muted", style: { opacity: 0.24 } },
         { selector: "node.chat-entity-focus", style: { "border-color": "#087f80", "border-width": 3, "background-color": "#e2f5f0", "text-opacity": 1 } },
         { selector: "edge.chat-entity-focus", style: { "line-color": "#087f80", "width": 4, "target-arrow-color": "#087f80" } },
@@ -748,6 +845,9 @@ export default forwardRef<GraphHandle, Props>(function Graph(
       if (e.target === cy) callbacks.current.onSelect(null);
     });
     cy.on("dragfree", save);
+    cy.on("position", "node", event => {
+      event.target.connectedEdges().forEach((edge: EdgeSingular) => edge.data("endpoint_offset", endpointOffset(edge)));
+    });
     cy.on("pan", save);
     cy.on("zoom", () => {
       if (zoomFrame.current !== null) return;
@@ -758,18 +858,8 @@ export default forwardRef<GraphHandle, Props>(function Graph(
         save();
       });
     });
-    let previousWidth = container.current!.clientWidth;
     const resize = new ResizeObserver(() => {
       cy.resize();
-      const width = container.current?.clientWidth || 0;
-      if (
-        width > 0 &&
-        previousWidth > 0 &&
-        Math.abs(width - previousWidth) > 150 &&
-        cy.nodes().length
-      )
-        cy.fit(undefined, 40);
-      if (width > 0) previousWidth = width;
     });
     resize.observe(container.current!);
     return () => {
@@ -794,7 +884,7 @@ export default forwardRef<GraphHandle, Props>(function Graph(
       ":" +
       String(view.labels.names) +
       ":" +
-      String(view.labels.prefixes);
+      String(view.labels.prefixes) + ":" + String(view.labels.costs);
     const groups = new Map<
       string,
       { id: string; label: string; kind: string }
@@ -865,14 +955,45 @@ export default forwardRef<GraphHandle, Props>(function Graph(
         if (view.pinned.includes(n.id)) cy.$id(n.id).lock();
         rendered.current.set(n.id, { source, presentation });
       }
+      const edgeLabels = new Map(display.edges.map(e => {
+        const costLabel = view.labels.costs !== false ? costLabels.get(e.id) : undefined;
+        const expanded = !!e.bundle_id && !e.link_count;
+        const rawEndpoint = endpointLabels.get(e.id)!;
+        const endpoint = { source: canvasEndpointLabel(rawEndpoint.source), target: canvasEndpointLabel(rawEndpoint.target) };
+        const hasEndpoints = !!(endpoint.source || endpoint.target);
+        const showEndpoints = view.labels.prefixes !== false && expanded && hasEndpoints;
+        const baseLabel = e.link_count ? e.label : view.labels.prefixes === false ? "" : e.prefixes?.map((prefix: string) => `网段 ${prefix}`).join("\n") || e.label || "";
+        const unavailable = expanded && view.labels.costs !== false && !costLabel && e.families?.length && !e.families.includes(4)
+          ? "IPv6 · Cost 未解析" : "";
+        const center = costLabel?.center || unavailable;
+        return [e.id, { costLabel, expanded, endpoint, hasEndpoints, showEndpoints, center,
+          displayLabel: [showEndpoints ? "" : baseLabel, center].filter(Boolean).join("\n"),
+          sourceDetail: [endpoint.source || e.source_label, costLabel?.source].filter(Boolean).join("\n"),
+          targetDetail: [endpoint.target || e.target_label, costLabel?.target].filter(Boolean).join("\n"),
+        }];
+      }));
+      // A quadratic curve's midpoint moves half its control-point distance.
+      // Give every member the same spacing, sized for the tallest label in its bundle.
+      const bundleSpacing = new Map<string, number>();
+      for (const e of display.edges) {
+        const labels = edgeLabels.get(e.id)!;
+        if (!labels.expanded) continue;
+        const rows = Math.max(...[labels.displayLabel, labels.sourceDetail, labels.targetDetail]
+          .map(text => text.split("\n").reduce((total, line) => total + Math.max(1, Math.ceil(line.length / 22)), 0)));
+        bundleSpacing.set(e.bundle_id!, Math.max(bundleSpacing.get(e.bundle_id!) || 144, (rows * 18 + 20) * 2));
+      }
       for (const e of display.edges) {
         if (!cy.$id(e.source).length || !cy.$id(e.target).length) continue;
         const edge = cy.$id(e.id),
           previous = rendered.current.get(e.id);
+        const labels = edgeLabels.get(e.id)!;
+        const costLabel = labels.costLabel;
+        const parallelSpacing = bundleSpacing.get(e.bundle_id || "") || 60;
+        const edgePresentation = `${presentation}:${labels.displayLabel}:${labels.sourceDetail}:${labels.targetDetail}:${parallelSpacing}:${labels.showEndpoints}`;
         if (
           edge.length &&
           previous?.source === e &&
-          previous.presentation === presentation
+          previous.presentation === edgePresentation
         )
           continue;
         const d = {
@@ -885,19 +1006,31 @@ export default forwardRef<GraphHandle, Props>(function Graph(
           cost: e.cost,
           review_state: e.review_state,
           bundle_id: e.bundle_id,
+          expanded_bundle: labels.expanded ? 1 : 0,
+          has_endpoints: labels.hasEndpoints ? 1 : 0,
+          endpoint_visible: labels.showEndpoints ? 1 : 0,
+          endpoint_center_label: labels.center,
+          source_endpoint_label: labels.endpoint.source,
+          target_endpoint_label: labels.endpoint.target,
+          endpoint_offset: 25,
+          parallel_spacing: parallelSpacing,
           member_link_ids: e.member_link_ids,
           link_count: e.link_count,
           bundle_width: e.bundle_width,
           source_label: e.source_label || "",
           target_label: e.target_label || "",
-          displayLabel:
-            e.link_count ? e.label : view.labels.prefixes === false
-              ? ""
-              : e.prefixes?.join("\n") || e.label || "",
+          cost_visible: costLabel ? 1 : 0,
+          source_cost_label: costLabel?.source || "",
+          target_cost_label: costLabel?.target || "",
+          source_detail_label: labels.sourceDetail,
+          target_detail_label: labels.targetDetail,
+          displayLabel: labels.displayLabel,
         };
         if (edge.length) edge.data(d);
         else cy.add({ group: "edges", data: d });
-        rendered.current.set(e.id, { source: e, presentation });
+        const added = cy.$id(e.id) as EdgeSingular;
+        added.data("endpoint_offset", endpointOffset(added));
+        rendered.current.set(e.id, { source: e, presentation: edgePresentation });
       }
     });
     suppress.current = false;
@@ -913,7 +1046,7 @@ export default forwardRef<GraphHandle, Props>(function Graph(
         }
       }
     }
-  }, [data, display, view.labels, view.groups]);
+  }, [data, display, costLabels, endpointLabels, view.labels, view.groups]);
   useEffect(() => {
     const cy = cyRef.current;
     if (!cy) return;
@@ -924,21 +1057,39 @@ export default forwardRef<GraphHandle, Props>(function Graph(
       for (const id of [simulation.source_device_id, simulation.destination_device_id]) {
         cy.getElementById(id).removeClass("simulation-muted").addClass("simulation-endpoint");
       }
-      const byLink = new Map<string, typeof simulation.hops>();
-      for (const hop of simulation.hops) for (const id of hop.link_ids) {
-        const group = byLink.get(id) || []; group.push(hop); byLink.set(id, group);
-      }
+      const byEdge = simulationHopsByEdge(display.edges, simulation);
       cy.edges().forEach(edge => {
-        const hops = byLink.get(edge.data("link_id") || edge.id());
+        const hops = byEdge.get(edge.id());
         if (!hops) return;
-        const hop = hops[0];
-        const forward = edge.source().id() === hop.source_device_id || edge.target().id() === hop.target_device_id;
-        edge.data("simulationLabel", `${edge.data("origin") === "observed" ? edge.data("cost") : hop.cost} · ${Number(hops.reduce((total, h) => total + h.share_percent, 0).toFixed(2))}%`);
-        edge.removeClass("simulation-muted").addClass(`simulation-route simulation-${forward ? "forward" : "reverse"}`);
+        const isForward = (hop: typeof hops[number]) => edge.source().id() === hop.source_device_id || edge.target().id() === hop.target_device_id;
+        const costs = [...new Set(hops.map(hop => hop.cost))].sort((a, b) => a - b).join(" / ");
+        const costPrefix = view.labels.costs !== false ? `Cost ${edge.data("origin") === "observed" ? edge.data("cost") : costs} · ` : "";
+        edge.data("simulationLabel", `${costPrefix}${Number(hops.reduce((total, h) => total + h.share_percent, 0).toFixed(2))}%`);
+        edge.removeClass("simulation-muted").addClass("simulation-route");
+        if (hops.some(isForward)) edge.addClass("simulation-forward");
+        if (hops.some(hop => !isForward(hop))) edge.addClass("simulation-reverse");
         edge.connectedNodes().removeClass("simulation-muted");
       });
     });
-  }, [simulation, data, display]);
+  }, [simulation, data, display, view.labels.costs]);
+  useEffect(() => {
+    const cy = cyRef.current;
+    if (!cy) return;
+    cy.batch(() => {
+      cy.nodes().removeClass("simulation-source simulation-destination");
+      if (!simulationEndpoints) return;
+      const { sourceDeviceId, destinationDeviceId } = simulationEndpoints;
+      for (const id of new Set([sourceDeviceId, destinationDeviceId].filter(Boolean))) {
+        const node = cy.getElementById(id);
+        if (!node.length) continue;
+        const role = id === sourceDeviceId && id === destinationDeviceId ? "源 / 目的" : id === sourceDeviceId ? "源" : "目的";
+        node.data("simulationEndpointLabel", `${role} · ${node.data("displayLabel") || node.data("label") || id}`);
+        node.removeClass("simulation-muted");
+        if (id === sourceDeviceId) node.addClass("simulation-source");
+        if (id === destinationDeviceId) node.addClass("simulation-destination");
+      }
+    });
+  }, [simulationEndpoints, simulation, data, display]);
   useEffect(() => {
     const cy = cyRef.current;
     if (!cy) return;
@@ -1023,63 +1174,106 @@ export default forwardRef<GraphHandle, Props>(function Graph(
           {!readOnly && <button className="primary" onClick={emptyAction}>导入配置</button>}
         </div>
       )}
-      <div className="graph-actions">
-        <button
-          title="选择 / 拖动"
-          aria-label="选择模式"
-          className={!drawing ? "active" : ""}
-          onClick={() => {
-            edges.current?.disableDrawMode();
-            setDrawing(false);
-          }}
-        >
-          <MousePointer2 size={17} />
-        </button>
-        <button
-          title="拖动连接设备，随后选择接口"
-          aria-label="手工连线模式"
-          disabled={readOnly}
-          className={drawing ? "active" : ""}
-          onClick={() => {
-            edges.current?.enableDrawMode();
-            setDrawing(true);
-          }}
-        >
-          <Link2 size={17} />
-        </button>
-        <span />
-        <button
-          title="固定 / 释放选中节点"
-          aria-label="固定选中节点"
-          onClick={() => {
-            cyRef.current?.nodes(":selected").forEach((n) => {
-              n.locked() ? n.unlock() : n.lock();
-            });
-            callbacks.current.onChange(capture());
-          }}
-        >
-          <Pin size={16} />
-        </button>
-        <button
-          title="撤销移动或布局"
-          aria-label="撤销布局"
-          onClick={() => {
-            undo.current?.undo();
-            save();
-          }}
-        >
-          <Undo2 size={17} />
-        </button>
-        <button
-          title="重做移动或布局"
-          aria-label="重做布局"
-          onClick={() => {
-            undo.current?.redo();
-            save();
-          }}
-        >
-          <Redo2 size={17} />
-        </button>
+      <div className="graph-topbar">
+        <div className="graph-actions">
+          <button
+            title="选择 / 拖动"
+            aria-label="选择模式"
+            className={!drawing ? "active" : ""}
+            onClick={() => {
+              edges.current?.disableDrawMode();
+              setDrawing(false);
+            }}
+          >
+            <MousePointer2 size={17} />
+          </button>
+          <button
+            title="拖动连接设备，随后选择接口"
+            aria-label="手工连线模式"
+            disabled={readOnly}
+            className={drawing ? "active" : ""}
+            onClick={() => {
+              edges.current?.enableDrawMode();
+              setDrawing(true);
+            }}
+          >
+            <Link2 size={17} />
+          </button>
+          <span />
+          <button
+            title={focusId ? "显示全部" : "聚焦相邻"}
+            aria-label={focusId ? "显示全部" : "聚焦相邻"}
+            aria-pressed={!!focusId}
+            className={focusId ? "active" : ""}
+            disabled={!onToggleFocus || !focusId && (!selection || !["device", "segment"].includes(selection.kind))}
+            onClick={onToggleFocus}
+          >
+            <Focus size={17} />
+          </button>
+          <button
+            title="固定 / 释放选中节点"
+            aria-label="固定选中节点"
+            onClick={() => {
+              cyRef.current?.nodes(":selected").forEach((n) => {
+                n.locked() ? n.unlock() : n.lock();
+              });
+              callbacks.current.onChange(capture());
+            }}
+          >
+            <Pin size={16} />
+          </button>
+          <button
+            title="撤销移动或布局"
+            aria-label="撤销布局"
+            onClick={() => {
+              undo.current?.undo();
+              save();
+            }}
+          >
+            <Undo2 size={17} />
+          </button>
+          <button
+            title="重做移动或布局"
+            aria-label="重做布局"
+            onClick={() => {
+              undo.current?.redo();
+              save();
+            }}
+          >
+            <Redo2 size={17} />
+          </button>
+          <span />
+          <div className="graph-settings" ref={settingsRef} onKeyDown={event => {
+            if (event.key === "Escape") {
+              event.preventDefault();
+              setSettingsOpen(false);
+              settingsRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+            }
+          }}>
+            <button title="显示设置" aria-label="显示设置" aria-expanded={settingsOpen}
+              className={settingsOpen ? "active" : ""} disabled={readOnly}
+              onClick={() => setSettingsOpen(open => !open)}>
+              <SlidersHorizontal size={17} />
+            </button>
+            {settingsOpen && !readOnly && <div className="view-settings" role="group" aria-label="拓扑显示设置">
+              <label>分组
+                <select aria-label="节点分组" value={String(view.groups.mode || "none")}
+                  onChange={event => onChange({ groups: { mode: event.target.value } })}>
+                  <option value="none">不分组</option>
+                  <option value="vendor">按厂商</option>
+                  <option value="site">按站点</option>
+                </select>
+              </label>
+              {[["names", "设备名称"], ["prefixes", "链路地址"], ["costs", "链路 Cost"]].map(([key, label]) =>
+                <label key={key}><input type="checkbox" checked={view.labels[key] !== false}
+                  onChange={event => onChange({ labels: { ...view.labels, [key]: event.target.checked } })} />{label}</label>)}
+            </div>}
+          </div>
+        </div>
+        {simulationEndpoints && (simulationEndpoints.sourceDeviceId || simulationEndpoints.destinationDeviceId) && <div className="simulation-endpoint-legend" role="status" aria-label="已选仿真端点">
+          {simulationEndpoints.sourceDeviceId && <span className="source"><i />源：{data.nodes.find(node => node.id === simulationEndpoints.sourceDeviceId)?.label || simulationEndpoints.sourceDeviceId}</span>}
+          {simulationEndpoints.destinationDeviceId && <span className="destination"><i />目的：{data.nodes.find(node => node.id === simulationEndpoints.destinationDeviceId)?.label || simulationEndpoints.destinationDeviceId}</span>}
+        </div>}
       </div>
       <div className="zoom-controls">
         <button
@@ -1096,11 +1290,13 @@ export default forwardRef<GraphHandle, Props>(function Graph(
         </button>
         <span>{zoom}%</span>
         <button
-          title="适应画布"
-          aria-label="适应画布"
+          title="将整个拓扑居中并调整缩放"
+          aria-label="回到中心"
+          className="recenter-button"
+          disabled={!data.nodes.length}
           onClick={() => cyRef.current?.fit(undefined, 70)}
         >
-          <Maximize size={17} />
+          <LocateFixed size={17} />回到中心
         </button>
       </div>
       <div className="vendor-legend" aria-label="节点图标图例">

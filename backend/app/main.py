@@ -30,14 +30,15 @@ from .overrides import apply_overrides
 from .schemas import CreateProject, DomainRequest, OverrideRequest, OverrideStatus, VersionRequest, ViewRequest
 from .source_io import read_source_text, write_source_text
 from .store import Job, Project, Snapshot, Source, Observation, Store, job_dict, now, project_summary, uid
-from .routing.model import SimulationRequest, validate_snapshot_routing
-from .routing.simulation import simulate
+from .routing.model import PortSimulationRequest, SimulationRequest, validate_snapshot_routing
+from .routing.simulation import simulate, simulate_ports
+from .routing.refresh import apply_bandwidth_assumptions, refresh_huawei_routing
 from .lsdb.api import register as register_lsdb
 from .lsdb.model import Batch as LSDBBatch
 from .ai.api import register as register_ai, facts_revision
 
 ROOT = Path(__file__).resolve().parents[2]
-VERSION = "1.4.1"
+VERSION = "1.4.2"
 DEFAULT_DOMAINS = {"domains": [{"id": "default", "name": "默认地址域", "confirmed": True}], "mappings": {}, "interface_mappings": {}, "segment_splits": {}}
 ACTIVE_JOBS = {"queued", "running", "cancelling"}
 MAX_RESTORE_BYTES = int(os.getenv("IPTOPO_MAX_RESTORE_BYTES", str(256 * 1024 * 1024)))
@@ -136,6 +137,15 @@ def create_app(data_dir: str | Path | None = None, worker_mode="process") -> Fas
         if not allow_import and active_job(s, project.id):
             raise HTTPException(409, "正在导入配置，请等待完成或取消导入")
 
+    def retained_source(s, project_id, source_id):
+        source = s.scalar(select(Source).where(Source.project_id == project_id, Source.source_id == source_id))
+        if not source:
+            return None
+        try:
+            return read_source_text(store.root / "sources" / source.storage_key)
+        except (OSError, UnicodeError):
+            return None
+
     def derived_model(s, project):
         domains = project.settings.get("domains", DEFAULT_DOMAINS)
         signature = (project.snapshot_id, sha256(json.dumps([project.overrides, domains], sort_keys=True).encode()).hexdigest())
@@ -146,7 +156,9 @@ def create_app(data_dir: str | Path | None = None, worker_mode="process") -> Fas
                 return cached
         snapshot = s.get(Snapshot, project.snapshot_id) if project.snapshot_id else None
         raw = snapshot.data if snapshot else empty_snapshot(project.id)
+        raw = refresh_huawei_routing(raw, lambda source_id: retained_source(s, project.id, source_id))
         output, evaluated = apply_overrides(raw, project.overrides, domains)
+        output = apply_bandwidth_assumptions(output)
         cached = {"signature": signature, "snapshot": output, "overrides": evaluated, "public": None, "graphs": {}}
         with derived_lock:
             derived[project.id] = cached
@@ -359,13 +371,13 @@ def create_app(data_dir: str | Path | None = None, worker_mode="process") -> Fas
             return job_dict(job)
 
     @app.post("/api/projects/{project_id}/simulate")
-    def simulate_project(project_id: str, body: SimulationRequest):
+    def simulate_project(project_id: str, body: PortSimulationRequest | SimulationRequest):
         with store.session() as s:
             project = require_project(s, project_id)
             check_version(s, project, body.version)
             snapshot, _ = effective(s, project)
             try:
-                result = simulate(snapshot, body)
+                result = simulate_ports(snapshot, body) if isinstance(body, PortSimulationRequest) else simulate(snapshot, body)
             except ValueError as exc:
                 raise HTTPException(422, str(exc)) from exc
             return {**result, "project_version": project.version}
@@ -486,7 +498,8 @@ def create_app(data_dir: str | Path | None = None, worker_mode="process") -> Fas
             if format == "json":
                 bundle = {"format": "iptopo.project", "schema_version": 1, "exported_at": now(),
                     "project": {**project_summary(project), "settings": project.settings, "overrides": project.overrides, "views": project.views},
-                    "snapshots": [x.data for x in s.scalars(select(Snapshot).where(Snapshot.project_id == project_id).order_by(Snapshot.created_at))],
+                    "snapshots": [refresh_huawei_routing(x.data, lambda source_id: retained_source(s, project_id, source_id))
+                                  for x in s.scalars(select(Snapshot).where(Snapshot.project_id == project_id).order_by(Snapshot.created_at))],
                     "lsdb_batches": [x.data for x in s.scalars(select(Observation).where(Observation.project_id == project_id).order_by(Observation.created_at))],
                     "sources": {}, "include_sources": include_sources}
                 if include_sources:
