@@ -31,7 +31,7 @@ def by_name(result, name):
     ("fixtures/nokia-md-flat.cfg", "nokia_md_flat", 4),
 ])
 def test_each_dialect_detects_parses_and_preserves_source(filename, dialect, count):
-    text = (SAMPLES / filename).read_text()
+    text = (SAMPLES / filename).read_text(encoding="utf-8")
     result = parse(text)
     assert result["status"] == "success", result["diagnostics"]
     assert len(addresses(result)) == count
@@ -331,7 +331,7 @@ def test_junos_loopback_unit_keeps_loopback_kind():
 
 
 def test_md_hierarchical_slash_configure_is_not_misdetected_flat():
-    text = (SAMPLES / "demo/08-access-nokia-md.cfg").read_text().replace("configure {", "/configure {", 1)
+    text = (SAMPLES / "demo/08-access-nokia-md.cfg").read_text(encoding="utf-8").replace("configure {", "/configure {", 1)
     result = parse(text)
     assert result["format"] == "md-hierarchical"
     assert result["status"] == "success"
@@ -377,7 +377,7 @@ def test_symlinked_venv_upstream_containment_bug_uses_trusted_package_resource(m
     def bad_symlink_check(**kwargs):
         raise ValueError("Template path resolves outside the package directory.")
     monkeypatch.setattr(ttp_templates, "get_template", bad_symlink_check)
-    result = parse((SAMPLES / "demo/06-branch-cisco-ios.cfg").read_text())
+    result = parse((SAMPLES / "demo/06-branch-cisco-ios.cfg").read_text(encoding="utf-8"))
     assert result["status"] == "success"
     assert not any(d["code"] == "upstream_template_unavailable" for d in result["diagnostics"])
     with pytest.raises(ValueError, match="registered"):

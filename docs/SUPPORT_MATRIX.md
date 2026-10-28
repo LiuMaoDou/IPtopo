@@ -4,6 +4,10 @@ This is the implemented **configuration-field subset**, not a claim of full vend
 
 ## Runtime and integration
 
+All application capabilities target PC desktop browsers, including topology editing, routing simulation, LSDB analysis and AI chat. Phone/tablet-specific layouts and acceptance are outside the current scope. See [workbench design](DESIGN.md#current-platform-scope--2026-10-28).
+
+Huawei VRP, Cisco IOS/XE/XR/NX-OS, Juniper Junos and Nokia SR OS have separate IPv4 routing adapters for OSPF single-area and IS-IS single-level simulation. Exact command coverage, assumptions, unsupported semantics and source references are in [ROUTING.md](ROUTING.md); cross-vendor synthetic acceptance configurations are in [samples/multi-vendor-igp](../samples/multi-vendor-igp).
+
 The tested runtime is Python 3.12.14 with TTP 0.10.1, `ttp-templates` 0.6.18, and `netutils` 1.19.2. Runtime versions are returned with every parsed snapshot. Upstream packages are consumed without local patches.
 
 `backend.app.parser.parse_config(text, filename, source_file_id, device_id, dialect=None)` is a pure function with no source-file I/O. It returns the device, interfaces, contexts, diagnostics, parse status, dialect metadata and parser versions defined in [CONTRACT.md](CONTRACT.md). An explicit dialect overrides heuristic detection. The supported selection IDs are exported as `SUPPORTED_DIALECTS`.
@@ -77,3 +81,5 @@ Primary references: [TTP API/documentation](https://ttp.readthedocs.io/en/latest
 Tests assert all nine dialect selections, IPv4/IPv6 families and original source lines, IPv4 masks, secondary/virtual/link-local/anycast roles, dynamic exclusion metadata, cross-VRF subnet grouping and explicit domain separation, LAG/subinterface associations, Junos set/hierarchy equivalence, inactive ancestry, group diagnostics, invalid/empty/truncated input, static-route/neighbor/ACL exclusion, stable IDs, and unknown operational state.
 
 The eight files in `samples/demo/` form one synthetic topology with dual-stack point-to-point links, parallel core links, a shared four-device segment, VRF interfaces grouped by subnet, LAN stubs, loopbacks, and a dynamic WAN. `samples/fixtures/` is test data and is not part of the demo import.
+
+配置 IGP 与 LSDB：Huawei VRP、Cisco IOS/XE/XR/NX-OS 配置、Junos set/层级、Nokia Classic/MD-CLI flat/层级均可提取 OSPF/IS-IS；LSDB 支持 Huawei display、Cisco database detail/verbose、Junos detail/extensive、SR OS database detail 原生输出（OSPFv2 Router / Network、IS-IS 数字或动态 System ID）；支持独立还原与配置关联、单 Area / Level Standard IPv4 SPF 和理论 ECMP。摘要只作清单，不伪造连接。当前不支持 OSPFv3 / IPv6、跨域选路、Flex-Algo / MT 专用路径及现场 FIB 对照。完整语法、完整性检查与边界见 [LSDB 支持说明](LSDB.md)。

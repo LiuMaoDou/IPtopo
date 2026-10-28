@@ -1,0 +1,101 @@
+A:ALA-A# show router ospf database
+===============================================================================
+OSPF Link State Database (Type : All)
+===============================================================================
+Area Id         Type    Link State Id   Adv Rtr Id      Age  Sequence   Cksum
+-------------------------------------------------------------------------------
+0.0.0.0         Router  180.0.0.2       180.0.0.2       1800 0x800000b6 0xf54
+0.0.0.0         Router  180.0.0.5       180.0.0.5       1902 0x8000009d 0xcb7c
+0.0.0.0         Router  180.0.0.8       180.0.0.8       1815 0x8000009a 0x529b
+0.0.0.0         Router  180.0.0.9       180.0.0.9       1156 0x80000085 0xd00f
+0.0.0.0         Router  180.0.0.10      180.0.0.10      533  0x8000009d 0x3f1f
+0.0.0.0         Router  180.0.0.11      180.0.0.11      137  0x80000086 0xc58f
+0.0.0.0         Router  180.0.0.12      180.0.0.12      918  0x8000009d 0x4cf3
+0.0.0.0         Router  180.0.0.13      180.0.0.13      1401 0x800000a2 0x879c
+0.0.0.0         Network 180.0.53.28     180.0.0.28      149  0x80000083 0xe5cd
+0.0.0.0         Network 180.0.54.28     180.0.0.28      1259 0x80000083 0xdad7
+0.0.0.0         Summary 180.0.0.15      180.0.0.10      378  0x80000084 0xeba1
+0.0.0.0         Summary 180.0.0.15      180.0.0.12      73   0x80000084 0xdfab
+0.0.0.0         Summary 180.0.0.18      180.0.0.10      1177 0x80000083 0xcfbb
+0.0.0.1         Summary 180.100.25.4    180.0.0.12      208  0x80000091 0x3049
+0.0.0.1         AS Summ 180.0.0.8       180.0.0.10      824  0x80000084 0x3d07
+0.0.0.1         AS Summ 180.0.0.8       180.0.0.12      1183 0x80000095 0x4bdf
+0.0.0.1         AS Summ 180.0.0.9       180.0.0.10      244  0x80000082 0x73cb
+n/a             AS Ext  7.1.0.0         180.0.0.23      1312 0x80000083 0x45e7
+n/a             AS Ext  7.2.0.0         180.0.0.23      997  0x80000082 0x45e6
+n/a             AS Ext  10.20.0.0       180.0.0.23      238  0x80000081 0x2d81
+...
+-------------------------------------------------------------------------------
+No. of LSAs: 339
+===============================================================================
+A:ALA-A#  
+
+
+A:ALA-A# show router ospf database detail
+===============================================================================
+OSPF Link State Database (Type : All) (Detailed)
+-------------------------------------------------------------------------------
+Router LSA for Area 0.0.0.0
+-------------------------------------------------------------------------------
+Area Id          : 0.0.0.0              Adv Router Id    : 180.0.0.2
+Link State Id    : 180.0.0.2            LSA Type         : Router
+Sequence No      : 0x800000b7           Checksum         : 0xd55
+Age              : 155                  Length           : 192
+Options          : E
+Flags            : None                 Link Count       : 14
+Link Type (1)    : Point To Point
+Nbr Rtr Id (1)   : 180.0.0.13           I/F Address (1)  : 180.0.22.2
+No of TOS (1)    : 0                    Metric-0 (1)     : 25
+Link Type (2)    : Stub Network
+Network (2)      : 180.0.22.0           Mask (2)         : 255.255.255.0
+No of TOS (2)    : 0                    Metric-0 (2)     : 25
+Link Type (3)    : Point To Point
+Nbr Rtr Id (3)   : 180.0.0.12           I/F Address (3)  : 180.0.5.2
+No of TOS (3)    : 0                    Metric-0 (3)     : 25
+Link Type (4)    : Stub Network
+Network (4)      : 180.0.5.0            Mask (4)         : 255.255.255.0
+No of TOS (4)    : 0                    Metric-0 (4)     : 25
+Link Type (5)    : Point To Point
+Nbr Rtr Id (5)   : 180.0.0.8            I/F Address (5)  : 180.0.13.2
+No of TOS (5)    : 0                    Metric-0 (5)     : 6
+Link Type (6)    : Stub Network
+Network (6)      : 180.0.13.0           Mask (6)         : 255.255.255.0
+No of TOS (6)    : 0                    Metric-0 (6)     : 6
+Link Type (7)    : Point To Point
+Nbr Rtr Id (7)   : 180.0.0.5            I/F Address (7)  : 180.0.14.2
+No of TOS (7)    : 0                    Metric-0 (7)     : 6
+Link Type (8)    : Stub Network
+Network (8)      : 180.0.14.0           Mask (8)         : 255.255.255.0
+No of TOS (8)    : 0                    Metric-0 (8)     : 6
+Link Type (9)    : Point To Point
+Nbr Rtr Id (9)   : 180.0.0.11           I/F Address (9)  : 180.0.17.2
+No of TOS (9)    : 0                    Metric-0 (9)     : 25
+Link Type (10)   : Stub Network
+Network (10)     : 180.0.17.0           Mask (10)        : 255.255.255.0
+No of TOS (10)   : 0                    Metric-0 (10)    : 25
+Link Type (11)   : Stub Network
+Network (11)     : 180.0.0.2            Mask (11)        : 255.255.255.255
+No of TOS (11)   : 0                    Metric-0 (11)    : 1
+Link Type (12)   : Stub Network
+Network (12)     : 180.0.18.0           Mask (12)        : 255.255.255.0
+No of TOS (12)   : 0                    Metric-0 (12)    : 24
+Link Type (13)   : Point To Point
+Nbr Rtr Id (13)  : 180.0.0.10           I/F Address (13) : 180.0.3.2
+No of TOS (13)   : 0                    Metric-0 (13)    : 25
+Link Type (14)   : Stub Network
+Network (14)     : 180.0.3.0            Mask (14)        : 255.255.255.0
+No of TOS (14)   : 0                    Metric-0 (14)    : 25
+-------------------------------------------------------------------------------
+AS Ext LSA for Network 180.0.0.14
+-------------------------------------------------------------------------------
+Area Id          : N/A                  Adv Router Id    : 180.0.0.10
+Link State Id    : 180.0.0.14           LSA Type         : AS Ext
+Sequence No      : 0x80000083           Checksum         : 0xa659
+Age              : 2033                 Length           : 36
+Options          : E
+Network Mask     : 255.255.255.255      Fwding Address   : 180.1.6.15
+Metric Type      : Type 2               Metric-0         : 4
+Ext Route Tag    : 0
+-------------------------------------------------------------------------------
+...
+A:ALA-A#

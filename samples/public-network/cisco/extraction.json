@@ -1,0 +1,146 @@
+[
+  {
+    "file": "cisco/config/ospf-r1.cfg",
+    "vendor": "cisco",
+    "kind": "config",
+    "protocol": "ospf",
+    "source_url": "https://www.cisco.com/c/en/us/support/docs/ip/open-shortest-path-first-ospf/47864-ospfdb5.html",
+    "extraction": {
+      "method": "web_rendered_lines",
+      "first_line": 104,
+      "last_line": 120,
+      "transformations": [
+        "Removed rendered quote markers and four-space code fence indentation",
+        "Removed explanatory !--- comments; CLI values unchanged"
+      ]
+    }
+  },
+  {
+    "file": "cisco/config/ospf-r2.cfg",
+    "vendor": "cisco",
+    "kind": "config",
+    "protocol": "ospf",
+    "source_url": "https://www.cisco.com/c/en/us/support/docs/ip/open-shortest-path-first-ospf/47864-ospfdb5.html",
+    "extraction": {
+      "method": "web_rendered_lines",
+      "first_line": 124,
+      "last_line": 144,
+      "transformations": [
+        "Removed rendered quote markers and four-space code fence indentation",
+        "Removed explanatory !--- comments; CLI values unchanged"
+      ]
+    }
+  },
+  {
+    "file": "cisco/config/ospf-r3.cfg",
+    "vendor": "cisco",
+    "kind": "config",
+    "protocol": "ospf",
+    "source_url": "https://www.cisco.com/c/en/us/support/docs/ip/open-shortest-path-first-ospf/47864-ospfdb5.html",
+    "extraction": {
+      "method": "web_rendered_lines",
+      "first_line": 148,
+      "last_line": 161,
+      "transformations": [
+        "Removed rendered quote markers and four-space code fence indentation",
+        "Removed explanatory !--- comments; CLI values unchanged"
+      ]
+    }
+  },
+  {
+    "file": "cisco/lsdb/ospf-r2-router.txt",
+    "vendor": "cisco",
+    "kind": "lsdb",
+    "protocol": "ospf",
+    "source_url": "https://www.cisco.com/c/en/us/support/docs/ip/open-shortest-path-first-ospf/47864-ospfdb5.html",
+    "extraction": {
+      "method": "web_rendered_lines",
+      "first_line": 202,
+      "last_line": 340,
+      "transformations": [
+        "Removed rendered quote markers and four-space code fence indentation",
+        "Removed explanatory !--- comments; CLI values unchanged"
+      ]
+    }
+  },
+  {
+    "file": "cisco/verification/ospf-routes.txt",
+    "vendor": "cisco",
+    "kind": "verification",
+    "protocol": "ospf",
+    "source_url": "https://www.cisco.com/c/en/us/support/docs/ip/open-shortest-path-first-ospf/47864-ospfdb5.html",
+    "extraction": {
+      "method": "web_rendered_lines",
+      "first_line": 418,
+      "last_line": 427,
+      "transformations": [
+        "Removed rendered quote markers and four-space code fence indentation",
+        "Removed explanatory !--- comments; CLI values unchanged"
+      ]
+    }
+  },
+  {
+    "file": "cisco/config/isis-r1.cfg",
+    "vendor": "cisco",
+    "kind": "config",
+    "protocol": "isis",
+    "source_url": "https://www.cisco.com/c/en/us/support/docs/ip/integrated-intermediate-system-to-intermediate-system-is-is/13795-is-is-ip-config.html",
+    "extraction": {
+      "method": "web_rendered_lines",
+      "first_line": 124,
+      "last_line": 143,
+      "transformations": [
+        "Removed rendered quote markers and four-space code fence indentation",
+        "Removed explanatory !--- comments; CLI values unchanged"
+      ]
+    }
+  },
+  {
+    "file": "cisco/config/isis-r2.cfg",
+    "vendor": "cisco",
+    "kind": "config",
+    "protocol": "isis",
+    "source_url": "https://www.cisco.com/c/en/us/support/docs/ip/integrated-intermediate-system-to-intermediate-system-is-is/13795-is-is-ip-config.html",
+    "extraction": {
+      "method": "web_rendered_lines",
+      "first_line": 147,
+      "last_line": 172,
+      "transformations": [
+        "Removed rendered quote markers and four-space code fence indentation",
+        "Removed explanatory !--- comments; CLI values unchanged"
+      ]
+    }
+  },
+  {
+    "file": "cisco/config/isis-r3.cfg",
+    "vendor": "cisco",
+    "kind": "config",
+    "protocol": "isis",
+    "source_url": "https://www.cisco.com/c/en/us/support/docs/ip/integrated-intermediate-system-to-intermediate-system-is-is/13795-is-is-ip-config.html",
+    "extraction": {
+      "method": "web_rendered_lines",
+      "first_line": 176,
+      "last_line": 194,
+      "transformations": [
+        "Removed rendered quote markers and four-space code fence indentation",
+        "Removed explanatory !--- comments; CLI values unchanged"
+      ]
+    }
+  },
+  {
+    "file": "cisco/lsdb/isis-r2-detail.txt",
+    "vendor": "cisco",
+    "kind": "lsdb",
+    "protocol": "isis",
+    "source_url": "https://www.cisco.com/c/en/us/support/docs/ip/integrated-intermediate-system-to-intermediate-system-is-is/13795-is-is-ip-config.html",
+    "extraction": {
+      "method": "web_rendered_lines",
+      "first_line": 269,
+      "last_line": 295,
+      "transformations": [
+        "Removed rendered quote markers and four-space code fence indentation",
+        "Removed explanatory !--- comments; CLI values unchanged"
+      ]
+    }
+  }
+]

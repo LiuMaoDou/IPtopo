@@ -373,7 +373,7 @@ def _parse_cli(b):
             vrf_context["rd"] = line.split()[-1]
         elif vrf_context and re.match(r"(?:vpn-target|route-target)\s+", line):
             vrf_context["rt"].append(line.split(maxsplit=1)[1])
-        m = re.match(r"interface\s+([^\s]+)\s*$", line)
+        m = re.match(r"interface\s+([^\s]+)(?:\s+(?:point-to-point|multipoint))?\s*$", line, re.I)
         if m:
             active = (b.iface(m.group(1), n), [])
             blocks.append(active)
@@ -1042,7 +1042,8 @@ def parse_config(text: str, filename: str, source_file_id: str, device_id: str, 
     """Return normalized facts and honest per-file diagnostics; no filesystem I/O."""
     # Strip terminal escapes without deleting lines, preserving source coordinates.
     clean = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", text.lstrip("\ufeff")).replace("\r\n", "\n").replace("\r", "\n")
-    clean = clean.replace("---- More ----", "").replace("--More--", "")
+    pagination_seen = bool(re.search(r"--+\s*More\s*--+", clean, re.I))
+    clean = clean.replace("---- More ----", "").replace("--More--", "").replace("\u00a0", " ")
     dialect = _ALIASES.get(dialect, dialect) if dialect else detect_dialect(clean)
     b = _Builder(clean, filename, source_file_id, device_id, dialect)
     if not clean.strip():
@@ -1061,11 +1062,13 @@ def parse_config(text: str, filename: str, source_file_id: str, device_id: str, 
                 _parse_nokia_md(b)
         except Exception as exc:
             b.warn("parser_error", f"Parser could not complete this file ({type(exc).__name__}). Parsed facts are retained for review.", severity="error")
-        if re.search(r"(?mi)truncated|output omitted|-- ?more ?--", clean):
+        if pagination_seen or re.search(r"(?mi)truncated|output omitted|-- ?more ?--", clean):
             b.warn("truncated_configuration", "Source contains a truncation or pagination marker; verify completeness.")
         if len(re.findall(r'(?<!\\)"', clean)) % 2:
             b.warn("unterminated_quote", "Configuration contains an unmatched quote; verify backup completeness.")
     result = b.finish()
+    from .routing.adapters import extract_routing
+    result["routing"] = extract_routing(dialect, clean, result)
     if not clean.strip() or dialect not in _DIALECTS:
         result["status"] = result["device"]["parse_status"] = "failed"
     return result

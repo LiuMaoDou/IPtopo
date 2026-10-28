@@ -1,0 +1,131 @@
+IGP-S#show ip ospf 1 database router
+ OSPF Router with ID (10.255.0.1) (Process ID 1)
+ Router Link States (Area 0)
+
+ LS age: 100
+ LS Type: Router Links
+ Link State ID: 10.255.0.1
+ Advertising Router: 10.255.0.1
+ LS Seq Number: 80000001
+ Checksum: 0x1234
+ Number of Links: 3
+ Link connected to: a Stub Network
+  (Link ID) Network/subnet number: 10.255.0.1
+  (Link Data) Network Mask: 255.255.255.255
+  TOS 0 Metrics: 1
+ Link connected to: another Router (point-to-point)
+  (Link ID) Neighboring Router ID: 10.255.0.2
+  (Link Data) Router Interface address: 10.80.1.1
+  TOS 0 Metrics: 10
+ Link connected to: another Router (point-to-point)
+  (Link ID) Neighboring Router ID: 10.255.0.3
+  (Link Data) Router Interface address: 10.80.3.1
+  TOS 0 Metrics: 10
+
+ LS age: 100
+ LS Type: Router Links
+ Link State ID: 10.255.0.2
+ Advertising Router: 10.255.0.2
+ LS Seq Number: 80000001
+ Checksum: 0x1234
+ Number of Links: 3
+ Link connected to: a Stub Network
+  (Link ID) Network/subnet number: 10.255.0.2
+  (Link Data) Network Mask: 255.255.255.255
+  TOS 0 Metrics: 1
+ Link connected to: another Router (point-to-point)
+  (Link ID) Neighboring Router ID: 10.255.0.1
+  (Link Data) Router Interface address: 10.80.1.2
+  TOS 0 Metrics: 10
+ Link connected to: another Router (point-to-point)
+  (Link ID) Neighboring Router ID: 10.255.0.6
+  (Link Data) Router Interface address: 10.80.2.1
+  TOS 0 Metrics: 20
+
+ LS age: 100
+ LS Type: Router Links
+ Link State ID: 10.255.0.3
+ Advertising Router: 10.255.0.3
+ LS Seq Number: 80000001
+ Checksum: 0x1234
+ Number of Links: 4
+ Link connected to: a Stub Network
+  (Link ID) Network/subnet number: 10.255.0.3
+  (Link Data) Network Mask: 255.255.255.255
+  TOS 0 Metrics: 1
+ Link connected to: another Router (point-to-point)
+  (Link ID) Neighboring Router ID: 10.255.0.1
+  (Link Data) Router Interface address: 10.80.3.2
+  TOS 0 Metrics: 10
+ Link connected to: another Router (point-to-point)
+  (Link ID) Neighboring Router ID: 10.255.0.4
+  (Link Data) Router Interface address: 10.80.4.1
+  TOS 0 Metrics: 10
+ Link connected to: another Router (point-to-point)
+  (Link ID) Neighboring Router ID: 10.255.0.5
+  (Link Data) Router Interface address: 10.80.6.1
+  TOS 0 Metrics: 10
+
+ LS age: 100
+ LS Type: Router Links
+ Link State ID: 10.255.0.4
+ Advertising Router: 10.255.0.4
+ LS Seq Number: 80000001
+ Checksum: 0x1234
+ Number of Links: 3
+ Link connected to: a Stub Network
+  (Link ID) Network/subnet number: 10.255.0.4
+  (Link Data) Network Mask: 255.255.255.255
+  TOS 0 Metrics: 1
+ Link connected to: another Router (point-to-point)
+  (Link ID) Neighboring Router ID: 10.255.0.3
+  (Link Data) Router Interface address: 10.80.4.2
+  TOS 0 Metrics: 10
+ Link connected to: another Router (point-to-point)
+  (Link ID) Neighboring Router ID: 10.255.0.6
+  (Link Data) Router Interface address: 10.80.5.1
+  TOS 0 Metrics: 10
+
+ LS age: 100
+ LS Type: Router Links
+ Link State ID: 10.255.0.5
+ Advertising Router: 10.255.0.5
+ LS Seq Number: 80000001
+ Checksum: 0x1234
+ Number of Links: 3
+ Link connected to: a Stub Network
+  (Link ID) Network/subnet number: 10.255.0.5
+  (Link Data) Network Mask: 255.255.255.255
+  TOS 0 Metrics: 1
+ Link connected to: another Router (point-to-point)
+  (Link ID) Neighboring Router ID: 10.255.0.3
+  (Link Data) Router Interface address: 10.80.6.2
+  TOS 0 Metrics: 10
+ Link connected to: another Router (point-to-point)
+  (Link ID) Neighboring Router ID: 10.255.0.6
+  (Link Data) Router Interface address: 10.80.7.1
+  TOS 0 Metrics: 10
+
+ LS age: 100
+ LS Type: Router Links
+ Link State ID: 10.255.0.6
+ Advertising Router: 10.255.0.6
+ LS Seq Number: 80000001
+ Checksum: 0x1234
+ Number of Links: 4
+ Link connected to: a Stub Network
+  (Link ID) Network/subnet number: 10.255.0.6
+  (Link Data) Network Mask: 255.255.255.255
+  TOS 0 Metrics: 0
+ Link connected to: another Router (point-to-point)
+  (Link ID) Neighboring Router ID: 10.255.0.2
+  (Link Data) Router Interface address: 10.80.2.2
+  TOS 0 Metrics: 20
+ Link connected to: another Router (point-to-point)
+  (Link ID) Neighboring Router ID: 10.255.0.4
+  (Link Data) Router Interface address: 10.80.5.2
+  TOS 0 Metrics: 10
+ Link connected to: another Router (point-to-point)
+  (Link ID) Neighboring Router ID: 10.255.0.5
+  (Link Data) Router Interface address: 10.80.7.2
+  TOS 0 Metrics: 10

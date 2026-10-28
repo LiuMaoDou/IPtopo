@@ -1,0 +1,93 @@
+[
+  {
+    "file": "huawei/config/isis-ipv6-switchA.cfg",
+    "vendor": "huawei",
+    "kind": "config",
+    "protocol": "isis",
+    "address_family": 6,
+    "source_url": "https://info.support.huawei.com/enterprise/en/doc/EDOC1100389673/9ec00e90/example-for-configuring-basic-ipv6-is-is-functions",
+    "extraction": {
+      "method": "web_rendered_lines",
+      "first_line": 266,
+      "last_line": 308,
+      "transformations": [
+        "Removed web code-block indentation; CLI values unchanged"
+      ]
+    }
+  },
+  {
+    "file": "huawei/config/isis-ipv6-switchB.cfg",
+    "vendor": "huawei",
+    "kind": "config",
+    "protocol": "isis",
+    "address_family": 6,
+    "source_url": "https://info.support.huawei.com/enterprise/en/doc/EDOC1100389673/9ec00e90/example-for-configuring-basic-ipv6-is-is-functions",
+    "extraction": {
+      "method": "web_rendered_lines",
+      "first_line": 311,
+      "last_line": 353,
+      "transformations": [
+        "Removed web code-block indentation; CLI values unchanged"
+      ]
+    }
+  },
+  {
+    "file": "huawei/config/isis-ipv6-switchC.cfg",
+    "vendor": "huawei",
+    "kind": "config",
+    "protocol": "isis",
+    "address_family": 6,
+    "source_url": "https://info.support.huawei.com/enterprise/en/doc/EDOC1100389673/9ec00e90/example-for-configuring-basic-ipv6-is-is-functions",
+    "extraction": {
+      "method": "web_rendered_lines",
+      "first_line": 356,
+      "last_line": 433,
+      "transformations": [
+        "Removed web code-block indentation; CLI values unchanged"
+      ]
+    }
+  },
+  {
+    "file": "huawei/config/isis-ipv6-switchD.cfg",
+    "vendor": "huawei",
+    "kind": "config",
+    "protocol": "isis",
+    "address_family": 6,
+    "source_url": "https://info.support.huawei.com/enterprise/en/doc/EDOC1100389673/9ec00e90/example-for-configuring-basic-ipv6-is-is-functions",
+    "extraction": {
+      "method": "web_rendered_lines",
+      "first_line": 436,
+      "last_line": 540,
+      "transformations": [
+        "Removed web code-block indentation; CLI values unchanged"
+      ]
+    }
+  },
+  {
+    "file": "huawei/lsdb/isis-ipv6-summary.txt",
+    "vendor": "huawei",
+    "kind": "lsdb",
+    "protocol": "isis",
+    "source_url": "https://info.support.huawei.com/enterprise/en/doc/EDOC1100389673/9ec00e90/example-for-configuring-basic-ipv6-is-is-functions",
+    "extraction": {
+      "method": "web_rendered_lines",
+      "first_line": 236,
+      "last_line": 261
+    }
+  },
+  {
+    "file": "huawei/lsdb/isis-old-verbose.txt",
+    "vendor": "huawei",
+    "kind": "lsdb",
+    "protocol": "isis",
+    "source_url": "https://info.support.huawei.com/hedex/api/pages/EDOC1100331917/AZM1014P/06/resources/dc/display_isis_lsdb.html",
+    "extraction": {
+      "method": "web_search_cached_rendering",
+      "start_marker": "<HUAWEI> display isis lsdb verbose",
+      "end_marker": "表2",
+      "transformations": [
+        "Removed rendered code-block indentation; CLI values unchanged"
+      ]
+    }
+  }
+]

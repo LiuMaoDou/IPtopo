@@ -131,7 +131,10 @@ def _manual_link(snapshot, record, a_id, b_id):
     a, b = _entity(snapshot, "interface", a_id), _entity(snapshot, "interface", b_id)
     return {"id": stable_id("manual-link", record["id"], a_id, b_id), "interface_a_id": a_id, "interface_b_id": b_id,
             "device_a_id": a["device_id"], "device_b_id": b["device_id"], "relation_type": "manual",
-            "origin": "manual", "review_state": "confirmed", "families": [], "prefixes": [], "segment_ids": [],
+            "origin": "manual", "review_state": "confirmed", "families": sorted(
+                {address.get("family") for address in a.get("addresses", []) if address.get("address") and address.get("family") in (4, 6)}
+                & {address.get("family") for address in b.get("addresses", []) if address.get("address") and address.get("family") in (4, 6)}
+            ), "prefixes": [], "segment_ids": [],
             "evidence": [{"rule": "manual_relation", "domain_id": None, "family": None, "prefix": None,
                           "interface_ids": [a_id, b_id], "source_refs": _refs([a, b]), "override_id": record["id"], "reason": record.get("reason", "")}],
             "diagnostics": [], "override_id": record["id"]}

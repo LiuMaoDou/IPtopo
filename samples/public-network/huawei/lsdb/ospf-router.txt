@@ -1,0 +1,22 @@
+<HUAWEI> display ospf lsdb router 
+          OSPF Process 1 with Router ID 10.137.244.123 
+                          Area: 0.0.0.0 
+                  Link State Database 
+ 
+Type      : Router 
+  Ls id     : 10.137.244.123 
+Adv rtr   : 10.137.244.123 // Device that advertises or generates LSAs
+  Ls age    : 437 
+  Len       : 48 
+  Options   :  E 
+  seq#      : 80000211 
+  chksum    : 0xee20 
+  Link count: 2 
+Link ID: 11.1.1.0 //Link ID indicates the router ID of a neighbor if the link type is Point-to-Point or Virtual Link, indicates the IP address of the DR if the link type is TransNet, indicates the IP address of the local device if the link type is Stub.
+     Data   : 255.255.255.0 
+     Link Type: StubNet 
+     Metric : 1 
+Link ID: 3.3.3.3 
+     Data   : 255.255.255.255 
+     Link Type: StubNet 
+     Metric : 0

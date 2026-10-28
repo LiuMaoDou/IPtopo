@@ -2,7 +2,11 @@
 
 Primary screen concept: `frontend/design/concept.png` (1536 × 1024), generated with the built-in Image Gen tool before implementation. Brief: complete Chinese network-engineer topology editor; white surfaces, navy text, teal actions, dotted graph canvas, inventory at left, evidence inspector at right, diagnostics below. UI remains code-native.
 
-Tokens: white #fff, canvas #f8fafb, ink #172b3a, muted #718091, teal #087f80, border #e4e9ed; 6px corner radius, no gradients, subtle toolbar shadows only. System sans Chinese typography, 13px controls and 12px metadata, 22px logo. Lucide outline icons 16–20px, 1.7px stroke. Header 64px; toolbar 54px; sidebar 250px; inspector 300px; collapsible diagnostics; full remaining height canvas. Mobile stacks panels behind explicit tabs and retains all controls.
+Tokens: white #fff, canvas #f8fafb, ink #172b3a, muted #718091, teal #087f80, border #e4e9ed; 6px corner radius, no gradients, subtle toolbar shadows only. System sans Chinese typography, 13px controls and 12px metadata, 22px logo. Lucide outline icons 16–20px, 1.7px stroke. Header 64px; toolbar 54px; sidebar 250px; inspector 300px; collapsible diagnostics; full remaining height canvas. Desktop laptop and monitor windows use the same inventory/canvas/inspector composition.
+
+## Current platform scope — 2026-10-28
+
+All capabilities target PC desktop browsers. The user explicitly excluded phone support. Keep the three-column workspace available for topology, simulation, LSDB and AI chat; remove the phone/tablet panel switcher and dedicated compact-screen layouts. The workspace has a 1280 px minimum width; narrower PC windows scroll horizontally without changing panel composition. The toolbar can wrap on desktop windows. Desktop window sizing and accessibility remain part of acceptance. Mobile/tablet observations in the dated records below describe earlier work and are no longer support commitments.
 
 Component families: header and toolbar, tab strip, list rows, compact property table, source code lines, modal forms, bordered buttons, graph device and subnet nodes. App composes Graph, Inspector, Inventory, Dialogs and Diagnostics; API mutations are serialized and refresh version, large graph algorithms are lazy loaded. Allowed copy is functional Chinese text from the plan and concept: IPtopo, 设备视图, 网段视图, 地址域, 自动布局, 保存视图, 导入配置, 导出, 设备, 文件, 质量报告, 修改记录, 设备详情, 接口, 来源, 修正. Required workflow controls extend the same design.
 

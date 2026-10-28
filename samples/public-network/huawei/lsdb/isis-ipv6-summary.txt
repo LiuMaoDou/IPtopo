@@ -1,0 +1,26 @@
+[switchC] display isis lsdb
+
+    Database Information for ISIS(1)
+    --------------------------------------------------------------------------------
+    Level-1 Link State Database
+
+    *(In TLV)-Leaking Route, *(By LSPID)-Self LSP, +-Self LSP(Extended),
+       ATT-Attached, P-Partition, OL-Overload
+    LSPID                 Seq Num      Checksum      HoldTime(s)    Length ATT/P/OL
+    --------------------------------------------------------------------------------
+    0000.0000.0001.00-00  0x0000000b   0xc229                373        86 0/0/0
+    0000.0000.0002.00-00  0x00000008   0x08e4                431        86 0/0/0
+    0000.0000.0002.01-00  0x00000008   0xd3ed                431        55 0/0/0
+    0000.0000.0003.00-00* 0x0000000c   0x8af5                489       143 1/0/0
+    0000.0000.0003.01-00* 0x0000000a   0xa21b                489        55 0/0/0
+    Total LSP(s): 5
+
+    Level-2 Link State Database
+    *(In TLV)-Leaking Route, *(By LSPID)-Self LSP, +-Self LSP(Extended),
+       ATT-Attached, P-Partition, OL-Overload
+    LSPID                 Seq Num      Checksum      HoldTime(s)    Length ATT/P/OL
+    --------------------------------------------------------------------------------
+    0000.0000.0001.00-00  0x00000009   0x7883                557       116 0/0/0
+    0000.0000.0001.01-00  0x00000007   0xcef3                557        55 0/0/0
+    0000.0000.0003.00-00* 0x00000008   0x158d                489       146 0/0/0
+    Total LSP(s): 3

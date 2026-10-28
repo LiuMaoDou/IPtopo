@@ -8,6 +8,7 @@ from importlib.metadata import version as package_version
 import json
 import multiprocessing
 import os
+import shutil
 from pathlib import Path
 import re
 from threading import RLock
@@ -15,6 +16,7 @@ from typing import Annotated, Literal
 from urllib.parse import quote
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.gzip import GZipMiddleware
@@ -26,12 +28,18 @@ from .ingest import MAX_FILES, MAX_FILE_BYTES, MAX_TOTAL_BYTES, MAX_UPLOAD_BYTES
 from .jobs import empty_snapshot, import_worker
 from .overrides import apply_overrides
 from .schemas import CreateProject, DomainRequest, OverrideRequest, OverrideStatus, VersionRequest, ViewRequest
-from .store import Job, Project, Snapshot, Source, Store, job_dict, now, project_summary, uid
+from .store import Job, Project, Snapshot, Source, Observation, Store, job_dict, now, project_summary, uid
+from .routing.model import SimulationRequest, validate_snapshot_routing
+from .routing.simulation import simulate
+from .lsdb.api import register as register_lsdb
+from .lsdb.model import Batch as LSDBBatch
+from .ai.api import register as register_ai, facts_revision
 
 ROOT = Path(__file__).resolve().parents[2]
-VERSION = "1.3.2"
+VERSION = "1.4.0"
 DEFAULT_DOMAINS = {"domains": [{"id": "default", "name": "默认地址域", "confirmed": True}], "mappings": {}, "interface_mappings": {}, "segment_splits": {}}
 ACTIVE_JOBS = {"queued", "running", "cancelling"}
+MAX_RESTORE_BYTES = int(os.getenv("IPTOPO_MAX_RESTORE_BYTES", str(256 * 1024 * 1024)))
 
 
 def render_graph(graph):
@@ -49,6 +57,7 @@ def render_graph(graph):
 def create_app(data_dir: str | Path | None = None, worker_mode="process") -> FastAPI:
     store = Store(data_dir or os.environ.get("IPTOPO_DATA_DIR", ROOT / "data"))
     workers = {}
+    workers_lock = RLock()
     # Views are independent of facts: a pan/drag must not replay every override.
     # Retain only the latest derived model for at most two active projects.
     derived = OrderedDict()
@@ -58,7 +67,9 @@ def create_app(data_dir: str | Path | None = None, worker_mode="process") -> Fas
     async def lifespan(app):
         store.recover_jobs()
         yield
-        for process in workers.values():
+        if hasattr(app.state, "ai_shutdown"):
+            await app.state.ai_shutdown()
+        for process in list(workers.values()):
             if process.is_alive():
                 process.terminate()
             process.join(timeout=2)
@@ -68,12 +79,37 @@ def create_app(data_dir: str | Path | None = None, worker_mode="process") -> Fas
     app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=3)
     app.state.store = store
 
+    def reap_workers():
+        with workers_lock:
+            dead = [(key, process) for key, process in workers.items() if not process.is_alive()]
+            for key, _ in dead:
+                workers.pop(key, None)
+        if not dead:
+            return
+        for key, process in dead:
+            process.join(timeout=0)
+            # Only tracked parser jobs own these staging directories. A hard
+            # worker exit bypasses the worker's normal finally cleanup.
+            temporary = store.root / "uploads" / key
+            if temporary.parent.resolve() == (store.root / "uploads").resolve():
+                shutil.rmtree(temporary, ignore_errors=True)
+        with store.session(write=True) as s:
+            for key, process in dead:
+                job = s.get(Job, key)
+                if job and job.status in ACTIVE_JOBS:
+                    job.status = "interrupted"
+                    job.updated_at = now()
+                    job.data = {**job.data, "errors": [*job.data.get("errors", []),
+                        f"解析进程意外退出（退出码 {process.exitcode}），本批次未提交，可以重新导入。"]}
+
     @app.middleware("http")
     async def limits(request: Request, call_next):
+        await run_in_threadpool(reap_workers)
         length = request.headers.get("content-length")
         if length:
             try:
-                if int(length) > MAX_UPLOAD_BYTES:
+                limit = MAX_RESTORE_BYTES + 2 * 1024 * 1024 if request.url.path == "/api/projects/restore" else MAX_UPLOAD_BYTES
+                if int(length) > limit:
                     return JSONResponse(status_code=413, content={"detail": "请求超过上传大小限制"})
             except ValueError:
                 return JSONResponse(status_code=400, content={"detail": "Content-Length 无效"})
@@ -153,7 +189,7 @@ def create_app(data_dir: str | Path | None = None, worker_mode="process") -> Fas
                 cached["graphs"][mode] = render_graph(project_graph(snapshot, mode))
             # Manually added devices can exist before the first imported snapshot.
             has_snapshot = bool(project.snapshot_id or snapshot.get("devices"))
-            return {**project_summary(project), "snapshot": snapshot if has_snapshot else None,
+            return {**project_summary(project), "effective_revision": facts_revision(project), "snapshot": snapshot if has_snapshot else None,
                 "device_count": len(snapshot.get("devices", [])), "topology": cached["graphs"][mode],
                 "domains": snapshot.get("domain_settings", project.settings.get("domains", DEFAULT_DOMAINS)),
                 "overrides": overrides, "views": project.views,
@@ -169,6 +205,9 @@ def create_app(data_dir: str | Path | None = None, worker_mode="process") -> Fas
             project = require_project(s, project_id)
             check_version(s, project, expected_version)
         ingested = ingest_uploads(uploads)
+        protect_previous = strategy == "replace" and any(item.get("status") == "failed" for item in ingested.results)
+        if protect_previous:
+            ingested.results.append({"filename": "本批次", "status": "partial", "parse_status": "partial", "message": "输入读取有失败，已保留未成功替换的旧文件，避免将缺失输入当成删除。", "diagnostics": []})
         job_id = uid("job_")
         prepared = []
         folder = store.root / "uploads" / job_id
@@ -185,19 +224,16 @@ def create_app(data_dir: str | Path | None = None, worker_mode="process") -> Fas
                 raise HTTPException(429, "已有两个解析作业运行，请稍后重试")
             job = Job(id=job_id, project_id=project_id, status="queued", progress=0,
                 data={"uploads": prepared, "expected_version": expected_version, "dialect": dialect or None,
-                      "strategy": strategy, "results": ingested.results, "errors": [], "file_count": len(prepared), "total_bytes": ingested.total_bytes})
+                      "strategy": strategy, "protect_previous_on_input_failure": protect_previous, "results": ingested.results, "errors": [], "file_count": len(prepared), "total_bytes": ingested.total_bytes})
             s.add(job)
         if worker_mode == "inline":
             import_worker(str(store.root), job_id)
         else:
-            for jid, proc in list(workers.items()):
-                if not proc.is_alive():
-                    proc.join()
-                    workers.pop(jid)
             process = multiprocessing.get_context("spawn").Process(target=import_worker, args=(str(store.root), job_id), daemon=True)
             try:
                 process.start()
-                workers[job_id] = process
+                with workers_lock:
+                    workers[job_id] = process
             except Exception:
                 with store.session(write=True) as s:
                     job = s.get(Job, job_id)
@@ -207,6 +243,9 @@ def create_app(data_dir: str | Path | None = None, worker_mode="process") -> Fas
         with store.session() as s:
             return job_dict(s.get(Job, job_id))
 
+    register_lsdb(app, store, require_project, check_version, effective, bump)
+    register_ai(app, store, require_project, effective)
+
     @app.get("/api/health")
     def health():
         return {"status": "ok", "version": VERSION}
@@ -214,7 +253,10 @@ def create_app(data_dir: str | Path | None = None, worker_mode="process") -> Fas
     @app.get("/api/capabilities")
     def capabilities():
         from .parser import SUPPORTED_DIALECTS
+        from .lsdb.adapters import VENDORS
         return {"dialects": SUPPORTED_DIALECTS,
+                "routing": {"protocols": ["ospf", "isis"], "dialects": [d["id"] for d in SUPPORTED_DIALECTS], "families": [4]},
+                "lsdb": {"vendors": [{"id": k, "label": v} for k,v in VENDORS.items()], "protocols": ["ospf", "isis"], "families": [4]},
                 "limits": {"files": MAX_FILES, "file_bytes": MAX_FILE_BYTES, "total_bytes": MAX_TOTAL_BYTES, "zip_depth": MAX_ZIP_DEPTH},
                 "versions": {name: package_version(name) for name in ["ttp", "ttp-templates", "netutils", "N2G", "fastapi"]},
                 "batfish": {"enabled": False, "note": "可选增强未启用；首版不依赖 Batfish 服务"}}
@@ -239,8 +281,8 @@ def create_app(data_dir: str | Path | None = None, worker_mode="process") -> Fas
 
     @app.post("/api/projects/restore", status_code=201)
     async def restore(file: Annotated[UploadFile, File()]):
-        raw = await file.read(MAX_UPLOAD_BYTES + 1)
-        if len(raw) > MAX_UPLOAD_BYTES:
+        raw = await file.read(MAX_RESTORE_BYTES + 1)
+        if len(raw) > MAX_RESTORE_BYTES:
             raise HTTPException(413, "项目文件过大")
         try:
             bundle = json.loads(raw)
@@ -251,6 +293,7 @@ def create_app(data_dir: str | Path | None = None, worker_mode="process") -> Fas
         project_data = bundle["project"]
         snapshots = deepcopy(bundle["snapshots"])
         id_map = {snap["id"]: uid("snap_") for snap in snapshots}
+        observation_id_map = {b["id"]: uid("lsdb_") for b in bundle.get("lsdb_batches", [])}
         overrides = deepcopy(project_data.get("overrides", []))
         for record in overrides:
             if record.get("base_snapshot_id") in id_map:
@@ -260,9 +303,16 @@ def create_app(data_dir: str | Path | None = None, worker_mode="process") -> Fas
                 snap["id"] = id_map[snap["id"]]
                 snap["project_id"] = new_id
                 s.add(Snapshot(id=snap["id"], project_id=new_id, data=snap, created_at=snap.get("created_at", now())))
+            for observation in bundle.get("lsdb_batches", []):
+                data = deepcopy(observation)
+                data["id"] = observation_id_map[data["id"]]
+                data["config_snapshot_id"] = id_map.get(data.get("config_snapshot_id"))
+                s.add(Observation(id=data["id"], project_id=new_id, data=data))
             project = Project(id=new_id, name=project_data["name"], description=project_data.get("description", ""),
                 settings=deepcopy(project_data.get("settings", {"domains": DEFAULT_DOMAINS})), views=deepcopy(project_data.get("views", [])), overrides=overrides,
                 snapshot_id=id_map.get(project_data.get("snapshot_id")))
+            project.settings = {**project.settings, "lsdb_mappings": {
+                observation_id_map[key]: value for key, value in project.settings.get("lsdb_mappings", {}).items() if key in observation_id_map}}
             s.add(project)
             for src_id, item in bundle.get("sources", {}).items():
                 key = uid() + ".txt"
@@ -289,8 +339,8 @@ def create_app(data_dir: str | Path | None = None, worker_mode="process") -> Fas
         return start_job(project_id, uploads, dialect, strategy, expected_version)
 
     @app.post("/api/projects/{project_id}/demo", status_code=202)
-    def demo(project_id: str):
-        directory = ROOT / "samples" / "demo"
+    def demo(project_id: str, kind: Literal["default", "huawei-igp", "multi-vendor-igp"] = "default"):
+        directory = ROOT / "samples" / (kind if kind != "default" else "demo")
         paths = sorted(p for p in directory.rglob("*") if p.is_file() and p.suffix in {".cfg", ".conf", ".txt", ".set"})
         if not paths:
             raise HTTPException(503, "示例配置尚未安装")
@@ -306,6 +356,18 @@ def create_app(data_dir: str | Path | None = None, worker_mode="process") -> Fas
             if not job:
                 raise HTTPException(404, "作业不存在")
             return job_dict(job)
+
+    @app.post("/api/projects/{project_id}/simulate")
+    def simulate_project(project_id: str, body: SimulationRequest):
+        with store.session() as s:
+            project = require_project(s, project_id)
+            check_version(s, project, body.version)
+            snapshot, _ = effective(s, project)
+            try:
+                result = simulate(snapshot, body)
+            except ValueError as exc:
+                raise HTTPException(422, str(exc)) from exc
+            return {**result, "project_version": project.version}
 
     @app.post("/api/imports/{job_id}/cancel")
     def cancel_job(job_id: str):
@@ -424,6 +486,7 @@ def create_app(data_dir: str | Path | None = None, worker_mode="process") -> Fas
                 bundle = {"format": "iptopo.project", "schema_version": 1, "exported_at": now(),
                     "project": {**project_summary(project), "settings": project.settings, "overrides": project.overrides, "views": project.views},
                     "snapshots": [x.data for x in s.scalars(select(Snapshot).where(Snapshot.project_id == project_id).order_by(Snapshot.created_at))],
+                    "lsdb_batches": [x.data for x in s.scalars(select(Observation).where(Observation.project_id == project_id).order_by(Observation.created_at))],
                     "sources": {}, "include_sources": include_sources}
                 if include_sources:
                     bundle["sources"] = {src.source_id: {"filename": src.filename, "text": (store.root / "sources" / src.storage_key).read_text(encoding="utf-8")}
@@ -431,6 +494,8 @@ def create_app(data_dir: str | Path | None = None, worker_mode="process") -> Fas
                 else:
                     bundle = without_source_text(bundle)
                 content = json.dumps(bundle, ensure_ascii=False, indent=2).encode()
+                if len(content) > MAX_RESTORE_BYTES:
+                    raise HTTPException(413, "备份超过当前恢复限额。请调整 IPTOPO_MAX_RESTORE_BYTES 后重试，或备份完整数据目录。")
                 mime, extension = "application/json", ".iptopo.json"
             else:
                 graph = filter_graph(snapshot, view, mode)
@@ -485,6 +550,19 @@ def validate_bundle(bundle):
         raise ValueError("快照列表无效")
     if len(snapshots) > 10000:
         raise ValueError("快照过多")
+    observations = bundle.get("lsdb_batches", [])
+    if not isinstance(observations, list) or len(observations) > 10000:
+        raise ValueError("LSDB 批次列表无效")
+    observation_ids = set()
+    for item in observations:
+        observation = LSDBBatch.model_validate(item)
+        if observation.id in observation_ids:
+            raise ValueError("LSDB 批次 ID 重复")
+        observation_ids.add(observation.id)
+    lsdb_mappings = project.get("settings", {}).get("lsdb_mappings", {})
+    if not isinstance(lsdb_mappings, dict) or any(key not in observation_ids or not isinstance(value, dict)
+            or any(not isinstance(a, str) or not isinstance(b, str) for a, b in value.items()) for key, value in lsdb_mappings.items()):
+        raise ValueError("LSDB 身份关联数据无效")
     snapshot_ids = set()
     for snap in snapshots:
         if snap["id"] in snapshot_ids:
@@ -497,11 +575,15 @@ def validate_bundle(bundle):
             if len(ids) != len(set(ids)):
                 raise ValueError(f"{kind} ID 重复")
         device_ids = {d["id"] for d in snap["devices"]}
+        validate_snapshot_routing(snap)
         for interface in snap["interfaces"]:
             if interface["device_id"] not in device_ids or not isinstance(interface.get("addresses", []), list):
                 raise ValueError("接口归属或地址结构无效")
         # Exercise actual inference before committing restored state.
         apply_overrides(deepcopy(snap), [], project.get("settings", {}).get("domains", DEFAULT_DOMAINS))
+    for observation in observations:
+        if observation.get("config_snapshot_id") and observation["config_snapshot_id"] not in snapshot_ids:
+            raise ValueError("LSDB 引用的配置快照不存在")
     if project.get("snapshot_id") and project["snapshot_id"] not in snapshot_ids:
         raise ValueError("当前快照不存在")
     settings = project.get("settings", {})

@@ -1,0 +1,54 @@
+IGP-S#show isis database detail
+Tag CORE:
+ISIS Level-2 Link State Database:
+LSPID LSP Seq Num LSP Checksum LSP Holdtime ATT/P/OL
+
+0000.0000.0001.00-00 0x00000001 0x1234 1100 0/0/0
+ NLPID: 0xCC
+ Hostname: IGP-S
+ IP Address: 10.255.0.1
+ Metric: 10 IS-Extended 0000.0000.0002.00
+ Metric: 10 IS-Extended 0000.0000.0003.00
+ Metric: 0 IP-Extended 10.255.0.1/32
+
+0000.0000.0002.00-00 0x00000001 0x1234 1100 0/0/0
+ NLPID: 0xCC
+ Hostname: IGP-A
+ IP Address: 10.255.0.2
+ Metric: 10 IS-Extended 0000.0000.0001.00
+ Metric: 20 IS-Extended 0000.0000.0006.00
+ Metric: 0 IP-Extended 10.255.0.2/32
+
+0000.0000.0003.00-00 0x00000001 0x1234 1100 0/0/0
+ NLPID: 0xCC
+ Hostname: IGP-B
+ IP Address: 10.255.0.3
+ Metric: 10 IS-Extended 0000.0000.0001.00
+ Metric: 10 IS-Extended 0000.0000.0004.00
+ Metric: 10 IS-Extended 0000.0000.0005.00
+ Metric: 0 IP-Extended 10.255.0.3/32
+
+0000.0000.0004.00-00 0x00000001 0x1234 1100 0/0/0
+ NLPID: 0xCC
+ Hostname: IGP-C
+ IP Address: 10.255.0.4
+ Metric: 10 IS-Extended 0000.0000.0003.00
+ Metric: 10 IS-Extended 0000.0000.0006.00
+ Metric: 0 IP-Extended 10.255.0.4/32
+
+0000.0000.0005.00-00 0x00000001 0x1234 1100 0/0/0
+ NLPID: 0xCC
+ Hostname: IGP-E
+ IP Address: 10.255.0.5
+ Metric: 10 IS-Extended 0000.0000.0003.00
+ Metric: 10 IS-Extended 0000.0000.0006.00
+ Metric: 0 IP-Extended 10.255.0.5/32
+
+0000.0000.0006.00-00 0x00000001 0x1234 1100 0/0/0
+ NLPID: 0xCC
+ Hostname: IGP-D
+ IP Address: 10.255.0.6
+ Metric: 20 IS-Extended 0000.0000.0002.00
+ Metric: 10 IS-Extended 0000.0000.0004.00
+ Metric: 10 IS-Extended 0000.0000.0005.00
+ Metric: 0 IP-Extended 10.255.0.6/32

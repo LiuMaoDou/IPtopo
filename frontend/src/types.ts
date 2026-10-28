@@ -108,6 +108,7 @@ export type SourceFile = {
   diagnostics: Diagnostic[];
 };
 export type Snapshot = {
+  routing?: import("./routingTypes").RoutingFacts;
   id: string;
   devices: Device[];
   interfaces: Interface[];
@@ -143,6 +144,9 @@ export type GraphData = {
     source: string;
     target: string;
     label: string;
+    status?: string;
+    cost?: number;
+    source_refs?: Ref[];
     link_id?: string;
     source_label?: string;
     target_label?: string;
@@ -187,6 +191,7 @@ export type Job = {
 };
 export type Project = {
   id: string;
+  effective_revision?: string;
   name: string;
   description: string;
   version: number;

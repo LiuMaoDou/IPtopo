@@ -10,6 +10,8 @@ on:
       - 'requirements.lock'
       - 'desktop.py'
       - 'packaging/**'
+      - 'samples/**'
+      - 'docs/WINDOWS.md'
       - 'scripts/smoke_desktop.py'
       - '.github/workflows/windows.yml'
 permissions:
@@ -32,19 +34,44 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: python -m pip install -r requirements.lock -r packaging/requirements.txt
       - run: python -m pytest backend/tests -q
+      - name: Validate public vendor fixtures
+        run: python -m scripts.validate_public_network
       - run: npm ci; if ($LASTEXITCODE) { exit $LASTEXITCODE }; npm test; if ($LASTEXITCODE) { exit $LASTEXITCODE }; npm run build
         working-directory: frontend
       - run: python -m PyInstaller --clean --noconfirm packaging/windows.spec
+      - name: Install native Codex for the packaged connector smoke test
+        shell: pwsh
+        run: |
+          $prefix = Join-Path $env:RUNNER_TEMP 'iptopo-codex'
+          npm install --prefix $prefix --no-audit --no-fund '@openai/codex@0.163.0'
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          $native = Get-ChildItem (Join-Path $prefix 'node_modules/@openai') -Filter codex.exe -Recurse |
+            Where-Object { $_.FullName -match 'x86_64-pc-windows-msvc' } | Select-Object -First 1
+          if (-not $native) { throw 'Official Windows x64 Codex executable is missing' }
+          & $native.FullName --version
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          "IPTOPO_TEST_CODEX_EXE=$($native.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
       - name: Test the actual windowed executable without Python or Node on PATH
-        run: python scripts/smoke_desktop.py --exe dist/IPtopo.exe
+        shell: pwsh
+        run: |
+          $version = (Get-Content frontend/package.json | ConvertFrom-Json).version
+          python scripts/smoke_desktop.py --exe dist/IPtopo.exe --codex-exe "$env:IPTOPO_TEST_CODEX_EXE" --expected-version "$version"
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Prepare portable download
         shell: pwsh
         run: |
           Copy-Item LICENSE dist/LICENSE.txt
           Copy-Item docs/WINDOWS.md dist/README.md
+          Copy-Item docs/AI.md dist/AI.md
           git archive --format=zip --output=dist/IPtopo-source.zip HEAD
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          $version = (Get-Content frontend/package.json | ConvertFrom-Json).version
+          $fileVersion = (Get-Item dist/IPtopo.exe).VersionInfo.FileVersion
+          if ($fileVersion -ne "$version.0") { throw "Unexpected EXE version: $fileVersion" }
+          $build = [ordered]@{ version = $version; commit = $env:GITHUB_SHA; platform = 'windows-x64'; workflow_run = $env:GITHUB_RUN_ID }
+          $build | ConvertTo-Json | Out-File dist/BUILD-INFO.json -Encoding utf8
           (Get-FileHash dist/IPtopo.exe -Algorithm SHA256).Hash + '  IPtopo.exe' | Out-File dist/SHA256SUMS.txt -Encoding ascii
-          Compress-Archive -Path dist/IPtopo.exe,dist/LICENSE.txt,dist/README.md,dist/IPtopo-source.zip,dist/SHA256SUMS.txt -DestinationPath dist/IPtopo-Windows-x64.zip
+          Compress-Archive -Path dist/IPtopo.exe,dist/LICENSE.txt,dist/README.md,dist/AI.md,dist/IPtopo-source.zip,dist/SHA256SUMS.txt,dist/BUILD-INFO.json -DestinationPath dist/IPtopo-Windows-x64.zip
       - uses: actions/upload-artifact@v4
         with:
           name: IPtopo-Windows-x64

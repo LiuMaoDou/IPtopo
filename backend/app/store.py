@@ -42,6 +42,14 @@ class Snapshot(Base):
     created_at = Column(String, default=now)
 
 
+class Observation(Base):
+    __tablename__ = "lsdb_observations"
+    id = Column(String, primary_key=True)
+    project_id = Column(String, index=True, nullable=False)
+    data = Column(JSON, nullable=False)
+    created_at = Column(String, default=now)
+
+
 class Source(Base):
     __tablename__ = "sources"
     key = Column(String, primary_key=True)
@@ -61,6 +69,36 @@ class Job(Base):
     data = Column(JSON, default=dict, nullable=False)
     created_at = Column(String, default=now)
     updated_at = Column(String, default=now)
+
+
+class ChatSession(Base):
+    """Agent conversations are independent of project facts and project.version."""
+    __tablename__ = "chat_sessions"
+    id = Column(String, primary_key=True)
+    project_id = Column(String, index=True, nullable=False)
+    title = Column(String, nullable=False, default="新对话")
+    backend = Column(String, nullable=False)
+    model = Column(String, nullable=False, default="")
+    runtime_thread_id = Column(String, nullable=True)
+    runtime_revision = Column(String, nullable=True)
+    created_at = Column(String, default=now, nullable=False)
+    updated_at = Column(String, default=now, nullable=False)
+
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+    id = Column(String, primary_key=True)
+    session_id = Column(String, index=True, nullable=False)
+    project_id = Column(String, index=True, nullable=False)
+    role = Column(String, nullable=False)
+    content = Column(Text, nullable=False, default="")
+    status = Column(String, nullable=False, default="completed")
+    context = Column(JSON, nullable=False, default=dict)
+    cards = Column(JSON, nullable=False, default=list)
+    tool_calls = Column(JSON, nullable=False, default=list)
+    usage = Column(JSON, nullable=False, default=dict)
+    error = Column(Text, nullable=True)
+    created_at = Column(String, default=now, nullable=False)
 
 
 class Store:
@@ -98,6 +136,9 @@ class Store:
                 job.status = "interrupted"
                 job.updated_at = now()
                 job.data = {**job.data, "errors": [*job.data.get("errors", []), "服务已重新启动；未完成的导入未提交，请重新导入。"]}
+            for message in s.scalars(select(ChatMessage).where(ChatMessage.status == "running")):
+                message.status = "error"
+                message.error = "服务已重新启动，本轮对话已中断，可以重新提问。"
 
 
 def job_dict(job: Job) -> dict:

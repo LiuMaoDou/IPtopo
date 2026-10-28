@@ -2,6 +2,8 @@
 
 从网络设备配置还原可解释、可编辑的 IP **逻辑**拓扑。本机或可信内网部署，Python/FastAPI + React/TypeScript + Cytoscape.js，SQLite 保存项目、不可变配置快照、人工修正和命名视图。
 
+所有功能面向 **PC 桌面浏览器**，包括笔记本和台式机上的拓扑编辑、路径仿真、LSDB 与 AI 对话。采用设备列表、画布和详情 / 对话并列的工作区，最小宽度为 1280 px；较窄的 PC 窗口保持桌面布局并可横向滚动。开发和验收聚焦桌面窗口，不提供手机或平板专用交互。
+
 配置同网段只产生候选关系，不能证明物理直连或在线可达。只有配置输入时，运行状态为 `unknown`；“人工确认”也不代表实时运行状态。
 
 ![IPtopo 工作区](docs/workbench.png)
@@ -9,6 +11,8 @@
 ## 启动
 
 ### Windows 双击启动
+
+[下载 Windows x64 便携包](https://github.com/LiuMaoDou/IPtopo/releases/latest/download/IPtopo-Windows-x64.zip) · [版本与校验文件](https://github.com/LiuMaoDou/IPtopo/releases)
 
 Windows x64 可使用免安装的 `IPtopo.exe`，自带前后端及 Python 运行环境。双击后自动打开浏览器，关闭启动窗口退出。数据保存在 `%LOCALAPPDATA%\IPtopo\data`，升级 EXE 不覆盖项目。下载构建和使用说明见 [Windows 版](docs/WINDOWS.md)；构建产物位于 [Windows executable 工作流](https://github.com/LiuMaoDou/IPtopo/actions/workflows/windows.yml)。
 
@@ -59,9 +63,21 @@ Vite 将 `/api` 代理到 8765。API 进程必须使用 **一个 Uvicorn worker*
 7. 重新上传同名文件更新该设备快照，其他文件默认保留；“替换”模式移除未在本次提供的配置。失败文件不会删除之前的有效配置。文件内设备名称或厂商变化时创建新身份并提醒复核。
 8. 导出 JSON、PNG、CSV ZIP、draw.io。项目 JSON 包含全部配置事实快照、修正和视图，可恢复成独立项目；默认不包含原配置，可显式选择包含。CSV/draw.io 按选定已保存视图筛选；PNG 由当前画布生成。
 
+### AI 对话
+
+工具栏“AI 对话”支持直接查询设备、接口、逻辑组网和配置 / LSDB 路径，并通过结果卡片定位画布和来源。可使用本机原生 Codex、专用 OpenCode V1/V2 服务，或支持工具调用的模型 API；也可生成当前项目的临时只读 MCP 连接供外部 Agent 使用。默认 Codex 使用独立原生会话与只读权限，路径由 IPtopo 引擎计算。安装、登录、专用 Agent 配置、容器回调地址和数据边界见 [AI 接入说明](docs/AI.md)。
+
 设备身份以项目中持久保存的输入文件映射建立，不以 hostname 或 IP 自动合并。同名设备保留独立身份并报警。输入文件改名会建立新身份；请保留稳定的备份文件名。批次内部相同内容只处理一次。
 
 ## 解析范围
+
+### 四厂商 OSPF / IS-IS 路径仿真
+
+工具栏新增“路径仿真”：选择源设备、目的设备的已发布 /32 Loopback 和 Area / Level，在画布上查看最短路径、并行链路与逐跳 ECMP 理论分担。可临时修改开销、补充未知开销假设或模拟接口退出，原始配置不变。提供独立的六设备四厂商混合示例，三条等价路径理论占比为 50% / 25% / 25%。
+
+现已适配 Huawei VRP、Cisco IOS/XE/XR/NX-OS、Juniper Junos set/层级、Nokia SR OS Classic/MD-CLI flat/层级，支持 IPv4、OSPF 单 Area 和 IS-IS 单 Level 内部路径。协议事实采用独立、版本化的数据契约，计算引擎与厂商适配器解耦。旧项目需重新导入完整配置来提取协议字段。支持语法、API 和限制见 [路由仿真说明](docs/ROUTING.md)，默认启用、继承、成本与 FIB 差异见 [默认行为说明](docs/DEFAULTS.md)。
+
+### 接口与拓扑
 
 目标方言：Huawei VRP；Cisco IOS/IOS-XE、IOS-XR、NX-OS；Junos set/层级；Nokia SR OS Classic、MD-CLI flat/层级。
 
@@ -108,7 +124,8 @@ Junos 支持完整配置、接口子树以及带命令/编辑路径上下文的�
 - ZIP 递归读取，不按用户路径解压到磁盘；拒绝越界路径、符号链接、加密或不支持的归档；二进制与元数据跳过并报告。嵌套归档的实际展开数据也计入总量限制。
 - 单文件错误独立报告；取消作业或重启中断时不会提交半个快照。重启后未完成作业标记 `interrupted`，可以重新上传。
 - 更新请求带项目版本，冲突返回 409。导入期间暂停其他项目写入，避免新快照覆盖刚做的修正。
-- 需要包含配置原文的便携备份，使用 JSON 导出并勾选包含原文。完整服务备份先停止服务，再复制整个数据目录/数据卷（包括数据库及 sources）。恢复时使用同版本或兼容 schema 的应用。
+- 需要包含配置原文的便携备份，使用 JSON 导出并勾选包含原文。项目 JSON 导出与恢复使用独立的 256 MiB 限额，通过 `IPTOPO_MAX_RESTORE_BYTES` 调整，与配置上传限额分开计算。
+- 完整服务备份先停止服务，再复制数据目录/数据卷（包括数据库及 sources），排除 `ai/codex-home/auth.json`，不要跟随该认证符号链接；硬链接备份也应排除此文件。恢复时使用同版本或兼容 schema 的应用，并重新建立原生 Codex 登录。聊天、AI 设置和原生 Agent 历史不进入项目 JSON；详见 [AI 数据边界](docs/AI.md#本地数据与排错)。
 - 日志不输出配置正文。前端按纯文本显示配置。配置文件可能含凭据，请将数据目录和含原文的备份放在受控位置。
 
 ## 目录
@@ -127,3 +144,7 @@ scripts/         本机启动与合成基准
 ### 多厂商 LAG / LACP
 
 支持 Huawei Eth-Trunk、Cisco Port-channel / Bundle-Ether、Juniper ae、Nokia SR OS LAG 的配置成员关系及显式协议模式。点击链路或接口可查看两端聚合接口、成员端口和 LACP 参数。LACP、静态聚合、PAgP 分别标记；物理成员不会重复生成三层链路。地址仍属于聚合口或逻辑子接口。已有项目需重新导入原配置以提取新增字段。详细语法与边界见 [支持矩阵](docs/SUPPORT_MATRIX.md#lag--lacp-support-v12)。
+
+### LSDB 拓扑与配置融合
+
+工具栏“LSDB 拓扑”可选择或自动识别 Huawei、Cisco、Juniper、Nokia 的 OSPFv2 / IS-IS 详细 LSDB，独立还原协议连接，关联配置设备 / 接口，查看开销与连接差异，并计算逐跳 ECMP。采集批次和配置快照独立保存，支持项目 JSON 备份恢复。内置四种原生 LSDB 格式和六设备混合合成示例。见 [使用、格式与边界](docs/LSDB.md)。

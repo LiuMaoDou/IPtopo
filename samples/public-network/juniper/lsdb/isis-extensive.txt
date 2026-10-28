@@ -1,0 +1,81 @@
+user@host> show isis database extensive
+IS-IS level 1 link-state database:
+ISIS instance: Default, Routing Instance: master
+
+VMX_R2_re.00-00 Sequence: 0x3bf6, Checksum: 0x97e3, Lifetime: 331 secs
+   IPV6 Unicast IS neighbor: VMX_R3_re.00     Metric:       10
+     Two-way fragment: VMX_R3_re.00-00, Two-way first fragment: VMX_R3_re.00-00
+   IPV6 Unicast IS neighbor: VMX_R5_re.00     Metric:       10
+     Two-way fragment: VMX_R5_re.00-00, Two-way first fragment: VMX_R5_re.00-00
+   IPV6 Unicast IS neighbor: VMX_R6_re.00     Metric:       10
+     Two-way fragment: VMX_R6_re.00-00, Two-way first fragment: VMX_R6_re.00-00
+   V6 IPV6 Unicast prefix: 2000::23:0/126     Metric:       10 Internal Up
+   V6 IPV6 Unicast prefix: 2000::25:0/126     Metric:       10 Internal Up
+   V6 IPV6 Unicast prefix: 2000::26:0/126     Metric:       10 Internal Up
+   V6 IPV6 Unicast prefix: 2000::2:2:2:2/128  Metric:        0 Internal Up
+   V6 IPV6 Unicast prefix: abcd::128:220:28:200/128 Metric:        0 Internal Up
+
+  Header: LSP ID: VMX_R2_re.00-00, Length: 523 bytes
+    Allocated length: 1492 bytes, Router ID: 2.2.2.2
+    Remaining lifetime: 331 secs, Level: 1, Interface: 0
+    Estimated free bytes: 848, Actual free bytes: 969
+    Aging timer expires in: 331 secs
+    Protocols: IPv6
+
+  Packet: LSP ID: VMX_R2_re.00-00, Length: 523 bytes, Lifetime : 348 secs
+    Checksum: 0x97e3, Sequence: 0x3bf6, Attributes: 0x1 <L1>
+    NLPID: 0x83, Fixed length: 27 bytes, Version: 1, Sysid length: 0 bytes
+    Packet type: 18, Packet version: 1, Max area: 0
+
+  TLVs:
+    Area address: 47.0005.80ff.f800.0000.0108.0001 (13)
+    Area address: 49.0005 (3)
+    LSP Buffer Size: 1492
+    Speaks: IPV6
+    Topology: unicast
+    Topology: ipv6 unicast
+    IP router id: 2.2.2.2
+    IP address: 2.2.2.2
+    IPv6 TE Router ID: abcd::128:220:28:200
+    IPv6 address: abcd::128:220:28:200
+    Hostname: VMX_R2_re
+    Router Capability:  Router ID 2.2.2.2, Flags: 0x00
+      Node MSD Advertisement Sub-TLV:Type:  23, Length: 4
+        Base MPLS Imposition MSD:Type:  1, Value: 3
+        Entropy Readable Label Depth MSD:Type:  2, Value: 16
+      IPv6 TE Router Id: abcd::128:220:28:200
+    IPV6 UnicastIPv6 prefix: 2000::25:0/126 Metric 10 Up
+    IPV6 UnicastIPv6 prefix: 2000::26:0/126 Metric 10 Up
+    IPV6 UnicastIPv6 prefix: 2000::2:2:2:2/128 Metric 0 Up
+    IPV6 UnicastIPv6 prefix: abcd::128:220:28:200/128 Metric 0 Up
+    IPV6 UnicastIPv6 prefix: 2000::23:0/126 Metric 10 Up
+    Extended IS Reachability TLV, Type: 222, Length: 203
+    IPV6 UnicastIS neighbor: VMX_R6_re.00, Metric: default 10 SubTLV len: 56
+      IPv6 address: 2000::26:1
+      Neighbor's IPv6 address: 2000::26:2
+      Local interface index: 361, Remote interface index: 364
+      Link MSD Advertisement Sub-TLV:Type: 15, Length: 2
+        Base MPLS Imposition MSD:Type: 1, Value: 3
+      Maximum bandwidth: 1000Mbps
+    IPV6 UnicastIS neighbor: VMX_R3_re.00, Metric: default 10 SubTLV len: 56
+      IPv6 address: 2000::23:1
+      Neighbor's IPv6 address: 2000::23:2
+      Local interface index: 339, Remote interface index: 334
+      Link MSD Advertisement Sub-TLV:Type: 15, Length: 2
+        Base MPLS Imposition MSD:Type: 1, Value: 3
+      Maximum bandwidth: 1000Mbps
+    IPV6 UnicastIS neighbor: VMX_R5_re.00, Metric: default 10 SubTLV len: 56
+      IPv6 address: 2000::25:1
+      Neighbor's IPv6 address: 2000::25:2
+      Local interface index: 340, Remote interface index: 338
+      Link MSD Advertisement Sub-TLV:Type: 15, Length: 2
+        Base MPLS Imposition MSD:Type: 1, Value: 3
+      Maximum bandwidth: 1000Mbps
+    IPv6 SRLG neighbor: R3_re.00, Neighbor Address included
+      IPv6 address: 2000::23:1
+      Neighbor's IPv6 address: 2000::23:2
+      IDs: RED, BLACK, GREEN
+  No queued transmissions
+
+IS-IS level 2 link-state database:
+ISIS instance: Default, Routing Instance: master

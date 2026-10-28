@@ -1,0 +1,27 @@
+R2# show isis database R2.00-00 detail
+ISIS Level-1 LSP R2.00-00
+LSPID         LSP Seq Num  LSP Checksum  LSP Holdtime  ATT/P/OL
+R2.00-00    * 0x00000093   0x077E        71            0/0/0
+  Area Address: 49.0001
+  NLPID:        0xCC
+  Hostname: R2
+  IP Address:   172.16.2.2
+  Metric: 10         IP 172.16.12.0 255.255.255.0
+  Metric: 0          IP 172.16.2.2 255.255.255.255
+  Metric: 10         IP 172.16.23.0 255.255.255.252
+  Metric: 10         IS R2.01
+  Metric: 10         IS R3.00
+ISIS Level-2 LSP R2.00-00
+LSPID         LSP Seq Num  LSP Checksum  LSP Holdtime  ATT/P/OL
+R2.00-00    * 0x0000009A   0x5A69        103           0/0/0
+  Area Address: 49.0001
+  NLPID:        0xCC
+  Hostname: R2
+  IP Address:   172.16.2.2
+  Metric: 10         IS R2.01
+  Metric: 10         IS R3.00
+  Metric: 10         IP 172.16.23.0 255.255.255.252
+  Metric: 10         IP 172.16.1.1 255.255.255.255
+  Metric: 10         IP 172.16.3.3 255.255.255.255
+  Metric: 0          IP 172.16.2.2 255.255.255.255
+  Metric: 10         IP 172.16.12.0 255.255.255.0

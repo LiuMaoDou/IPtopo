@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Network,
   Upload,
@@ -13,10 +13,10 @@ import {
   FolderOpen,
   X,
   Link2,
-  PanelLeft,
-  PanelRight,
   Play,
   AlertCircle,
+  Route,
+  MessageSquare,
 } from "lucide-react";
 import Graph, { type GraphHandle } from "./Graph";
 import { indexTopology, filterTopology } from "./graphModel";
@@ -24,6 +24,11 @@ import Inventory from "./Inventory";
 import Inspector, { type Action } from "./Inspector";
 import ActionDialog, { DomainDialog, Modal, SourceDialog } from "./Dialogs";
 import Diagnostics from "./Diagnostics";
+import SimulationPanel from "./SimulationPanel";
+import LSDBPanel from "./LSDBPanel";
+import type { SimulationHighlight } from "./routingTypes";
+import { cardTopology, type CardAction } from "./chat/types";
+const ChatPanel = lazy(() => import("./chat/ChatPanel"));
 import {
   api,
   blankView,
@@ -47,6 +52,18 @@ const initialFilters = {
   focus: "",
 };
 export default function App() {
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatHighlight, setChatHighlight] = useState<SimulationHighlight | null>(null);
+  const [chatGraph, setChatGraph] = useState<GraphData | null>(null);
+  const [chatBatchId, setChatBatchId] = useState("");
+  const [lsdbBatchId, setLsdbBatchId] = useState("");
+  const [chatFocus, setChatFocus] = useState<{ deviceIds: string[]; linkIds: string[] } | null>(null);
+  const [lsdbOpen, setLsdbOpen] = useState(false);
+  const [lsdbGraph, setLsdbGraph] = useState<GraphData | null>(null);
+  const [lsdbHighlight, setLsdbHighlight] = useState<SimulationHighlight | null>(null);
+  const [lsdbView, setLsdbView] = useState<View>(() => blankView("lsdb"));
+  const [simulationOpen, setSimulationOpen] = useState(false);
+  const [simulation, setSimulation] = useState<SimulationHighlight | null>(null);
   const [projects, setProjects] = useState<Summary[]>([]),
     [project, setProject] = useState<Project | null>(null),
     [capabilities, setCapabilities] = useState<{
@@ -70,7 +87,6 @@ export default function App() {
     [filters, setFilters] = useState(initialFilters),
     [layout, setLayout] = useState("fcose"),
     [onlySelected, setOnlySelected] = useState(false),
-    [mobilePanel, setMobilePanel] = useState("canvas"),
     [saved, setSaved] = useState(true),
     [exportOpen, setExportOpen] = useState(false),
     [viewSettings, setViewSettings] = useState(false),
@@ -95,6 +111,29 @@ export default function App() {
   projectRef.current = project;
   viewRef.current = view;
   modeRef.current = filters.mode;
+  const simulationRevision = `${project?.id}:${project?.snapshot_id}:${JSON.stringify([project?.overrides, project?.domains])}`;
+  useEffect(() => { setSimulation(null); setLsdbGraph(null); setLsdbHighlight(null); setChatHighlight(null); setChatGraph(null); setChatFocus(null); setChatBatchId(""); }, [simulationRevision]);
+  const displayedLsdbGraph = chatOpen && chatGraph ? chatGraph : lsdbGraph;
+  const clearChatHighlight = () => { setChatHighlight(null); setChatFocus(null); };
+  const chatAction = ({ card, context, action }: CardAction) => {
+    if (!project || context.project_id !== project.id || (context.snapshot_id || null) !== (project.snapshot_id || null)
+      || context.revision && project.effective_revision && context.revision !== project.effective_revision) {
+      setError("项目数据已变化，请重新提问后查看当前结果。"); return;
+    }
+    const layer = card.data.layer === "lsdb" ? "lsdb" : "config";
+    if (layer === "lsdb") {
+      const topology = cardTopology(card);
+      if (!topology && action === "highlight") { setError("此结果缺少 LSDB 拓扑，无法高亮；请重新查询。"); return; }
+      setLsdbOpen(true); if (topology) setChatGraph(topology);
+      setChatBatchId(typeof card.data.batch_id === "string" ? card.data.batch_id : "");
+    } else {
+      setLsdbOpen(false); setChatGraph(null); setChatBatchId("");
+      setFilters(previous => ({ ...initialFilters, mode: previous.mode }));
+    }
+    setSimulationOpen(false); setChatHighlight(action === "highlight" ? card.highlight || null : null);
+    setChatFocus({ deviceIds: card.device_ids || [], linkIds: card.link_ids || [] });
+    const first = card.device_ids?.[0]; if (first) setSelection({ kind: "device", id: first });
+  };
   const notify = (message: string) => {
     setToast(message);
     setTimeout(() => setToast(""), 3500);
@@ -270,6 +309,7 @@ export default function App() {
     await task;
   }, []);
   const viewChanged = (partial: Partial<View>) => {
+    if (lsdbOpen) { setLsdbView(prev => ({ ...prev, ...partial })); return; }
     const updated = { ...viewRef.current, ...partial };
     viewRef.current = updated;
     setView(updated);
@@ -286,6 +326,7 @@ export default function App() {
     }, 1000);
   };
   const flushView = async () => {
+    if (lsdbOpen) return;
     if (saveTimer.current) {
       clearTimeout(saveTimer.current);
       saveTimer.current = null;
@@ -299,6 +340,7 @@ export default function App() {
     }
   };
   const setFilter = (key: string, value: string) => {
+    if (lsdbOpen) return;
     const f = { ...filters, [key]: value };
     setFilters(f);
     viewChanged({ ...graph.current?.capture(), filters: f });
@@ -526,7 +568,16 @@ export default function App() {
   };
   const openAction = (a: Action) => {
     setAction(a);
-    setMobilePanel("canvas");
+  };
+  const igpDemo = async () => {
+    try {
+      setBusy(true);
+      const p = await api<Project>("/api/projects", { method: "POST", body: JSON.stringify({ name: "四厂商 IGP 仿真示例", description: "合成六设备网络，验证三条等价路径的 50% / 25% / 25% 分担。" }) });
+      await loadProject(p.id);
+      setSimulationOpen(true);
+      setJob(await api<Job>(`/api/projects/${p.id}/demo?kind=multi-vendor-igp`, { method: "POST", body: "{}" }));
+    } catch (e) { showError(e); }
+    finally { setBusy(false); }
   };
   const topologyIndex = useMemo(
     () =>
@@ -560,6 +611,11 @@ export default function App() {
         return;
       }
       if (!project) return;
+      if (lsdbOpen && format === "json") {
+        const a = document.createElement("a");
+        a.href = `/api/projects/${project.id}/exports/json?include_sources=${includeSources}`;
+        a.download = ""; a.click(); return;
+      }
       const latest = {
         ...viewRef.current,
         ...graph.current?.capture(),
@@ -615,7 +671,7 @@ export default function App() {
     ? project.views
     : [view, ...(project?.views || [])];
   return (
-    <div className={"app-shell panel-" + mobilePanel}>
+    <div className="app-shell">
       <header className="app-header">
         <a className="brand" href="/" aria-label="IPtopo 首页">
           <Network size={29} />
@@ -672,7 +728,7 @@ export default function App() {
         </button>
         <div className="export-wrap">
           <button
-            disabled={!project?.snapshot}
+            disabled={!project}
             onClick={() => setExportOpen(!exportOpen)}
           >
             <Download size={16} />
@@ -687,7 +743,7 @@ export default function App() {
                   checked={includeSources}
                   onChange={(e) => setIncludeSources(e.target.checked)}
                 />
-                JSON 包含原始配置
+                JSON 包含配置与 LSDB 原文
               </label>
               {[
                 ["json", "项目 JSON"],
@@ -697,6 +753,7 @@ export default function App() {
               ].map(([format, label]) => (
                 <button
                   key={format}
+                  disabled={lsdbOpen && (format === "csv" || format === "drawio")}
                   title={
                     format === "png"
                       ? "完整拓扑 PNG，最长边不超过 4096 像素"
@@ -712,8 +769,12 @@ export default function App() {
         </div>
       </header>
       <div className="toolbar">
+        <button disabled={!project} className={simulationOpen && !chatOpen ? "active" : ""} onClick={() => { setChatOpen(false); clearChatHighlight(); setChatGraph(null); setSimulationOpen(!simulationOpen); setLsdbOpen(false); setSimulation(null); }}><Route size={16} />路径仿真</button>
+        <button disabled={!project} className={lsdbOpen && !chatOpen ? "active" : ""} onClick={() => { setLsdbOpen(chatOpen ? true : !lsdbOpen); setChatOpen(false); clearChatHighlight(); setChatGraph(null); setSimulationOpen(false); setSelection(null); }}>LSDB 拓扑</button>
+        <button disabled={!project} className={chatOpen ? "active" : ""} onClick={() => { setChatOpen(!chatOpen); setSimulationOpen(false); setSimulation(null); clearChatHighlight(); setChatGraph(null); setChatBatchId(""); }}><MessageSquare size={16} />AI 对话</button>
         <div className="segmented">
           <button
+            disabled={lsdbOpen}
             className={filters.mode === "device" ? "active" : ""}
             onClick={() => setFilter("mode", "device")}
           >
@@ -721,6 +782,7 @@ export default function App() {
             设备视图
           </button>
           <button
+            disabled={lsdbOpen}
             className={filters.mode === "segment" ? "active" : ""}
             onClick={() => setFilter("mode", "segment")}
           >
@@ -730,6 +792,7 @@ export default function App() {
         </div>
         <select
           aria-label="地址族筛选"
+          disabled={lsdbOpen}
           value={filters.family}
           onChange={(e) => setFilter("family", e.target.value)}
         >
@@ -739,6 +802,7 @@ export default function App() {
         </select>
         <select
           aria-label="厂商筛选"
+          disabled={lsdbOpen}
           value={filters.vendor}
           onChange={(e) => setFilter("vendor", e.target.value)}
         >
@@ -751,6 +815,7 @@ export default function App() {
         </select>
         <select
           aria-label="地址域筛选"
+          disabled={lsdbOpen}
           value={filters.domain}
           onChange={(e) => setFilter("domain", e.target.value)}
         >
@@ -765,7 +830,7 @@ export default function App() {
         <button
           title="重新推断拓扑"
           aria-label="重新推断拓扑"
-          disabled={!project?.snapshot || importing}
+          disabled={lsdbOpen || !project?.snapshot || importing}
           onClick={() =>
             void mutate("/infer", {})
               .then(() => notify("推断已更新"))
@@ -777,7 +842,7 @@ export default function App() {
         <button
           title="手工添加链路"
           onClick={() => openAction({ type: "force_link" })}
-          disabled={!project?.snapshot}
+          disabled={lsdbOpen || !project?.snapshot}
         >
           <Link2 size={16} />
         </button>
@@ -815,7 +880,7 @@ export default function App() {
         </label>
         <button
           onClick={() => openAction({ type: "view" })}
-          disabled={!project}
+          disabled={!project || lsdbOpen}
         >
           <Save size={15} />
           <span>保存视图</span>
@@ -873,38 +938,15 @@ export default function App() {
           )}
         </div>
       )}
-      <nav className="mobile-nav">
-        <button
-          className={mobilePanel === "inventory" ? "active" : ""}
-          onClick={() => setMobilePanel("inventory")}
-        >
-          <PanelLeft size={16} />
-          设备
-        </button>
-        <button
-          className={mobilePanel === "canvas" ? "active" : ""}
-          onClick={() => setMobilePanel("canvas")}
-        >
-          <Network size={16} />
-          拓扑
-        </button>
-        <button
-          className={mobilePanel === "inspector" ? "active" : ""}
-          onClick={() => setMobilePanel("inspector")}
-        >
-          <PanelRight size={16} />
-          详情
-        </button>
-      </nav>
-      <main className="workspace">
+      <main className={`workspace ${simulationOpen || lsdbOpen ? "simulating" : ""} ${chatOpen ? "chatting" : ""}`}>
         {project ? (
           <Inventory
             devices={inventoryDevices}
             project={project}
             selection={selection}
             onSelect={(s) => {
+              if (chatOpen) clearChatHighlight();
               setSelection(s);
-              setMobilePanel("inspector");
             }}
             search={filters.search}
             setSearch={(s) => setFilter("search", s)}
@@ -929,22 +971,23 @@ export default function App() {
               <Play size={15} />
               载入示例配置
             </button>
+            <button className="text-button" disabled={busy} onClick={() => void igpDemo()}><Route size={15} />四厂商路径仿真示例</button>
           </aside>
         )}
         <section className="canvas-section">
           <div className="canvas-heading">
             <div>
               <span className="live-dot" />
-              IP 逻辑拓扑{" "}
+              {lsdbOpen ? "LSDB 协议拓扑" : "IP 逻辑拓扑"}{" "}
               <small>
-                {filtered.nodes.filter((n) => n.kind === "device").length}{" "}
-                台设备 · {filtered.edges.length} 条关系
+                {(lsdbOpen ? displayedLsdbGraph?.nodes || [] : filtered.nodes).filter((n) => n.kind === "device").length}{" "}
+                台设备 · {lsdbOpen ? displayedLsdbGraph?.edges.length || 0 : filtered.edges.length} 条{lsdbOpen ? "有向关系" : "关系"}
               </small>
             </div>
             <button
               className="text-button"
               disabled={
-                !filters.focus &&
+                lsdbOpen || !filters.focus &&
                 (!selection || !["device", "segment"].includes(selection.kind))
               }
               onClick={() =>
@@ -955,12 +998,14 @@ export default function App() {
             </button>
             <button
               className="text-button view-settings-button"
+              disabled={lsdbOpen}
               onClick={() => setViewSettings(!viewSettings)}
             >
               显示设置
             </button>
             <select
               aria-label="切换命名视图"
+          disabled={lsdbOpen}
               value={view.id}
               onChange={(e) => {
                 const selected = project?.views.find(
@@ -986,7 +1031,7 @@ export default function App() {
               ))}
             </select>
           </div>
-          {viewSettings && (
+          {viewSettings && !lsdbOpen && (
             <div className="view-settings">
               <label>
                 分组
@@ -1024,19 +1069,22 @@ export default function App() {
           )}
           <Graph
             ref={graph}
-            key={`${project?.id || "empty"}:${(project?.topology.nodes.length || 0) > 300 ? "large" : "normal"}`}
-            data={filtered}
-            focusId={filters.focus}
+            key={`${project?.id || "empty"}:${lsdbOpen ? "lsdb" : "config"}:${(project?.topology.nodes.length || 0) > 300 ? "large" : "normal"}`}
+            data={lsdbOpen ? displayedLsdbGraph || { nodes: [], edges: [] } : filtered}
+            readOnly={lsdbOpen}
+            simulation={chatOpen ? chatHighlight : lsdbOpen ? lsdbHighlight : simulationOpen ? simulation : null}
+            emphasis={chatOpen ? chatFocus : null}
+            focusId={lsdbOpen ? undefined : filters.focus}
             largeGraph={(project?.topology.nodes.length || 0) > 300}
-            view={view}
+            view={lsdbOpen ? lsdbView : view}
             selection={selection}
             onSelect={(s) => {
+              if (chatOpen) clearChatHighlight();
               setSelection(s);
-              if (s && window.innerWidth < 760) setMobilePanel("inspector");
             }}
-            onChange={viewChanged}
+            onChange={lsdbOpen ? patch => setLsdbView(prev => ({ ...prev, ...patch })) : viewChanged}
             onConnect={(a, b) =>
-              openAction({
+              !lsdbOpen && openAction({
                 type: "force_link",
                 initial: { device_a_id: a, device_b_id: b },
               })
@@ -1044,7 +1092,7 @@ export default function App() {
             emptyAction={() => openAction({ type: "import" })}
             onError={setError}
           />
-          {project && !project.snapshot && (
+          {project && !project.snapshot && !lsdbOpen && (
             <button
               className="demo-action"
               disabled={busy}
@@ -1055,7 +1103,26 @@ export default function App() {
             </button>
           )}
         </section>
-        {project ? (
+        {project && lsdbOpen && <div style={{ display: chatOpen ? "none" : "contents" }}>
+          <LSDBPanel key={project.id} project={project} selection={selection} revision={simulationRevision} busy={busy || importing}
+            onBatch={setLsdbBatchId}
+            onGraph={(data, highlight) => { setLsdbGraph(data); setLsdbHighlight(highlight); }}
+            onVersion={version => { const current = projectRef.current; if (current?.id === project.id) updateProject({ ...current, version }); }}
+            onSource={r => void openSource(r)} onClose={() => { setLsdbOpen(false); setSelection(null); }}
+            onReveal={() => { graph.current?.fit(); }} />
+        </div>}
+        {project && chatOpen ? <Suspense fallback={<aside className="inspector chat-panel"><div className="chat-empty" role="status">正在载入 AI 对话…</div></aside>}>
+          <ChatPanel key={project.id} project={project} selection={selection} revision={project.effective_revision || simulationRevision}
+            canvasMode={lsdbOpen ? "lsdb" : "config"} lsdbBatchId={chatGraph ? chatBatchId : lsdbBatchId} importing={importing}
+            onSource={reference => void openSource(reference)} onAction={chatAction} onClearHighlight={clearChatHighlight}
+            onClose={() => { setChatOpen(false); clearChatHighlight(); setChatGraph(null); setChatBatchId(""); }} />
+        </Suspense> : project && lsdbOpen ? null : project && simulationOpen ? (
+          <SimulationPanel key={simulationRevision} project={project} busy={busy || importing}
+            onHighlight={setSimulation} onSource={(r) => void openSource(r)}
+            onClose={() => { setSimulationOpen(false); setSimulation(null); }}
+            onReveal={() => { setFilters({ ...initialFilters, mode: filters.mode }); }}
+            onDemo={() => void igpDemo()} />
+        ) : project ? (
           <Inspector
             project={project}
             selection={selection}
@@ -1096,7 +1163,7 @@ export default function App() {
             .length || 0}{" "}
           条关系
         </span>
-        <span>配置推断 ≠ 物理连接或实时可达</span>
+        <span>{lsdbOpen ? "LSDB 表示采集时的协议拓扑，非实时物理状态" : "配置推断 ≠ 物理连接或实时可达"}</span>
         <a
           href="https://github.com/LiuMaoDou/IPtopo"
           target="_blank"

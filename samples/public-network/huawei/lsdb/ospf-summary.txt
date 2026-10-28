@@ -1,0 +1,14 @@
+<HUAWEI> display ospf lsdb | include Router    
+          OSPF Process 1 with Router ID 192.168.1.1                   
+                  Link State Database                              
+                                                               
+                          Area: 0.0.0.0               
+ Type     LinkState  ID   AdvRouter      Age  Len   Sequence   Metric      
+ Router   192.168.1.1     192.168.1.1    98   36     8000000B       1     
+ Router   1.1.1.1         1.1.1.1        92   36     80000005       1   
+
+                                                                 
+                          Area: 0.0.0.1                          
+Type    LinkState  ID   AdvRouter      Age   Len    Sequence   Metric 
+Router   192.168.1.1    192.168.1.1     58   36     8000001B       1      
+Router   2.2.2.2         2.2.2.2        32   36     80000025       1

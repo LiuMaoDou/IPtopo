@@ -1,0 +1,97 @@
+IGP-B# show router isis 1 database detail
+Rtr Base ISIS Instance 1
+Displaying Level 2 database
+
+LSP ID : 0000.0000.0001.00-00 Level : L2
+ Sequence : 00000001  Checksum : 1234
+ Lifetime : 1100
+ Attributes : L2
+ Protocols : IPv4
+ Hostname : IGP-S
+ IP Address : 10.255.0.1
+ TE IS Nbrs :
+  Nbr : 0000.0000.0002.00
+  Default Metric : 10
+  Nbr : 0000.0000.0003.00
+  Default Metric : 10
+ Internal Reach :
+  IP Prefix : 10.255.0.1/32 (Dir.: Up) Metric : 0
+
+LSP ID : 0000.0000.0002.00-00 Level : L2
+ Sequence : 00000001  Checksum : 1234
+ Lifetime : 1100
+ Attributes : L2
+ Protocols : IPv4
+ Hostname : IGP-A
+ IP Address : 10.255.0.2
+ TE IS Nbrs :
+  Nbr : 0000.0000.0001.00
+  Default Metric : 10
+  Nbr : 0000.0000.0006.00
+  Default Metric : 20
+ Internal Reach :
+  IP Prefix : 10.255.0.2/32 (Dir.: Up) Metric : 0
+
+LSP ID : 0000.0000.0003.00-00 Level : L2
+ Sequence : 00000001  Checksum : 1234
+ Lifetime : 1100
+ Attributes : L2
+ Protocols : IPv4
+ Hostname : IGP-B
+ IP Address : 10.255.0.3
+ TE IS Nbrs :
+  Nbr : 0000.0000.0001.00
+  Default Metric : 10
+  Nbr : 0000.0000.0004.00
+  Default Metric : 10
+  Nbr : 0000.0000.0005.00
+  Default Metric : 10
+ Internal Reach :
+  IP Prefix : 10.255.0.3/32 (Dir.: Up) Metric : 0
+
+LSP ID : 0000.0000.0004.00-00 Level : L2
+ Sequence : 00000001  Checksum : 1234
+ Lifetime : 1100
+ Attributes : L2
+ Protocols : IPv4
+ Hostname : IGP-C
+ IP Address : 10.255.0.4
+ TE IS Nbrs :
+  Nbr : 0000.0000.0003.00
+  Default Metric : 10
+  Nbr : 0000.0000.0006.00
+  Default Metric : 10
+ Internal Reach :
+  IP Prefix : 10.255.0.4/32 (Dir.: Up) Metric : 0
+
+LSP ID : 0000.0000.0005.00-00 Level : L2
+ Sequence : 00000001  Checksum : 1234
+ Lifetime : 1100
+ Attributes : L2
+ Protocols : IPv4
+ Hostname : IGP-E
+ IP Address : 10.255.0.5
+ TE IS Nbrs :
+  Nbr : 0000.0000.0003.00
+  Default Metric : 10
+  Nbr : 0000.0000.0006.00
+  Default Metric : 10
+ Internal Reach :
+  IP Prefix : 10.255.0.5/32 (Dir.: Up) Metric : 0
+
+LSP ID : 0000.0000.0006.00-00 Level : L2
+ Sequence : 00000001  Checksum : 1234
+ Lifetime : 1100
+ Attributes : L2
+ Protocols : IPv4
+ Hostname : IGP-D
+ IP Address : 10.255.0.6
+ TE IS Nbrs :
+  Nbr : 0000.0000.0002.00
+  Default Metric : 20
+  Nbr : 0000.0000.0004.00
+  Default Metric : 10
+  Nbr : 0000.0000.0005.00
+  Default Metric : 10
+ Internal Reach :
+  IP Prefix : 10.255.0.6/32 (Dir.: Up) Metric : 0

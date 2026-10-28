@@ -8,6 +8,7 @@ import shutil
 import time
 from sqlalchemy import select
 from .store import Job, Project, Snapshot, Source, Store, now, uid
+from .routing.model import RoutingFacts, merge_facts
 
 PROGRESS_BATCH_SIZE = 25
 PROGRESS_INTERVAL_SECONDS = 0.25
@@ -16,7 +17,8 @@ PROGRESS_INTERVAL_SECONDS = 0.25
 def empty_snapshot(project_id: str) -> dict:
     return {"id": uid("snap_"), "project_id": project_id, "created_at": now(),
             "devices": [], "interfaces": [], "contexts": [], "source_files": [],
-            "diagnostics": [], "segments": [], "links": [], "unmatched": [], "parser_versions": {}}
+            "diagnostics": [], "segments": [], "links": [], "unmatched": [], "parser_versions": {},
+            "routing": RoutingFacts().model_dump()}
 
 
 def import_worker(data_dir: str, job_id: str):
@@ -119,6 +121,11 @@ def import_worker(data_dir: str, job_id: str):
                     result["devices"].append(parsed["device"])
                     result["interfaces"].extend(interfaces)
                     result["contexts"].extend(parsed.get("contexts", []))
+                    routing = parsed.get("routing", {})
+                    for key in ("instances", "bindings", "advertisements", "issues"):
+                        result["routing"][key].extend(routing.get(key, []))
+                    result["routing"]["adapter_versions"].update(routing.get("adapter_versions", {}))
+                    result["routing"]["adapter_devices"].extend(routing.get("adapter_devices", []))
                     result["source_files"].append(meta)
                     result["parser_versions"].update(parsed.get("parser_versions", {}))
                     parsed_devices.append(parsed["device"])
@@ -143,9 +150,11 @@ def import_worker(data_dir: str, job_id: str):
                 flush_progress()
         flush_progress()
         # Merge retains all files not successfully replaced; replace still protects failed files.
-        keep_names = (set(previous_files) - replacements) if job_data.get("strategy", "merge") == "merge" else (set(previous_files) & failures)
+        preserve_unseen = job_data.get("strategy", "merge") == "merge" or job_data.get("protect_previous_on_input_failure", False)
+        keep_names = (set(previous_files) - replacements) if preserve_unseen else (set(previous_files) & failures)
         keep_device_ids = {previous_files[n].get("device_id") for n in keep_names}
         keep_sources = {previous_files[n]["id"] for n in keep_names}
+        result["routing"] = merge_facts(result["routing"], old_data.get("routing"), keep_device_ids)
         for key in ["devices", "interfaces", "contexts"]:
             result[key] = [obj for obj in old_data.get(key, []) if (obj.get("id") if key == "devices" else obj.get("device_id")) in keep_device_ids] + result[key]
         result["source_files"] = [f for f in old_data.get("source_files", []) if f["id"] in keep_sources] + result["source_files"]

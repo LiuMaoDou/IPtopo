@@ -1,0 +1,60 @@
+IGP-A> show ospf database extensive
+OSPF link state database, Area 0.0.0.0
+
+Router 10.255.0.1 10.255.0.1 0x80000001 100 0x22 0x1234 100
+ bits 0x0, link count 3
+ id 10.255.0.1, data 255.255.255.255, Type Stub (1)
+  TOS 0 metric 1
+ id 10.255.0.2, data 10.80.1.1, Type PointToPoint (1)
+  TOS 0 metric 10
+ id 10.255.0.3, data 10.80.3.1, Type PointToPoint (1)
+  TOS 0 metric 10
+
+Router 10.255.0.2 10.255.0.2 0x80000001 100 0x22 0x1234 100
+ bits 0x0, link count 3
+ id 10.255.0.2, data 255.255.255.255, Type Stub (1)
+  TOS 0 metric 1
+ id 10.255.0.1, data 10.80.1.2, Type PointToPoint (1)
+  TOS 0 metric 10
+ id 10.255.0.6, data 10.80.2.1, Type PointToPoint (1)
+  TOS 0 metric 20
+
+Router 10.255.0.3 10.255.0.3 0x80000001 100 0x22 0x1234 100
+ bits 0x0, link count 4
+ id 10.255.0.3, data 255.255.255.255, Type Stub (1)
+  TOS 0 metric 1
+ id 10.255.0.1, data 10.80.3.2, Type PointToPoint (1)
+  TOS 0 metric 10
+ id 10.255.0.4, data 10.80.4.1, Type PointToPoint (1)
+  TOS 0 metric 10
+ id 10.255.0.5, data 10.80.6.1, Type PointToPoint (1)
+  TOS 0 metric 10
+
+Router 10.255.0.4 10.255.0.4 0x80000001 100 0x22 0x1234 100
+ bits 0x0, link count 3
+ id 10.255.0.4, data 255.255.255.255, Type Stub (1)
+  TOS 0 metric 1
+ id 10.255.0.3, data 10.80.4.2, Type PointToPoint (1)
+  TOS 0 metric 10
+ id 10.255.0.6, data 10.80.5.1, Type PointToPoint (1)
+  TOS 0 metric 10
+
+Router 10.255.0.5 10.255.0.5 0x80000001 100 0x22 0x1234 100
+ bits 0x0, link count 3
+ id 10.255.0.5, data 255.255.255.255, Type Stub (1)
+  TOS 0 metric 1
+ id 10.255.0.3, data 10.80.6.2, Type PointToPoint (1)
+  TOS 0 metric 10
+ id 10.255.0.6, data 10.80.7.1, Type PointToPoint (1)
+  TOS 0 metric 10
+
+Router 10.255.0.6 10.255.0.6 0x80000001 100 0x22 0x1234 100
+ bits 0x0, link count 4
+ id 10.255.0.6, data 255.255.255.255, Type Stub (1)
+  TOS 0 metric 0
+ id 10.255.0.2, data 10.80.2.2, Type PointToPoint (1)
+  TOS 0 metric 20
+ id 10.255.0.4, data 10.80.5.2, Type PointToPoint (1)
+  TOS 0 metric 10
+ id 10.255.0.5, data 10.80.7.2, Type PointToPoint (1)
+  TOS 0 metric 10

@@ -15,7 +15,7 @@ def prepared_job(tmp_path, count):
     uploads = []
     for n in range(count):
         key = f"router-{n}.cfg"
-        (folder / key).write_text(f"hostname r{n}\ninterface Loopback0\n ip address 192.0.2.{n+1}/32\n!\nend\n")
+        (folder / key).write_text(f"hostname r{n}\ninterface Loopback0\n ip address 192.0.2.{n+1}/32\n!\nend\n", encoding="utf-8")
         uploads.append({"filename": key, "storage_key": key, "hash": str(n), "encoding": "utf-8"})
     with store.session(write=True) as s:
         s.add(Project(id="project", name="Batch test", version=1, settings={}, overrides=[], views=[]))

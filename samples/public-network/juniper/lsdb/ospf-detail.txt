@@ -1,0 +1,72 @@
+user@host> show ospf database detail    
+    OSPF link state database, Area 0.0.0.1
+ Type       ID               Adv Rtr           Seq      Age  Opt  Cksum  Len
+Router   10.255.70.103    10.255.70.103    0x80000002   261  0x20 0x4112  48
+  bits 0x0, link count 2
+  id 10.255.71.242, data 12.1.1.1, Type PointToPoint (1)
+  TOS count 0, TOS 0 metric 1
+  id 12.1.1.0, data 255.255.255.0, Type Stub (3)
+  TOS count 0, TOS 0 metric 1
+Router  *10.255.71.242    10.255.71.242    0x80000002   260  0x20 0x11b1  48
+  bits 0x3, link count 2
+  id 10.255.70.103, data 12.1.1.2, Type PointToPoint (1)
+  TOS count 0, TOS 0 metric 1
+  id 12.1.1.0, data 255.255.255.0, Type Stub (3)
+  TOS count 0, TOS 0 metric 1
+Summary *23.1.1.0         10.255.71.242    0x80000002   218  0x20 0x6d72  28
+  mask 255.255.255.0
+  TOS 0x0, metric 1
+Summary *24.1.1.0         10.255.71.242    0x80000002   223  0x20 0x607e  28
+  mask 255.255.255.0
+  TOS 0x0, metric 1
+NSSA    *33.1.1.1         10.255.71.242    0x80000002   263  0x28 0x73bd  36
+  mask 255.255.255.255
+  Type 2, TOS 0x0, metric 0, fwd addr 12.1.1.2, tag 0.0.0.0
+
+    OSPF link state database, Area 0.0.0.2
+ Type       ID               Adv Rtr           Seq      Age  Opt  Cksum  Len
+Router   10.255.71.52     10.255.71.52     0x80000004   220  0x20 0xd021  36
+  bits 0x0, link count 1
+  id 23.1.1.1, data 23.1.1.2, Type Transit (2)
+  TOS count 0, TOS 0 metric 1
+Router  *10.255.71.242    10.255.71.242    0x80000003   219  0x20 0xe191  36
+  bits 0x3, link count 1
+  id 23.1.1.1, data 23.1.1.1, Type Transit (2)
+  TOS count 0, TOS 0 metric 1
+Network *23.1.1.1         10.255.71.242    0x80000002   219  0x20 0x9c76  32
+  mask 255.255.255.0
+  attached router 10.255.71.242
+  attached router 10.255.71.52
+Summary *12.1.1.0         10.255.71.242    0x80000001   263  0x20 0xfeec  28
+  mask 255.255.255.0
+  TOS 0x0, metric 1
+Summary *24.1.1.0         10.255.71.242    0x80000002   223  0x20 0x607e  28
+  mask 255.255.255.0
+  TOS 0x0, metric 1
+NSSA    *33.1.1.1         10.255.71.242    0x80000001   268  0x28 0xe047  36
+  mask 255.255.255.255
+  Type 2, TOS 0x0, metric 0, fwd addr 23.1.1.1, tag 0.0.0.0
+
+    OSPF link state database, Area 0.0.0.3
+ Type       ID               Adv Rtr           Seq      Age  Opt  Cksum  Len
+Router   10.255.71.238    10.255.71.238    0x80000003   225  0x20 0x3942  36
+  bits 0x0, link count 1
+  id 24.1.1.1, data 24.1.1.2, Type Transit (2)
+  TOS count 0, TOS 0 metric 1
+Router  *10.255.71.242    10.255.71.242    0x80000003   223  0x20 0xf37d  36
+  bits 0x3, link count 1
+  id 24.1.1.1, data 24.1.1.1, Type Transit (2)
+  TOS count 0, TOS 0 metric 1
+Network *24.1.1.1         10.255.71.242    0x80000002   223  0x20 0xc591  32
+  mask 255.255.255.0
+  attached router 10.255.71.242
+  attached router 10.255.71.238
+Summary *12.1.1.0         10.255.71.242    0x80000001   263  0x20 0xfeec  28
+  mask 255.255.255.0
+  TOS 0x0, metric 1
+Summary *23.1.1.0         10.255.71.242    0x80000002   218  0x20 0x6d72  28
+  mask 255.255.255.0
+  TOS 0x0, metric 1
+NSSA    *33.1.1.1         10.255.71.242    0x80000001   268  0x28 0xeb3b  36
+  mask 255.255.255.255
+  Type 2, TOS 0x0, metric 0, fwd addr 24.1.1.1, tag 0.0.0.0

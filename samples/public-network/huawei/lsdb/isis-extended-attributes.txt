@@ -1,0 +1,55 @@
+<HUAWEI> display isis lsdb verbose
+
+                        Database information for ISIS(1)
+                        -----------------------------------
+                          
+                          
+                          Level-2 Link State Database
+
+LSPID                  Seq Num    Checksum   HoldTime       Length   ATT/P/OL
+-----------------------------------------------------------------------------
+1111.1111.1111.00-00*  0x0000000c 0xe880     1193           365      0/0/0   
+ SOURCE       1111.1111.1111.00 
+ NLPID        IPV4
+ NLPID        IPV6
+ AREA ADDR    10
+ INTF ADDR    10.1.1.1
+ INTF ADDR    1.1.1.1
+ INTF ADDR V6 2001:DB8:1::1
+ INTF ADDR V6 2001:DB8:10::1
+ Topology     Standard
++NBR  ID      2222.2222.2222.01  COST: 10
++NBR  ID      2222.2222.2222.01  COST: 10
+   Lan-SRv6-X-Sid   2001:DB8:100::1:0:6  2222.2222.2222  B: 0  S: 0  P: 0  C: 0  Algorithm: 0  Weight: 0  
+     Function: End.X      Flavor: NO-FLAVOR    
+     Block-Len: --  NodeID-Len: --  Func-Len: --  Args-Len: --     
+   Lan-SRv6-X-Sid   2001:DB8:100::1:0:7  2222.2222.2222  B: 0  S: 0  P: 0  C: 0  Algorithm: 0  Weight: 0  
+     Function: End.X      Flavor: PSP     
+     Block-Len: --  NodeID-Len: --  Func-Len: --  Args-Len: --     
++IP-Extended  10.1.1.0        255.255.255.0    COST: 10        
+   Extended Reach Attr   Flag: X:0 R:0 N:0
++IP-Extended  1.1.1.1         255.255.255.255  COST: 0         
+   Extended Reach Attr   Flag: X:0 R:0 N:1
++IP-Extended  2.2.2.2         255.255.255.255  COST: 10         
+   Extended Reach Attr   Flag: X:0 R:1 N:1
+ IPV6         2001:DB8:1::1/128                COST: 0          
+   Extended Reach Attr   Flag: X:0 R:0 N:1
+ IPV6         2001:DB8:10::/64                 COST: 10         
+   Extended Reach Attr   Flag: X:0 R:0 N:0
+ IPV6         2001:DB8:100::/64                COST: 0          
+   Extended Reach Attr   Flag: X:0 R:0 N:0
+ Router Cap   1.1.1.1          D: 0  S: 0
+   Segment Routing IPv6 Cap   O: 0   C: 0
+   Segment Routing MSD   Max-SL: 10   Max-End-Pop: 11   Max-H-Ins: 10   Max-H-Encap: 10   Max-End-D: 11
+   Segment Routing IPv6 Router ID    2001:DB8:1::1
+ SRv6 Locator 2001:DB8:100::/64                MT: 0 Metric: 0 D: 0 Algorithm: 0
+   SRv6 End Sid   2001:DB8:100::1:0:3              C: 0
+      Function: End         Flavor: NO-FLAVOR     
+      Block-Len: --  NodeID-Len: --  Func-Len: --  Args-Len: --      
+   SRv6 End Sid   2001:DB8:100::1:0:4              C: 0
+      Function: End         Flavor: PSP      
+      Block-Len: --  NodeID-Len: --  Func-Len: --  Args-Len: --      
+   SRv6 End Sid   2001:DB8:100::1:0:5              C: 0
+      Function: End         Flavor: PSP USP USD      
+      Block-Len: --  NodeID-Len: --  Func-Len: --  Args-Len: --      
+   Extended Reach Attr   Flag: X:0 R:0 N:0

@@ -1,0 +1,90 @@
+*A:ALA-A# show router isis database
+===============================================================================
+Router Base ISIS Instance 1 Database
+===============================================================================
+LSP ID                                  Sequence Checksum Lifetime Attributes
+-------------------------------------------------------------------------------
+Displaying Level 1 database
+-------------------------------------------------------------------------------
+abr_dfw.00-00                           0x50     0x164f   603      L1L2
+Level (1) LSP Count : 1
+Displaying Level 2 database
+-------------------------------------------------------------------------------
+asbr_east.00-00                         0x53     0xe3f5   753      L1L2
+abr_dfw.00-00                           0x57     0x94ff   978      L1L2
+abr_dfw.03-00                           0x50     0x14f1   614      L1L2
+Level (2) LSP Count : 3
+===============================================================================
+*A:ALA-A# 
+
+
+*A:Dut-B# show router isis database Dut-A.00-00 detail 
+==============================================================================
+Router Base ISIS Instance 1 Database
+==============================================================================
+Displaying Level 1 database
+------------------------------------------------------------------------------
+Level (1) LSP Count : 0
+
+Displaying Level 2 database
+------------------------------------------------------------------------------
+LSP ID    : Dut-A.00-00                                 Level     : L2  
+Sequence  : 0x6                    Checksum  : 0xb7c4   Lifetime  : 1153       
+Version   : 1                      Pkt Type  : 20       Pkt Ver   : 1          
+Attributes: L1L2                   Max Area  : 3                               
+SysID Len : 6                      Used Len  : 311      Alloc Len : 311        
+ 
+TLVs : 
+  Area Addresses:
+    Area Address : (2) 30.31
+  Supp Protocols:
+    Protocols     : IPv4
+  IS-Hostname   : Dut-A
+  Router ID   :
+    Router ID   : 10.20.1.1
+  I/F Addresses :
+    I/F Address   : 10.20.1.1
+    I/F Address   : 10.10.1.1
+    I/F Address   : 10.10.2.1
+  TE IS Nbrs   :
+    Nbr   : Dut-B.01                            
+    Default Metric  : 1000
+    Sub TLV Len     : 98
+    IF Addr   : 10.10.1.1
+    MaxLink BW: 100000 kbps
+    Resvble BW: 100000 kbps
+    Unresvd BW: 
+        BW[0] : 10000 kbps
+        BW[1] : 40000 kbps
+        BW[2] : 40000 kbps            
+        BW[3] : 40000 kbps
+        BW[4] : 50000 kbps
+        BW[5] : 50000 kbps
+        BW[6] : 50000 kbps
+        BW[7] : 10000 kbps
+    Admin Grp : 0x0
+    TE Metric : 1000
+    SUBTLV BW CONSTS    : 8
+      BW Model : 1
+      BC[0]: 10000 kbps
+      BC[1]: 0 kbps
+      BC[2]: 40000 kbps
+      BC[3]: 0 kbps
+      BC[4]: 0 kbps
+      BC[5]: 50000 kbps
+      BC[6]: 0 kbps
+      BC[7]: 0 kbps
+  TE IP Reach   :
+    Default Metric  : 0
+    Control Info:    , prefLen 32
+    Prefix   : 10.20.1.1
+    Default Metric  : 1000
+    Control Info:    , prefLen 24
+    Prefix   : 10.10.1.0
+    Default Metric  : 1000
+    Control Info:    , prefLen 24
+    Prefix   : 10.10.2.0
+
+Level (2) LSP Count : 1
+==============================================================================
+*A:Dut-B#

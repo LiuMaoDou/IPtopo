@@ -1,0 +1,870 @@
+{
+  "schema_version": 1,
+  "description": "Public vendor documentation CLI excerpts, collected for parser and offline SPF verification. Each file keeps its source; different documents and capture times must not be unioned into one LSDB.",
+  "entries": [
+    {
+      "file": "cisco/config/isis-r1.cfg",
+      "vendor": "cisco",
+      "kind": "config",
+      "protocol": "isis",
+      "source_url": "https://www.cisco.com/c/en/us/support/docs/ip/integrated-intermediate-system-to-intermediate-system-is-is/13795-is-is-ip-config.html",
+      "extraction": {
+        "method": "web_rendered_lines",
+        "first_line": 124,
+        "last_line": 143,
+        "transformations": [
+          "Removed rendered quote markers and four-space code fence indentation",
+          "Removed explanatory !--- comments; CLI values unchanged",
+          "Removed rendered hyperlink markers where present"
+        ]
+      },
+      "sha256": "59e31448f3159c06d0135a3f241baf7295ad8a1662f1ee7766882bddf48dd577",
+      "size_bytes": 210,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "configuration_example",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "Cisco IOS",
+      "source_age_note": "Official legacy lab: 2005; ISIS example uses IOS 12.1(5)T9. Not coverage of every current IOS XE/XR/NX-OS release."
+    },
+    {
+      "file": "cisco/config/isis-r2.cfg",
+      "vendor": "cisco",
+      "kind": "config",
+      "protocol": "isis",
+      "source_url": "https://www.cisco.com/c/en/us/support/docs/ip/integrated-intermediate-system-to-intermediate-system-is-is/13795-is-is-ip-config.html",
+      "extraction": {
+        "method": "web_rendered_lines",
+        "first_line": 147,
+        "last_line": 172,
+        "transformations": [
+          "Removed rendered quote markers and four-space code fence indentation",
+          "Removed explanatory !--- comments; CLI values unchanged",
+          "Removed rendered hyperlink markers where present"
+        ]
+      },
+      "sha256": "1c1921bb1c395d4549da2285734a97d36b75355fa5b2e9f42ccc5bafe05a2509",
+      "size_bytes": 285,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "configuration_example",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "Cisco IOS",
+      "source_age_note": "Official legacy lab: 2005; ISIS example uses IOS 12.1(5)T9. Not coverage of every current IOS XE/XR/NX-OS release."
+    },
+    {
+      "file": "cisco/config/isis-r3.cfg",
+      "vendor": "cisco",
+      "kind": "config",
+      "protocol": "isis",
+      "source_url": "https://www.cisco.com/c/en/us/support/docs/ip/integrated-intermediate-system-to-intermediate-system-is-is/13795-is-is-ip-config.html",
+      "extraction": {
+        "method": "web_rendered_lines",
+        "first_line": 176,
+        "last_line": 194,
+        "transformations": [
+          "Removed rendered quote markers and four-space code fence indentation",
+          "Removed explanatory !--- comments; CLI values unchanged",
+          "Removed rendered hyperlink markers where present"
+        ]
+      },
+      "sha256": "ead3cdb810c96ee0799fbc27c81211fa0f3c218b478f8688f347608a3707ca5b",
+      "size_bytes": 210,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "configuration_example",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "Cisco IOS",
+      "source_age_note": "Official legacy lab: 2005; ISIS example uses IOS 12.1(5)T9. Not coverage of every current IOS XE/XR/NX-OS release."
+    },
+    {
+      "file": "cisco/config/ospf-r1.cfg",
+      "vendor": "cisco",
+      "kind": "config",
+      "protocol": "ospf",
+      "source_url": "https://www.cisco.com/c/en/us/support/docs/ip/open-shortest-path-first-ospf/47864-ospfdb5.html",
+      "extraction": {
+        "method": "web_rendered_lines",
+        "first_line": 104,
+        "last_line": 120,
+        "transformations": [
+          "Removed rendered quote markers and four-space code fence indentation",
+          "Removed explanatory !--- comments; CLI values unchanged",
+          "Removed rendered hyperlink markers where present"
+        ]
+      },
+      "sha256": "806d3d57dd48f94248ce6ffc13fe634fb393c89e123c0b5c527b92aa7a2be560",
+      "size_bytes": 234,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "configuration_example",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "Cisco IOS",
+      "source_age_note": "Official legacy lab: 2005; ISIS example uses IOS 12.1(5)T9. Not coverage of every current IOS XE/XR/NX-OS release."
+    },
+    {
+      "file": "cisco/config/ospf-r2.cfg",
+      "vendor": "cisco",
+      "kind": "config",
+      "protocol": "ospf",
+      "source_url": "https://www.cisco.com/c/en/us/support/docs/ip/open-shortest-path-first-ospf/47864-ospfdb5.html",
+      "extraction": {
+        "method": "web_rendered_lines",
+        "first_line": 124,
+        "last_line": 144,
+        "transformations": [
+          "Removed rendered quote markers and four-space code fence indentation",
+          "Removed explanatory !--- comments; CLI values unchanged",
+          "Removed rendered hyperlink markers where present"
+        ]
+      },
+      "sha256": "4e0c5e0fd1c13d439ba4c314d34aeef53578e484f9825d65a48463b5b9b934b7",
+      "size_bytes": 346,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "configuration_example",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "Cisco IOS",
+      "source_age_note": "Official legacy lab: 2005; ISIS example uses IOS 12.1(5)T9. Not coverage of every current IOS XE/XR/NX-OS release."
+    },
+    {
+      "file": "cisco/config/ospf-r3.cfg",
+      "vendor": "cisco",
+      "kind": "config",
+      "protocol": "ospf",
+      "source_url": "https://www.cisco.com/c/en/us/support/docs/ip/open-shortest-path-first-ospf/47864-ospfdb5.html",
+      "extraction": {
+        "method": "web_rendered_lines",
+        "first_line": 148,
+        "last_line": 161,
+        "transformations": [
+          "Removed rendered quote markers and four-space code fence indentation",
+          "Removed explanatory !--- comments; CLI values unchanged",
+          "Removed rendered hyperlink markers where present"
+        ]
+      },
+      "sha256": "4f86c6c78988c9c53f32f31414b37b973e5427f014e0ca34ebcb2ba897907736",
+      "size_bytes": 201,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "configuration_example",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "Cisco IOS",
+      "source_age_note": "Official legacy lab: 2005; ISIS example uses IOS 12.1(5)T9. Not coverage of every current IOS XE/XR/NX-OS release."
+    },
+    {
+      "file": "cisco/lsdb/isis-r2-detail.txt",
+      "vendor": "cisco",
+      "kind": "lsdb",
+      "protocol": "isis",
+      "source_url": "https://www.cisco.com/c/en/us/support/docs/ip/integrated-intermediate-system-to-intermediate-system-is-is/13795-is-is-ip-config.html",
+      "extraction": {
+        "method": "web_rendered_lines",
+        "first_line": 269,
+        "last_line": 295,
+        "transformations": [
+          "Removed rendered quote markers and four-space code fence indentation",
+          "Removed explanatory !--- comments; CLI values unchanged",
+          "Removed rendered hyperlink markers where present"
+        ]
+      },
+      "sha256": "7fccdbac8a78d3ca1e9e1bbce1b03b560f9732d11a7663f3b3c21b70f3edea01",
+      "size_bytes": 1043,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "document_excerpt",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "Cisco IOS",
+      "source_age_note": "Official legacy lab: 2005; ISIS example uses IOS 12.1(5)T9. Not coverage of every current IOS XE/XR/NX-OS release."
+    },
+    {
+      "file": "cisco/lsdb/ospf-r2-router.txt",
+      "vendor": "cisco",
+      "kind": "lsdb",
+      "protocol": "ospf",
+      "source_url": "https://www.cisco.com/c/en/us/support/docs/ip/open-shortest-path-first-ospf/47864-ospfdb5.html",
+      "extraction": {
+        "method": "web_rendered_lines",
+        "first_line": 202,
+        "last_line": 340,
+        "transformations": [
+          "Removed rendered quote markers and four-space code fence indentation",
+          "Removed explanatory !--- comments; CLI values unchanged",
+          "Removed rendered hyperlink markers where present"
+        ]
+      },
+      "sha256": "45b1b4a4841fb419127a483ea215029968d6bf2fe2dec17809bbf3fda6d4615c",
+      "size_bytes": 2934,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "document_excerpt",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "Cisco IOS",
+      "source_age_note": "Official legacy lab: 2005; ISIS example uses IOS 12.1(5)T9. Not coverage of every current IOS XE/XR/NX-OS release."
+    },
+    {
+      "file": "cisco/verification/ospf-routes.txt",
+      "vendor": "cisco",
+      "kind": "verification",
+      "protocol": "ospf",
+      "source_url": "https://www.cisco.com/c/en/us/support/docs/ip/open-shortest-path-first-ospf/47864-ospfdb5.html",
+      "extraction": {
+        "method": "web_rendered_lines",
+        "first_line": 418,
+        "last_line": 427,
+        "transformations": [
+          "Removed rendered quote markers and four-space code fence indentation",
+          "Removed explanatory !--- comments; CLI values unchanged",
+          "Removed rendered hyperlink markers where present"
+        ]
+      },
+      "sha256": "ee1317424dbf2ff27e8d9d771c33701d7c6865b6816d5f32ac9627ccc3df513f",
+      "size_bytes": 385,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "document_excerpt",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "Cisco IOS",
+      "source_age_note": "Official legacy lab: 2005; ISIS example uses IOS 12.1(5)T9. Not coverage of every current IOS XE/XR/NX-OS release."
+    },
+    {
+      "file": "huawei/config/isis-ipv6-switchA.cfg",
+      "vendor": "huawei",
+      "kind": "config",
+      "protocol": "isis",
+      "address_family": 6,
+      "source_url": "https://info.support.huawei.com/enterprise/en/doc/EDOC1100389673/9ec00e90/example-for-configuring-basic-ipv6-is-is-functions",
+      "extraction": {
+        "method": "web_rendered_lines",
+        "first_line": 266,
+        "last_line": 308,
+        "transformations": [
+          "Removed web code-block indentation; CLI values unchanged"
+        ]
+      },
+      "sha256": "9faca1d9836f197f158b87e6d30e28ce69fc5065c9b7897b69740b9a7a0155b8",
+      "size_bytes": 325,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "configuration_example",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "Huawei VRP documentation examples; CloudEngine configuration sample is IPv6-only"
+    },
+    {
+      "file": "huawei/config/isis-ipv6-switchB.cfg",
+      "vendor": "huawei",
+      "kind": "config",
+      "protocol": "isis",
+      "address_family": 6,
+      "source_url": "https://info.support.huawei.com/enterprise/en/doc/EDOC1100389673/9ec00e90/example-for-configuring-basic-ipv6-is-is-functions",
+      "extraction": {
+        "method": "web_rendered_lines",
+        "first_line": 311,
+        "last_line": 353,
+        "transformations": [
+          "Removed web code-block indentation; CLI values unchanged"
+        ]
+      },
+      "sha256": "cd1752296fba8e13952dd9e2dce7f6ff4995eecec0745a5bf8bb4760cba6f513",
+      "size_bytes": 325,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "configuration_example",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "Huawei VRP documentation examples; CloudEngine configuration sample is IPv6-only"
+    },
+    {
+      "file": "huawei/config/isis-ipv6-switchC.cfg",
+      "vendor": "huawei",
+      "kind": "config",
+      "protocol": "isis",
+      "address_family": 6,
+      "source_url": "https://info.support.huawei.com/enterprise/en/doc/EDOC1100389673/9ec00e90/example-for-configuring-basic-ipv6-is-is-functions",
+      "extraction": {
+        "method": "web_rendered_lines",
+        "first_line": 356,
+        "last_line": 433,
+        "transformations": [
+          "Removed web code-block indentation; CLI values unchanged"
+        ]
+      },
+      "sha256": "4d1a941555fc3d4ab1e6d7781987e3f8dcd8a089cb8ea3948ad94388dd65f5dd",
+      "size_bytes": 680,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "configuration_example",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "Huawei VRP documentation examples; CloudEngine configuration sample is IPv6-only"
+    },
+    {
+      "file": "huawei/config/isis-ipv6-switchD.cfg",
+      "vendor": "huawei",
+      "kind": "config",
+      "protocol": "isis",
+      "address_family": 6,
+      "source_url": "https://info.support.huawei.com/enterprise/en/doc/EDOC1100389673/9ec00e90/example-for-configuring-basic-ipv6-is-is-functions",
+      "extraction": {
+        "method": "web_rendered_lines",
+        "first_line": 436,
+        "last_line": 540,
+        "transformations": [
+          "Removed web code-block indentation; CLI values unchanged"
+        ]
+      },
+      "sha256": "0bf0d6ab7aa1590a43c1bfe59005ef865f45febf3e18891f219e490846f25f38",
+      "size_bytes": 498,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "configuration_example",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "Huawei VRP documentation examples; CloudEngine configuration sample is IPv6-only"
+    },
+    {
+      "file": "huawei/lsdb/isis-extended-attributes.txt",
+      "vendor": "huawei",
+      "kind": "lsdb",
+      "protocol": "isis",
+      "source_url": "https://info.support.huawei.com/hedex/api/pages/EDOC1100363264/AEN0403J/05/resources/command/yunshan/DISPLAY-ISIS-LSDB%28ISISCOMMOM%29.html",
+      "extraction": {
+        "method": "web_search_cached_rendering",
+        "start_marker": "standalone display isis lsdb verbose command",
+        "end_marker": "next example heading",
+        "transformations": [
+          "Removed rendered code-block indentation; CLI values unchanged"
+        ]
+      },
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "document_excerpt",
+      "sha256": "2994884770f8259b1410b37a09fb79cc4daec9d584d3576fdf107f91cdd6c3a4",
+      "size_bytes": 2772,
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "Huawei VRP documentation examples; CloudEngine configuration sample is IPv6-only"
+    },
+    {
+      "file": "huawei/lsdb/isis-ipv6-summary.txt",
+      "vendor": "huawei",
+      "kind": "lsdb",
+      "protocol": "isis",
+      "source_url": "https://info.support.huawei.com/enterprise/en/doc/EDOC1100389673/9ec00e90/example-for-configuring-basic-ipv6-is-is-functions",
+      "extraction": {
+        "method": "web_rendered_lines",
+        "first_line": 236,
+        "last_line": 261
+      },
+      "sha256": "f3175e47b844f87008d793817ad9835e128dbfadec4ecbf28586ba8e04cad1d1",
+      "size_bytes": 1481,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "document_excerpt",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "Huawei VRP documentation examples; CloudEngine configuration sample is IPv6-only"
+    },
+    {
+      "file": "huawei/lsdb/isis-old-verbose.txt",
+      "vendor": "huawei",
+      "kind": "lsdb",
+      "protocol": "isis",
+      "source_url": "https://info.support.huawei.com/hedex/api/pages/EDOC1100331917/AZM1014P/06/resources/dc/display_isis_lsdb.html",
+      "extraction": {
+        "method": "web_search_cached_rendering",
+        "start_marker": "<HUAWEI> display isis lsdb verbose",
+        "end_marker": "表2",
+        "transformations": [
+          "Removed rendered code-block indentation; CLI values unchanged"
+        ]
+      },
+      "sha256": "1e729142e1b7cc6d4d61b768b3dcbc5e9fc289418b6e99ab4480da0734da9496",
+      "size_bytes": 2734,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "document_excerpt",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "Huawei VRP documentation examples; CloudEngine configuration sample is IPv6-only"
+    },
+    {
+      "file": "huawei/lsdb/ospf-network.txt",
+      "vendor": "huawei",
+      "kind": "lsdb",
+      "protocol": "ospf",
+      "source_url": "https://info.support.huawei.com/network/ptmngsys/Web/tsrev_ne/cn/content/ne/22_edesk_ne_ospf_routing_oscillation_failure/edesk_ne_ospf_routing_oscillation_failure_edesk003.html",
+      "source_html_sha256": "9c9bc438005082ac5a8c11b18f30d872847cb923cabf463f3f9d6dcbbff31e36",
+      "extraction": {
+        "method": "html_pre",
+        "pre_index": 1,
+        "transformations": [
+          "HTML entity decoding; CRLF to LF; trailing whitespace at EOF normalized"
+        ]
+      },
+      "sha256": "aed076992288632e51efa8512f744ed496821fbc09d996d1f4f8bedbbd383ee6",
+      "size_bytes": 451,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "document_excerpt",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "Huawei VRP documentation examples; CloudEngine configuration sample is IPv6-only"
+    },
+    {
+      "file": "huawei/lsdb/ospf-router.txt",
+      "vendor": "huawei",
+      "kind": "lsdb",
+      "protocol": "ospf",
+      "source_url": "https://info.support.huawei.com/network/ptmngsys/Web/tsrev_s/en/content/s/46_edesk_ospf_cannot_learn/edesk_ospf_cannot_learn_edesk005.html",
+      "source_html_sha256": "15f1ebf9d335fa047b11d923217d97775e027a75368830bc00f1c3260c81d9a4",
+      "extraction": {
+        "method": "html_pre",
+        "pre_index": 0,
+        "transformations": [
+          "HTML entity decoding; CRLF to LF; trailing whitespace at EOF normalized"
+        ]
+      },
+      "sha256": "3f1add6a6118508415a352b5f30fbef9dce7aa9e03d6591b8bfee52bb72c2bdf",
+      "size_bytes": 827,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "document_excerpt",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "Huawei VRP documentation examples; CloudEngine configuration sample is IPv6-only"
+    },
+    {
+      "file": "huawei/lsdb/ospf-star-inconsistent.txt",
+      "vendor": "huawei",
+      "kind": "lsdb",
+      "protocol": "ospf",
+      "source_url": "https://info.support.huawei.com/network/ptmngsys/Web/tsrev_s/ru/content/s/51_edesk_ospf_flapping/edesk_ospf_flapping_edesk001.html",
+      "source_html_sha256": "0e4685c42518b82fb8ef20f82384fc188f00fd965d0d40f615b383b2383dd6da",
+      "extraction": {
+        "method": "html_pre",
+        "pre_index": 6,
+        "transformations": [
+          "HTML entity decoding; CRLF to LF; trailing whitespace at EOF normalized"
+        ]
+      },
+      "sha256": "61f2c9eaa5eb1a657de6968334de3dd117a0f84d6211eae078be08ccbf21c8de",
+      "size_bytes": 771,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "inconsistent_link_count",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "Huawei VRP documentation examples; CloudEngine configuration sample is IPv6-only"
+    },
+    {
+      "file": "huawei/lsdb/ospf-summary.txt",
+      "vendor": "huawei",
+      "kind": "lsdb",
+      "protocol": "ospf",
+      "source_url": "https://info.support.huawei.com/network/ptmngsys/Web/tsrev_s/ru/content/s/51_edesk_ospf_flapping/edesk_ospf_flapping_edesk001.html",
+      "source_html_sha256": "0e4685c42518b82fb8ef20f82384fc188f00fd965d0d40f615b383b2383dd6da",
+      "extraction": {
+        "method": "html_pre",
+        "pre_index": 4,
+        "transformations": [
+          "HTML entity decoding; CRLF to LF; trailing whitespace at EOF normalized"
+        ]
+      },
+      "sha256": "9671b5adbd25e0814fc826a73c128bbb3bf2a50f0ff25f18b6fed1ec74c76e03",
+      "size_bytes": 878,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "document_excerpt",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "Huawei VRP documentation examples; CloudEngine configuration sample is IPv6-only"
+    },
+    {
+      "file": "juniper/config/isis-r1-hierarchy.cfg",
+      "vendor": "juniper",
+      "kind": "config",
+      "protocol": "isis",
+      "source_url": "https://www.juniper.net/documentation/us/en/software/junos/is-is/topics/example/routing-protocol-is-is-security-configuring-cli.html",
+      "source_html_sha256": "de8af926900e31cc71719b6cd98a76238f9fc0ae17506cf448497e11ed2088ca",
+      "extraction": {
+        "method": "html_pre",
+        "pre_index": 6,
+        "transformations": [
+          "HTML entity decoding; CRLF to LF; trailing whitespace at EOF normalized"
+        ]
+      },
+      "sha256": "acc08762e2d6037a83854a554363ebba3dba69b7b0d099da9920f6fe25024fca",
+      "size_bytes": 619,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "configuration_example",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "Junos OS"
+    },
+    {
+      "file": "juniper/config/isis-r1-set.cfg",
+      "vendor": "juniper",
+      "kind": "config",
+      "protocol": "isis",
+      "source_url": "https://www.juniper.net/documentation/us/en/software/junos/is-is/topics/example/routing-protocol-is-is-security-configuring-cli.html",
+      "source_html_sha256": "de8af926900e31cc71719b6cd98a76238f9fc0ae17506cf448497e11ed2088ca",
+      "extraction": {
+        "method": "html_pre",
+        "pre_index": 0,
+        "transformations": [
+          "HTML entity decoding; CRLF to LF; trailing whitespace at EOF normalized"
+        ]
+      },
+      "sha256": "2e566786e94fa2d1773beee5d0360e1024a451ac5e8bb9213a967f8c44523f96",
+      "size_bytes": 428,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "configuration_example",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "Junos OS"
+    },
+    {
+      "file": "juniper/config/isis-r2-set.cfg",
+      "vendor": "juniper",
+      "kind": "config",
+      "protocol": "isis",
+      "source_url": "https://www.juniper.net/documentation/us/en/software/junos/is-is/topics/example/routing-protocol-is-is-security-configuring-cli.html",
+      "source_html_sha256": "de8af926900e31cc71719b6cd98a76238f9fc0ae17506cf448497e11ed2088ca",
+      "extraction": {
+        "method": "html_pre",
+        "pre_index": 1,
+        "transformations": [
+          "HTML entity decoding; CRLF to LF; trailing whitespace at EOF normalized"
+        ]
+      },
+      "sha256": "358c5ccd9883012281cb90616cf6ba1961cc6b562a7d58063b0f395636050188",
+      "size_bytes": 428,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "configuration_example",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "Junos OS"
+    },
+    {
+      "file": "juniper/config/ospf-r1.cfg",
+      "vendor": "juniper",
+      "kind": "config",
+      "protocol": "ospf",
+      "source_url": "https://www.juniper.net/documentation/us/en/software/junos/ospf/topics/topic-map/configuring-ospf-areas.html",
+      "source_html_sha256": "bfcb9adba254a5ff6bcb7b0ff52aae07b0b7490bcad6f275563d0ef100ed0906",
+      "extraction": {
+        "method": "html_pre",
+        "pre_index": 28,
+        "transformations": [
+          "HTML entity decoding; CRLF to LF; trailing whitespace at EOF normalized"
+        ]
+      },
+      "sha256": "f9ee36e30891270b755fb8de9de2310e5e367c75b1560dfe871b0619aea56b31",
+      "size_bytes": 226,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "configuration_example",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "Junos OS"
+    },
+    {
+      "file": "juniper/config/ospf-r2.cfg",
+      "vendor": "juniper",
+      "kind": "config",
+      "protocol": "ospf",
+      "source_url": "https://www.juniper.net/documentation/us/en/software/junos/ospf/topics/topic-map/configuring-ospf-areas.html",
+      "source_html_sha256": "bfcb9adba254a5ff6bcb7b0ff52aae07b0b7490bcad6f275563d0ef100ed0906",
+      "extraction": {
+        "method": "html_pre",
+        "pre_index": 29,
+        "transformations": [
+          "HTML entity decoding; CRLF to LF; trailing whitespace at EOF normalized"
+        ]
+      },
+      "sha256": "f2dc87730aa2636293c50c9dabe41baf4aef8db2ae50c62e6fd5cc23a8ca4ce0",
+      "size_bytes": 226,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "configuration_example",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "Junos OS"
+    },
+    {
+      "file": "juniper/lsdb/isis-detail.txt",
+      "vendor": "juniper",
+      "kind": "lsdb",
+      "protocol": "isis",
+      "source_url": "https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-isis-database.html",
+      "source_html_sha256": "491b783cf5e64e41b5de21f498997c038859af91ca065c0b18177b59b5892f06",
+      "extraction": {
+        "method": "html_pre",
+        "pre_index": 3,
+        "transformations": [
+          "HTML entity decoding; CRLF to LF; trailing whitespace at EOF normalized"
+        ]
+      },
+      "sha256": "af3157c8ab3b3f87ea95e3a9570909b124c1ce1c34963cc2975cb8447d0f2e91",
+      "size_bytes": 2921,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "document_excerpt",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "Junos OS"
+    },
+    {
+      "file": "juniper/lsdb/isis-extensive.txt",
+      "vendor": "juniper",
+      "kind": "lsdb",
+      "protocol": "isis",
+      "source_url": "https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-isis-database.html",
+      "source_html_sha256": "491b783cf5e64e41b5de21f498997c038859af91ca065c0b18177b59b5892f06",
+      "extraction": {
+        "method": "html_pre",
+        "pre_index": 6,
+        "transformations": [
+          "HTML entity decoding; CRLF to LF; trailing whitespace at EOF normalized"
+        ]
+      },
+      "sha256": "726b5f590d5a71b6dfb8bbdbee3d4958cbd7cb3da11a85366d352c1ae3bb20b0",
+      "size_bytes": 3848,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "document_excerpt",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "Junos OS"
+    },
+    {
+      "file": "juniper/lsdb/ospf-detail.txt",
+      "vendor": "juniper",
+      "kind": "lsdb",
+      "protocol": "ospf",
+      "source_url": "https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-ospf-database.html",
+      "source_html_sha256": "e5dfe972deaa6817ba22b052ba2476314a34277168236e5149d7261a740a86fa",
+      "extraction": {
+        "method": "html_pre",
+        "pre_index": 4,
+        "transformations": [
+          "HTML entity decoding; CRLF to LF; trailing whitespace at EOF normalized"
+        ]
+      },
+      "sha256": "54a83f7cf27d220d8973b3096c244a9aaf4f6366b996e2a516df8ad7e16ecbb5",
+      "size_bytes": 3166,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "document_excerpt",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "Junos OS"
+    },
+    {
+      "file": "juniper/verification/isis-adjacencies.txt",
+      "vendor": "juniper",
+      "kind": "verification",
+      "protocol": "isis",
+      "source_url": "https://www.juniper.net/documentation/us/en/software/junos/is-is/topics/example/routing-protocol-is-is-security-configuring-cli.html",
+      "source_html_sha256": "de8af926900e31cc71719b6cd98a76238f9fc0ae17506cf448497e11ed2088ca",
+      "extraction": {
+        "method": "html_pre",
+        "pre_index": 7,
+        "transformations": [
+          "HTML entity decoding; CRLF to LF; trailing whitespace at EOF normalized"
+        ]
+      },
+      "sha256": "f519c2029f886a3994b48e3740507c7163109c200b2f7b7666a72cb0a7024d6c",
+      "size_bytes": 260,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "document_excerpt",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "Junos OS"
+    },
+    {
+      "file": "nokia/config/isis-protocol-context.cfg",
+      "vendor": "nokia",
+      "kind": "config",
+      "protocol": "isis",
+      "source_url": "https://documentation.nokia.com/sas/23-3/books/k-routing-protocols/is-is.html",
+      "source_html_sha256": "b71db6aadb6cf5151d7c09fa2a79c95314f40fd73475d13a9599d20c1678d600",
+      "extraction": {
+        "method": "html_pre",
+        "pre_index": 35,
+        "transformations": [
+          "HTML entity decoding; CRLF to LF; trailing whitespace at EOF normalized"
+        ]
+      },
+      "sha256": "17f90f999ab06e5db501d6fc04e93804f744b4119863fc6863f9398c765032ae",
+      "size_bytes": 1101,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "context_fragment",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "SR OS / 7210 SAS / 7705 SAR documentation as identified by source URL; formats must be tested separately"
+    },
+    {
+      "file": "nokia/config/ospf-md-policy-fragment.cfg",
+      "vendor": "nokia",
+      "kind": "config",
+      "protocol": "ospf",
+      "source_url": "https://documentation.nokia.com/acg/24-7-2/books/router-configuration-md/m1078-lfa-policies-md-cli.html",
+      "source_html_sha256": "2c408e0e38f63e2195bd63576742e99a71156a77052e2495ff6e9a7ce725d615",
+      "extraction": {
+        "method": "html_pre",
+        "pre_index": 20,
+        "transformations": [
+          "HTML entity decoding; CRLF to LF; EOF normalized"
+        ]
+      },
+      "sha256": "afae09db8069d340cf8590814143e50e44a56d8daf6976436d1cd34041be1be6",
+      "size_bytes": 603,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "context_fragment",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "SR OS / 7210 SAS / 7705 SAR documentation as identified by source URL; formats must be tested separately"
+    },
+    {
+      "file": "nokia/config/ospf-protocol-context.cfg",
+      "vendor": "nokia",
+      "kind": "config",
+      "protocol": "ospf",
+      "source_url": "https://documentation.nokia.com/sas/23-9/books/k-routing-protocols/ospf.html",
+      "source_html_sha256": "4221d78bd807b4f36be88b51045682e157bc0dd3a078746d5901b3c82ef5644f",
+      "extraction": {
+        "method": "html_pre",
+        "pre_index": 28,
+        "transformations": [
+          "HTML entity decoding; CRLF to LF; trailing whitespace at EOF normalized"
+        ]
+      },
+      "sha256": "20458dda5b29deadf3089f2d122b4e0d25a9c25e8e4196e37fb8d94772fbb0ca",
+      "size_bytes": 1428,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "context_fragment",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "SR OS / 7210 SAS / 7705 SAR documentation as identified by source URL; formats must be tested separately"
+    },
+    {
+      "file": "nokia/config/ospf-router-context.cfg",
+      "vendor": "nokia",
+      "kind": "config",
+      "protocol": "ospf",
+      "source_url": "https://documentation.nokia.com/sas/23-9/books/k-routing-protocols/ospf.html",
+      "source_html_sha256": "4221d78bd807b4f36be88b51045682e157bc0dd3a078746d5901b3c82ef5644f",
+      "extraction": {
+        "method": "html_pre",
+        "pre_index": 35,
+        "transformations": [
+          "HTML entity decoding; CRLF to LF; trailing whitespace at EOF normalized"
+        ]
+      },
+      "sha256": "deeb431c5945ce05c373358e0ef6cc7594f56afcbeca8f4aef5e1799be76100e",
+      "size_bytes": 395,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "context_fragment",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "SR OS / 7210 SAS / 7705 SAR documentation as identified by source URL; formats must be tested separately"
+    },
+    {
+      "file": "nokia/config/router-basic-classic.cfg",
+      "vendor": "nokia",
+      "kind": "config",
+      "protocol": "ospf",
+      "source_url": "https://documentation.nokia.com/sar/25-4-1/books/router-config/ip-router-configuration.html",
+      "source_html_sha256": "80cc02fe106750029a6ec7243c144c4dc36a6cd6d762ce7d58c9cac63c8ffe97",
+      "extraction": {
+        "method": "html_pre",
+        "pre_index": 3,
+        "transformations": [
+          "HTML entity decoding; CRLF to LF; EOF normalized"
+        ]
+      },
+      "sha256": "ffe86aaf555f3dc65aa744cfbc18b455e88e83ed9327fdf16b538ebe5dfc0ef0",
+      "size_bytes": 486,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "configuration_example",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "SR OS / 7210 SAS / 7705 SAR documentation as identified by source URL; formats must be tested separately"
+    },
+    {
+      "file": "nokia/lsdb/isis-database.txt",
+      "vendor": "nokia",
+      "kind": "lsdb",
+      "protocol": "isis",
+      "source_url": "https://documentation.nokia.com/sas/23-3/books/k-routing-protocols/is-is.html",
+      "source_html_sha256": "b71db6aadb6cf5151d7c09fa2a79c95314f40fd73475d13a9599d20c1678d600",
+      "extraction": {
+        "method": "html_pre",
+        "pre_index": 52,
+        "transformations": [
+          "HTML entity decoding; CRLF to LF; trailing whitespace at EOF normalized"
+        ]
+      },
+      "sha256": "1af4db7ed49444f1c1713f2101a16247a5fd26798bc01009bae9611814daedf5",
+      "size_bytes": 3287,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "document_excerpt",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "SR OS / 7210 SAS / 7705 SAR documentation as identified by source URL; formats must be tested separately"
+    },
+    {
+      "file": "nokia/lsdb/isis-ipv6-detail.txt",
+      "vendor": "nokia",
+      "kind": "lsdb",
+      "protocol": "isis",
+      "source_url": "https://documentation.nokia.com/sas/23-3/books/k-routing-protocols/is-is.html",
+      "source_html_sha256": "b71db6aadb6cf5151d7c09fa2a79c95314f40fd73475d13a9599d20c1678d600",
+      "extraction": {
+        "method": "html_pre",
+        "pre_index": 21,
+        "transformations": [
+          "HTML entity decoding; CRLF to LF; trailing whitespace at EOF normalized"
+        ]
+      },
+      "sha256": "17748eccaa921348d38b823a77b5808421b2f7d6e054942eb6e91fce4ecaa58b",
+      "size_bytes": 4786,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "document_excerpt",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "SR OS / 7210 SAS / 7705 SAR documentation as identified by source URL; formats must be tested separately"
+    },
+    {
+      "file": "nokia/lsdb/ospf-database.txt",
+      "vendor": "nokia",
+      "kind": "lsdb",
+      "protocol": "ospf",
+      "source_url": "https://documentation.nokia.com/sas/23-9/books/k-routing-protocols/ospf.html",
+      "source_html_sha256": "4221d78bd807b4f36be88b51045682e157bc0dd3a078746d5901b3c82ef5644f",
+      "extraction": {
+        "method": "html_pre",
+        "pre_index": 43,
+        "transformations": [
+          "HTML entity decoding; CRLF to LF; trailing whitespace at EOF normalized"
+        ]
+      },
+      "sha256": "14674d939fa9ad20ec44a11de8344f1c1a8e6844fd6be44816dad83bd4ac71e3",
+      "size_bytes": 5920,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "document_excerpt",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "SR OS / 7210 SAS / 7705 SAR documentation as identified by source URL; formats must be tested separately"
+    },
+    {
+      "file": "nokia/verification/isis-hostnames.txt",
+      "vendor": "nokia",
+      "kind": "verification",
+      "protocol": "isis",
+      "source_url": "https://documentation.nokia.com/sas/23-3/books/k-routing-protocols/is-is.html",
+      "source_html_sha256": "b71db6aadb6cf5151d7c09fa2a79c95314f40fd73475d13a9599d20c1678d600",
+      "extraction": {
+        "method": "html_pre",
+        "pre_index": 53,
+        "transformations": [
+          "HTML entity decoding; CRLF to LF; trailing whitespace at EOF normalized"
+        ]
+      },
+      "sha256": "ff1625b5145f5a7b64701658788bde64fb1a457b8c72be731764553f91309494",
+      "size_bytes": 949,
+      "retrieved_at": "2026-10-28",
+      "provenance": "official_vendor_documentation_example",
+      "completeness": "document_excerpt",
+      "pairing": "Only pair samples from the same documented example; separate references are not the same live network or capture.",
+      "platform": "SR OS / 7210 SAS / 7705 SAR documentation as identified by source URL; formats must be tested separately"
+    }
+  ]
+}

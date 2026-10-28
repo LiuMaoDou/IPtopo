@@ -1,0 +1,19 @@
+<HUAWEI> display ospf lsdb network 101.0.0.1
+
+          OSPF Process 1 with Router ID 100.3.3.4
+                          Area: 0.0.0.0
+                  Link State Database
+
+
+  Type      : Network
+  Ls id     : 101.0.0.1
+  Adv rtr   : 1.1.1.1
+  Ls age    : 1789
+  Len       : 32
+  Options   :  E
+  seq#      : 80000003
+  chksum    : 0xe7f5
+  Net mask  : 255.255.255.0
+  Priority  : Low
+     Attached Router    1.1.1.1
+     Attached Router    3.3.3.3

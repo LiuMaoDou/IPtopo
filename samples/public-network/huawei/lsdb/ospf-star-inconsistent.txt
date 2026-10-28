@@ -1,0 +1,33 @@
+<HUAWEI> display ospf lsdb router 1.1.1.1
+
+          OSPF Process 100 with Router ID 13.0.0.1
+                          Area: 0.0.0.0
+                  Link State Database
+
+  Type      : Router
+  Ls id     : 1.1.1.1
+  Adv rtr   : 1.1.1.1
+  Ls age    : 501
+  Len       : 60
+  Options   :  ABR  E
+  seq#      : 8000024d
+  chksum    : 0xf58c
+  Link count: 3
+   * Link ID: 13.0.0.1
+     Data   : 100.0.0.2
+     Link Type: P-2-P
+     Metric : 1562
+   * Link ID: 100.0.0.0
+     Data   : 255.255.255.0
+     Link Type: StubNet
+     Metric : 1562
+     Priority : Low
+   * Link ID: 23.0.0.2
+     Data   : 23.0.0.2
+     Link Type: TransNet
+     Metric : 1         
+   * Link ID: 100.3.3.3
+     Data   : 255.255.255.255
+     Link Type: StubNet
+     Metric : 0
+     Priority : Medium

@@ -244,14 +244,23 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     await p.getByLabel("适应画布", { exact: true }).click();
     await p.waitForTimeout(300);
     await p.screenshot({ path: out + "iptopo-vendor-icons.png" });
-    await p.setViewportSize({ width: 390, height: 844 });
+    await p.setViewportSize({ width: 1280, height: 800 });
     await p.waitForTimeout(300);
-    await p.getByRole("button", { name: "设备", exact: true }).last().click();
     await p.locator(".device-row").first().click();
-    await p.screenshot({ path: out + "iptopo-scale-mobile-detail.png" });
+    await p.locator(".inspector").waitFor({ state: "visible" });
+    await p.screenshot({ path: out + "iptopo-scale-desktop-1280-detail.png" });
+    const desktopLayout = await p.evaluate(() => ({
+      viewport: "1280x800",
+      overflow: document.documentElement.scrollWidth > innerWidth,
+      inventory: getComputedStyle(document.querySelector(".inventory")).display !== "none",
+      canvas: getComputedStyle(document.querySelector(".canvas-section")).display !== "none",
+      inspector: getComputedStyle(document.querySelector(".inspector")).display !== "none",
+    }));
+    if (desktopLayout.overflow || !desktopLayout.inventory || !desktopLayout.canvas || !desktopLayout.inspector)
+      throw Error("Desktop three-column layout failed: " + JSON.stringify(desktopLayout));
     console.log(
-      "MOBILE_OVERFLOW",
-      await p.evaluate(() => document.documentElement.scrollWidth > innerWidth),
+      "PC_1280_LAYOUT",
+      JSON.stringify(desktopLayout),
     );
   }
   await browser.close();

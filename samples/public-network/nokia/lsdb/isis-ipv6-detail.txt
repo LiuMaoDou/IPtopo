@@ -1,0 +1,115 @@
+A:SAS-12>>config>router>isis# show router isis database detail
+===============================================================================
+Rtr Base ISIS Instance 0 Database (detail)
+===============================================================================
+Displaying Level 1 database
+-------------------------------------------------------------------------------
+LSP ID    : ALA-49.00-00                                Level     : L1
+Sequence  : 0x22b                  Checksum  : 0x60e4   Lifetime  : 1082
+Version   : 1                      Pkt Type  : 18       Pkt Ver   : 1
+Attributes: L1L2                   Max Area  : 3
+SysID Len : 6                      Used Len  : 404      Alloc Len : 1492
+
+TLVs :
+Area Addresses  :
+  Area Address    : (13) 47.4001.8000.00a7.0000.ffdd.0007
+Supp Protocols  :
+  Protocols       : IPv4 IPv6
+IS-Hostname     :
+  Hostname        : ALA-49
+TE Router ID    :
+  Router ID       : 10.10.10.104
+Internal Reach  :
+  IP Prefix       : 10.10.10.104/32    (Dir. :Up)  Metric  : 0 (I)
+  IP Prefix       : 10.10.4.0/24       (Dir. :Up)  Metric  : 10 (I)
+  IP Prefix       : 10.10.5.0/24       (Dir. :Up)  Metric  : 10 (I)
+  IP Prefix       : 10.10.7.0/24       (Dir. :Up)  Metric  : 10 (I)
+  IP Prefix       : 10.10.0.0/24       (Dir. :Up)  Metric  : 10 (I)
+  IP Prefix       : 10.0.0.0/24        (Dir. :Up)  Metric  : 10 (I)
+MT IPv6 Reach.  :
+  MT ID           : 2
+  IPv6 Prefix     : 3ffe::101:100/120
+                    Flags : Up Internal Metric : 10
+  IPv6 Prefix     : 10::/64
+                    Flags : Up Internal Metric : 10
+I/f Addresses   :
+  IP Address      : 10.10.10.104
+  IP Address      : 10.10.4.3
+  IP Address      : 10.10.5.3
+  IP Address      : 10.10.7.3
+  IP Address      : 10.10.0.16
+  IP Address      : 10.0.0.104
+I/f Addresses IPv6 :
+  IPv6 Address    : 3FFE::101:101
+  IPv6 Address    : 10::104
+TE IP Reach.    :
+  IP Prefix       : 10.10.10.104/32      (Dir. :Up)  Metric  : 0
+  IP Prefix       : 10.10.4.0/24         (Dir. :Up)  Metric  : 10
+  IP Prefix       : 10.10.5.0/24         (Dir. :Up)  Metric  : 10
+  IP Prefix       : 10.10.7.0/24         (Dir. :Up)  Metric  : 10
+  IP Prefix       : 10.10.0.0/24         (Dir. :Up)  Metric  : 10
+  IP Prefix       : 10.0.0.0/24          (Dir. :Up)  Metric  : 10
+Authentication  :
+  Auth Type       : Password(1) (116 bytes)
+
+Level (1) LSP Count : 1
+
+Displaying Level 2 database
+-------------------------------------------------------------------------------
+LSP ID    : ALA-49.00-00                                Level     : L2
+Sequence  : 0x22c                  Checksum  : 0xb888   Lifetime  : 1082
+Version   : 1                      Pkt Type  : 20       Pkt Ver   : 1
+Attributes: L1L2                   Max Area  : 3
+SysID Len : 6                      Used Len  : 304      Alloc Len : 1492
+
+TLVs :
+Area Addresses  :
+  Area Address    : (13) 47.4001.8000.00a7.0000.ffdd.0007
+Supp Protocols  :
+  Protocols       : IPv4 IPv6
+IS-Hostname     :
+  Hostname        : ALA-49
+TE Router ID    :
+  Router ID       : 10.10.10.104
+Internal Reach  :
+  IP Prefix       : 10.10.10.104/32    (Dir. :Up)  Metric  : 0 (I)
+  IP Prefix       : 10.10.4.0/24       (Dir. :Up)  Metric  : 10 (I)
+  IP Prefix       : 10.10.5.0/24       (Dir. :Up)  Metric  : 10 (I)
+  IP Prefix       : 10.10.7.0/24       (Dir. :Up)  Metric  : 10 (I)
+  IP Prefix       : 10.10.0.0/24       (Dir. :Up)  Metric  : 10 (I)
+  IP Prefix       : 10.0.0.0/24        (Dir. :Up)  Metric  : 10 (I)
+MT IPv6 Reach.  :
+  MT ID           : 2
+  IPv6 Prefix     : 3ffe::101:100/120
+                    Flags : Up Internal Metric : 10
+  IPv6 Prefix     : 10::/64
+                    Flags : Up Internal Metric : 10
+I/f Addresses   :
+  IP Address      : 10.10.10.104
+  IP Address      : 10.10.4.3
+  IP Address      : 10.10.5.3
+  IP Address      : 10.10.7.3
+  IP Address      : 10.10.0.16
+  IP Address      : 10.0.0.104
+I/f Addresses IPv6 :
+  IPv6 Address    : 3FFE::101:101
+  IPv6 Address    : 10::104
+TE IP Reach.    :
+  IP Prefix       : 10.10.10.104/32      (Dir. :Up)  Metric  : 0
+  IP Prefix       : 10.10.4.0/24         (Dir. :Up)  Metric  : 10
+  IP Prefix       : 10.10.5.0/24         (Dir. :Up)  Metric  : 10
+  IP Prefix       : 10.10.7.0/24         (Dir. :Up)  Metric  : 10
+  IP Prefix       : 10.10.0.0/24         (Dir. :Up)  Metric  : 10
+  IP Prefix       : 10.0.0.0/24          (Dir. :Up)  Metric  : 10
+Authentication  :
+  Auth Type       : MD5(54) (16 bytes)
+
+Level (2) LSP Count : 1
+------------------------------------------------------------------------------
+Flags : D = Prefix Leaked Down
+      : N = Node Flag
+      : R = Re-advertisement Flag
+      : S = Sub-TLVs Present
+      : X = External Prefix Flag
+===============================================================================
+A:SAS-12>>config>router>isis#

@@ -1,0 +1,45 @@
+user@host> show isis database logical-system CE3 sisira.00-00 detail      
+
+IS-IS level 1 link-state database:
+
+sisira.00-00 Sequence: 0x11, Checksum: 0x10fc, Lifetime: 975 secs
+   IS neighbor: hemantha-CE3.02               Metric:       10
+   ES neighbor: 0015.0015.0015                Metric:       10 Down
+   ES neighbor: 0025.0025.0025                Metric:       10 Down
+   ES neighbor: 0030.0030.0030                Metric:       10 Down
+   ES neighbor: 0040.0040.0040                Metric:       10 Down
+   ES neighbor: sisira                        Metric:        0
+   IP prefix: 10.1.0.0/24                      Metric:       10 External Down
+   IP prefix: 10.3.0.0/24                      Metric:       10 External Down
+   IP prefix: 10.4.0.0/24                      Metric:       10 External Down
+   IP prefix: 10.5.0.0/24                      Metric:       10 Internal Up
+   IP prefix: 10.15.15.15/32                  Metric:       10 External Down
+   IP prefix: 10.25.25.25/32                  Metric:       10 External Down
+   IP prefix: 10.30.30.30/32                  Metric:       10 External Down
+   IP prefix: 10.40.40.40/32                  Metric:       10 External Down
+   IP prefix: 10.60.60.60/32                  Metric:        0 Internal Up
+
+IS-IS level 2 link-state database:
+
+sisira.00-00 Sequence: 0x13, Checksum: 0x69ac, Lifetime: 993 secs
+   IS neighbor: hemantha-CE3.02               Metric:       10
+   IP prefix: 10.1.0.0/24                      Metric:       10 External Down
+   IP prefix: 10.3.0.0/24                      Metric:       10 External Down
+   IP prefix: 10.4.0.0/24                      Metric:       10 External Down
+   IP prefix: 10.5.0.0/24                      Metric:       10 Internal Up
+   IP prefix: 10.15.15.15/32                  Metric:       10 External Down
+   IP prefix: 10.25.25.25/32                  Metric:       10 External Down
+   IP prefix: 10.30.30.30/32                  Metric:       10 External Down
+   IP prefix: 10.40.40.40/32                  Metric:       10 External Down
+   IP prefix: 10.50.50.50/32                  Metric:       10 Internal Up
+   IP prefix: 10.60.60.60/32                  Metric:        0 Internal Up
+   ISO prefix: 60.0006.80ff.f800.0000.0108.0001.0015.0015.0015/152
+                                              Metric:       10 External Down
+   ISO prefix: 60.0006.80ff.f800.0000.0108.0001.0025.0025.0025/152
+                                              Metric:       10 External Down
+   ISO prefix: 60.0006.80ff.f800.0000.0108.0001.0030.0030.0030/152
+                                              Metric:       10 External Down
+   ISO prefix: 60.0006.80ff.f800.0000.0108.0001.0040.0040.0040/152
+                                              Metric:       10 External Down
+   ISO prefix: 60.0006.80ff.f800.0000.0108.0001.0060.0060.0060/152
+                                              Metric:        0 Internal Up

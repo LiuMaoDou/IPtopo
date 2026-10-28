@@ -1,0 +1,136 @@
+IGP-B# show router ospf 1 database detail
+OSPFv2 (1)
+
+Router LSA for Area 0.0.0.0
+ LSA Type : Router
+ Link State Id : 10.255.0.1
+ Adv Router Id : 10.255.0.1
+ Sequence No : 80000001
+ Checksum : 1234
+ Age : 100
+ Link Count : 3
+ Link Type (1) : Stub
+ Network (1) : 10.255.0.1
+ Mask (1) : 255.255.255.255
+ Metric-0 (1) : 1
+ Link Type (2) : P-2-P
+ Nbr Rtr Id (2) : 10.255.0.2
+ I/F Address (2) : 10.80.1.1
+ Metric-0 (2) : 10
+ Link Type (3) : P-2-P
+ Nbr Rtr Id (3) : 10.255.0.3
+ I/F Address (3) : 10.80.3.1
+ Metric-0 (3) : 10
+
+Router LSA for Area 0.0.0.0
+ LSA Type : Router
+ Link State Id : 10.255.0.2
+ Adv Router Id : 10.255.0.2
+ Sequence No : 80000001
+ Checksum : 1234
+ Age : 100
+ Link Count : 3
+ Link Type (1) : Stub
+ Network (1) : 10.255.0.2
+ Mask (1) : 255.255.255.255
+ Metric-0 (1) : 1
+ Link Type (2) : P-2-P
+ Nbr Rtr Id (2) : 10.255.0.1
+ I/F Address (2) : 10.80.1.2
+ Metric-0 (2) : 10
+ Link Type (3) : P-2-P
+ Nbr Rtr Id (3) : 10.255.0.6
+ I/F Address (3) : 10.80.2.1
+ Metric-0 (3) : 20
+
+Router LSA for Area 0.0.0.0
+ LSA Type : Router
+ Link State Id : 10.255.0.3
+ Adv Router Id : 10.255.0.3
+ Sequence No : 80000001
+ Checksum : 1234
+ Age : 100
+ Link Count : 4
+ Link Type (1) : Stub
+ Network (1) : 10.255.0.3
+ Mask (1) : 255.255.255.255
+ Metric-0 (1) : 1
+ Link Type (2) : P-2-P
+ Nbr Rtr Id (2) : 10.255.0.1
+ I/F Address (2) : 10.80.3.2
+ Metric-0 (2) : 10
+ Link Type (3) : P-2-P
+ Nbr Rtr Id (3) : 10.255.0.4
+ I/F Address (3) : 10.80.4.1
+ Metric-0 (3) : 10
+ Link Type (4) : P-2-P
+ Nbr Rtr Id (4) : 10.255.0.5
+ I/F Address (4) : 10.80.6.1
+ Metric-0 (4) : 10
+
+Router LSA for Area 0.0.0.0
+ LSA Type : Router
+ Link State Id : 10.255.0.4
+ Adv Router Id : 10.255.0.4
+ Sequence No : 80000001
+ Checksum : 1234
+ Age : 100
+ Link Count : 3
+ Link Type (1) : Stub
+ Network (1) : 10.255.0.4
+ Mask (1) : 255.255.255.255
+ Metric-0 (1) : 1
+ Link Type (2) : P-2-P
+ Nbr Rtr Id (2) : 10.255.0.3
+ I/F Address (2) : 10.80.4.2
+ Metric-0 (2) : 10
+ Link Type (3) : P-2-P
+ Nbr Rtr Id (3) : 10.255.0.6
+ I/F Address (3) : 10.80.5.1
+ Metric-0 (3) : 10
+
+Router LSA for Area 0.0.0.0
+ LSA Type : Router
+ Link State Id : 10.255.0.5
+ Adv Router Id : 10.255.0.5
+ Sequence No : 80000001
+ Checksum : 1234
+ Age : 100
+ Link Count : 3
+ Link Type (1) : Stub
+ Network (1) : 10.255.0.5
+ Mask (1) : 255.255.255.255
+ Metric-0 (1) : 1
+ Link Type (2) : P-2-P
+ Nbr Rtr Id (2) : 10.255.0.3
+ I/F Address (2) : 10.80.6.2
+ Metric-0 (2) : 10
+ Link Type (3) : P-2-P
+ Nbr Rtr Id (3) : 10.255.0.6
+ I/F Address (3) : 10.80.7.1
+ Metric-0 (3) : 10
+
+Router LSA for Area 0.0.0.0
+ LSA Type : Router
+ Link State Id : 10.255.0.6
+ Adv Router Id : 10.255.0.6
+ Sequence No : 80000001
+ Checksum : 1234
+ Age : 100
+ Link Count : 4
+ Link Type (1) : Stub
+ Network (1) : 10.255.0.6
+ Mask (1) : 255.255.255.255
+ Metric-0 (1) : 0
+ Link Type (2) : P-2-P
+ Nbr Rtr Id (2) : 10.255.0.2
+ I/F Address (2) : 10.80.2.2
+ Metric-0 (2) : 20
+ Link Type (3) : P-2-P
+ Nbr Rtr Id (3) : 10.255.0.4
+ I/F Address (3) : 10.80.5.2
+ Metric-0 (3) : 10
+ Link Type (4) : P-2-P
+ Nbr Rtr Id (4) : 10.255.0.5
+ I/F Address (4) : 10.80.7.2
+ Metric-0 (4) : 10

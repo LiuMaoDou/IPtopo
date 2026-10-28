@@ -1,0 +1,846 @@
+{
+  "dataset": {
+    "files": 38,
+    "vendors": [
+      "cisco",
+      "huawei",
+      "juniper",
+      "nokia"
+    ]
+  },
+  "checks": [
+    {
+      "name": "source_integrity:cisco/config/isis-r1.cfg",
+      "passed": true,
+      "source_url": "https://www.cisco.com/c/en/us/support/docs/ip/integrated-intermediate-system-to-intermediate-system-is-is/13795-is-is-ip-config.html"
+    },
+    {
+      "name": "source_integrity:cisco/config/isis-r2.cfg",
+      "passed": true,
+      "source_url": "https://www.cisco.com/c/en/us/support/docs/ip/integrated-intermediate-system-to-intermediate-system-is-is/13795-is-is-ip-config.html"
+    },
+    {
+      "name": "source_integrity:cisco/config/isis-r3.cfg",
+      "passed": true,
+      "source_url": "https://www.cisco.com/c/en/us/support/docs/ip/integrated-intermediate-system-to-intermediate-system-is-is/13795-is-is-ip-config.html"
+    },
+    {
+      "name": "source_integrity:cisco/config/ospf-r1.cfg",
+      "passed": true,
+      "source_url": "https://www.cisco.com/c/en/us/support/docs/ip/open-shortest-path-first-ospf/47864-ospfdb5.html"
+    },
+    {
+      "name": "source_integrity:cisco/config/ospf-r2.cfg",
+      "passed": true,
+      "source_url": "https://www.cisco.com/c/en/us/support/docs/ip/open-shortest-path-first-ospf/47864-ospfdb5.html"
+    },
+    {
+      "name": "source_integrity:cisco/config/ospf-r3.cfg",
+      "passed": true,
+      "source_url": "https://www.cisco.com/c/en/us/support/docs/ip/open-shortest-path-first-ospf/47864-ospfdb5.html"
+    },
+    {
+      "name": "source_integrity:cisco/lsdb/isis-r2-detail.txt",
+      "passed": true,
+      "source_url": "https://www.cisco.com/c/en/us/support/docs/ip/integrated-intermediate-system-to-intermediate-system-is-is/13795-is-is-ip-config.html"
+    },
+    {
+      "name": "source_integrity:cisco/lsdb/ospf-r2-router.txt",
+      "passed": true,
+      "source_url": "https://www.cisco.com/c/en/us/support/docs/ip/open-shortest-path-first-ospf/47864-ospfdb5.html"
+    },
+    {
+      "name": "source_integrity:cisco/verification/ospf-routes.txt",
+      "passed": true,
+      "source_url": "https://www.cisco.com/c/en/us/support/docs/ip/open-shortest-path-first-ospf/47864-ospfdb5.html"
+    },
+    {
+      "name": "source_integrity:huawei/config/isis-ipv6-switchA.cfg",
+      "passed": true,
+      "source_url": "https://info.support.huawei.com/enterprise/en/doc/EDOC1100389673/9ec00e90/example-for-configuring-basic-ipv6-is-is-functions"
+    },
+    {
+      "name": "source_integrity:huawei/config/isis-ipv6-switchB.cfg",
+      "passed": true,
+      "source_url": "https://info.support.huawei.com/enterprise/en/doc/EDOC1100389673/9ec00e90/example-for-configuring-basic-ipv6-is-is-functions"
+    },
+    {
+      "name": "source_integrity:huawei/config/isis-ipv6-switchC.cfg",
+      "passed": true,
+      "source_url": "https://info.support.huawei.com/enterprise/en/doc/EDOC1100389673/9ec00e90/example-for-configuring-basic-ipv6-is-is-functions"
+    },
+    {
+      "name": "source_integrity:huawei/config/isis-ipv6-switchD.cfg",
+      "passed": true,
+      "source_url": "https://info.support.huawei.com/enterprise/en/doc/EDOC1100389673/9ec00e90/example-for-configuring-basic-ipv6-is-is-functions"
+    },
+    {
+      "name": "source_integrity:huawei/lsdb/isis-extended-attributes.txt",
+      "passed": true,
+      "source_url": "https://info.support.huawei.com/hedex/api/pages/EDOC1100363264/AEN0403J/05/resources/command/yunshan/DISPLAY-ISIS-LSDB%28ISISCOMMOM%29.html"
+    },
+    {
+      "name": "source_integrity:huawei/lsdb/isis-ipv6-summary.txt",
+      "passed": true,
+      "source_url": "https://info.support.huawei.com/enterprise/en/doc/EDOC1100389673/9ec00e90/example-for-configuring-basic-ipv6-is-is-functions"
+    },
+    {
+      "name": "source_integrity:huawei/lsdb/isis-old-verbose.txt",
+      "passed": true,
+      "source_url": "https://info.support.huawei.com/hedex/api/pages/EDOC1100331917/AZM1014P/06/resources/dc/display_isis_lsdb.html"
+    },
+    {
+      "name": "source_integrity:huawei/lsdb/ospf-network.txt",
+      "passed": true,
+      "source_url": "https://info.support.huawei.com/network/ptmngsys/Web/tsrev_ne/cn/content/ne/22_edesk_ne_ospf_routing_oscillation_failure/edesk_ne_ospf_routing_oscillation_failure_edesk003.html"
+    },
+    {
+      "name": "source_integrity:huawei/lsdb/ospf-router.txt",
+      "passed": true,
+      "source_url": "https://info.support.huawei.com/network/ptmngsys/Web/tsrev_s/en/content/s/46_edesk_ospf_cannot_learn/edesk_ospf_cannot_learn_edesk005.html"
+    },
+    {
+      "name": "source_integrity:huawei/lsdb/ospf-star-inconsistent.txt",
+      "passed": true,
+      "source_url": "https://info.support.huawei.com/network/ptmngsys/Web/tsrev_s/ru/content/s/51_edesk_ospf_flapping/edesk_ospf_flapping_edesk001.html"
+    },
+    {
+      "name": "source_integrity:huawei/lsdb/ospf-summary.txt",
+      "passed": true,
+      "source_url": "https://info.support.huawei.com/network/ptmngsys/Web/tsrev_s/ru/content/s/51_edesk_ospf_flapping/edesk_ospf_flapping_edesk001.html"
+    },
+    {
+      "name": "source_integrity:juniper/config/isis-r1-hierarchy.cfg",
+      "passed": true,
+      "source_url": "https://www.juniper.net/documentation/us/en/software/junos/is-is/topics/example/routing-protocol-is-is-security-configuring-cli.html"
+    },
+    {
+      "name": "source_integrity:juniper/config/isis-r1-set.cfg",
+      "passed": true,
+      "source_url": "https://www.juniper.net/documentation/us/en/software/junos/is-is/topics/example/routing-protocol-is-is-security-configuring-cli.html"
+    },
+    {
+      "name": "source_integrity:juniper/config/isis-r2-set.cfg",
+      "passed": true,
+      "source_url": "https://www.juniper.net/documentation/us/en/software/junos/is-is/topics/example/routing-protocol-is-is-security-configuring-cli.html"
+    },
+    {
+      "name": "source_integrity:juniper/config/ospf-r1.cfg",
+      "passed": true,
+      "source_url": "https://www.juniper.net/documentation/us/en/software/junos/ospf/topics/topic-map/configuring-ospf-areas.html"
+    },
+    {
+      "name": "source_integrity:juniper/config/ospf-r2.cfg",
+      "passed": true,
+      "source_url": "https://www.juniper.net/documentation/us/en/software/junos/ospf/topics/topic-map/configuring-ospf-areas.html"
+    },
+    {
+      "name": "source_integrity:juniper/lsdb/isis-detail.txt",
+      "passed": true,
+      "source_url": "https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-isis-database.html"
+    },
+    {
+      "name": "source_integrity:juniper/lsdb/isis-extensive.txt",
+      "passed": true,
+      "source_url": "https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-isis-database.html"
+    },
+    {
+      "name": "source_integrity:juniper/lsdb/ospf-detail.txt",
+      "passed": true,
+      "source_url": "https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-ospf-database.html"
+    },
+    {
+      "name": "source_integrity:juniper/verification/isis-adjacencies.txt",
+      "passed": true,
+      "source_url": "https://www.juniper.net/documentation/us/en/software/junos/is-is/topics/example/routing-protocol-is-is-security-configuring-cli.html"
+    },
+    {
+      "name": "source_integrity:nokia/config/isis-protocol-context.cfg",
+      "passed": true,
+      "source_url": "https://documentation.nokia.com/sas/23-3/books/k-routing-protocols/is-is.html"
+    },
+    {
+      "name": "source_integrity:nokia/config/ospf-md-policy-fragment.cfg",
+      "passed": true,
+      "source_url": "https://documentation.nokia.com/acg/24-7-2/books/router-configuration-md/m1078-lfa-policies-md-cli.html"
+    },
+    {
+      "name": "source_integrity:nokia/config/ospf-protocol-context.cfg",
+      "passed": true,
+      "source_url": "https://documentation.nokia.com/sas/23-9/books/k-routing-protocols/ospf.html"
+    },
+    {
+      "name": "source_integrity:nokia/config/ospf-router-context.cfg",
+      "passed": true,
+      "source_url": "https://documentation.nokia.com/sas/23-9/books/k-routing-protocols/ospf.html"
+    },
+    {
+      "name": "source_integrity:nokia/config/router-basic-classic.cfg",
+      "passed": true,
+      "source_url": "https://documentation.nokia.com/sar/25-4-1/books/router-config/ip-router-configuration.html"
+    },
+    {
+      "name": "source_integrity:nokia/lsdb/isis-database.txt",
+      "passed": true,
+      "source_url": "https://documentation.nokia.com/sas/23-3/books/k-routing-protocols/is-is.html"
+    },
+    {
+      "name": "source_integrity:nokia/lsdb/isis-ipv6-detail.txt",
+      "passed": true,
+      "source_url": "https://documentation.nokia.com/sas/23-3/books/k-routing-protocols/is-is.html"
+    },
+    {
+      "name": "source_integrity:nokia/lsdb/ospf-database.txt",
+      "passed": true,
+      "source_url": "https://documentation.nokia.com/sas/23-9/books/k-routing-protocols/ospf.html"
+    },
+    {
+      "name": "source_integrity:nokia/verification/isis-hostnames.txt",
+      "passed": true,
+      "source_url": "https://documentation.nokia.com/sas/23-3/books/k-routing-protocols/is-is.html"
+    },
+    {
+      "name": "config_addresses:cisco/config/ospf-r1.cfg",
+      "passed": true,
+      "dialect": "cisco_ios",
+      "expected": [
+        "1.1.1.1",
+        "4.0.0.1"
+      ],
+      "actual": [
+        "1.1.1.1",
+        "4.0.0.1"
+      ],
+      "transformations": [],
+      "diagnostics": []
+    },
+    {
+      "name": "config_addresses:cisco/config/ospf-r2.cfg",
+      "passed": true,
+      "dialect": "cisco_ios",
+      "expected": [
+        "2.2.2.2",
+        "200.0.0.2",
+        "6.0.0.2"
+      ],
+      "actual": [
+        "2.2.2.2",
+        "200.0.0.2",
+        "6.0.0.2"
+      ],
+      "transformations": [],
+      "diagnostics": []
+    },
+    {
+      "name": "config_addresses:cisco/config/ospf-r3.cfg",
+      "passed": true,
+      "dialect": "cisco_ios",
+      "expected": [
+        "200.0.0.3",
+        "3.3.3.3"
+      ],
+      "actual": [
+        "200.0.0.3",
+        "3.3.3.3"
+      ],
+      "transformations": [],
+      "diagnostics": []
+    },
+    {
+      "name": "config_addresses:cisco/config/isis-r1.cfg",
+      "passed": true,
+      "dialect": "cisco_ios",
+      "expected": [
+        "172.16.1.1",
+        "172.16.12.1"
+      ],
+      "actual": [
+        "172.16.1.1",
+        "172.16.12.1"
+      ],
+      "transformations": [
+        "Restored submode indentation lost in the official rendered example; tokens unchanged"
+      ],
+      "diagnostics": []
+    },
+    {
+      "name": "config_addresses:cisco/config/isis-r2.cfg",
+      "passed": true,
+      "dialect": "cisco_ios",
+      "expected": [
+        "172.16.12.2",
+        "172.16.2.2",
+        "172.16.23.1"
+      ],
+      "actual": [
+        "172.16.12.2",
+        "172.16.2.2",
+        "172.16.23.1"
+      ],
+      "transformations": [
+        "Restored submode indentation lost in the official rendered example; tokens unchanged"
+      ],
+      "diagnostics": []
+    },
+    {
+      "name": "config_addresses:cisco/config/isis-r3.cfg",
+      "passed": true,
+      "dialect": "cisco_ios",
+      "expected": [
+        "172.16.23.2",
+        "172.16.3.3"
+      ],
+      "actual": [
+        "172.16.23.2",
+        "172.16.3.3"
+      ],
+      "transformations": [
+        "Restored submode indentation lost in the official rendered example; tokens unchanged"
+      ],
+      "diagnostics": []
+    },
+    {
+      "name": "config_addresses:juniper/config/isis-r1-set.cfg",
+      "passed": true,
+      "dialect": "junos_set",
+      "expected": [
+        "10.100.12.1",
+        "192.168.0.1"
+      ],
+      "actual": [
+        "10.100.12.1",
+        "192.168.0.1"
+      ],
+      "transformations": [],
+      "diagnostics": []
+    },
+    {
+      "name": "config_addresses:juniper/config/isis-r2-set.cfg",
+      "passed": true,
+      "dialect": "junos_set",
+      "expected": [
+        "10.100.12.2",
+        "192.168.0.2"
+      ],
+      "actual": [
+        "10.100.12.2",
+        "192.168.0.2"
+      ],
+      "transformations": [],
+      "diagnostics": []
+    },
+    {
+      "name": "config_addresses:juniper/config/isis-r1-hierarchy.cfg",
+      "passed": true,
+      "dialect": "junos_hierarchical",
+      "expected": [
+        "10.100.12.1",
+        "192.168.0.1"
+      ],
+      "actual": [
+        "10.100.12.1",
+        "192.168.0.1"
+      ],
+      "transformations": [],
+      "diagnostics": []
+    },
+    {
+      "name": "config_addresses:juniper/config/ospf-r1.cfg",
+      "passed": true,
+      "dialect": "junos_set",
+      "expected": [
+        "192.0.2.45"
+      ],
+      "actual": [
+        "192.0.2.45"
+      ],
+      "transformations": [],
+      "diagnostics": []
+    },
+    {
+      "name": "config_addresses:juniper/config/ospf-r2.cfg",
+      "passed": true,
+      "dialect": "junos_set",
+      "expected": [
+        "192.0.2.37"
+      ],
+      "actual": [
+        "192.0.2.37"
+      ],
+      "transformations": [],
+      "diagnostics": []
+    },
+    {
+      "name": "config_addresses:nokia/config/router-basic-classic.cfg",
+      "passed": true,
+      "dialect": "nokia_classic",
+      "expected": [
+        "192.0.2.1",
+        "192.0.2.1"
+      ],
+      "actual": [
+        "192.0.2.1",
+        "192.0.2.1"
+      ],
+      "transformations": [],
+      "diagnostics": []
+    },
+    {
+      "name": "config_addresses:nokia/config/ospf-router-context.cfg",
+      "passed": true,
+      "dialect": "nokia_classic",
+      "expected": [
+        "10.0.0.103",
+        "10.10.10.104"
+      ],
+      "actual": [
+        "10.0.0.103",
+        "10.10.10.104"
+      ],
+      "transformations": [
+        "Wrapped the explicit config>router excerpt in configure/router; no address or protocol values added"
+      ],
+      "diagnostics": []
+    },
+    {
+      "name": "config_addresses:huawei/config/isis-ipv6-switchA.cfg",
+      "passed": true,
+      "dialect": "huawei_vrp",
+      "expected": [
+        "fc00:0:0:11::2"
+      ],
+      "actual": [
+        "fc00:0:0:11::2"
+      ],
+      "transformations": [],
+      "diagnostics": []
+    },
+    {
+      "name": "config_addresses:huawei/config/isis-ipv6-switchB.cfg",
+      "passed": true,
+      "dialect": "huawei_vrp",
+      "expected": [
+        "fc00:0:0:12::2"
+      ],
+      "actual": [
+        "fc00:0:0:12::2"
+      ],
+      "transformations": [],
+      "diagnostics": []
+    },
+    {
+      "name": "config_addresses:huawei/config/isis-ipv6-switchC.cfg",
+      "passed": true,
+      "dialect": "huawei_vrp",
+      "expected": [
+        "fc00:0:0:11::1",
+        "fc00:0:0:12::1",
+        "fc00:0:0:30::1"
+      ],
+      "actual": [
+        "fc00:0:0:11::1",
+        "fc00:0:0:12::1",
+        "fc00:0:0:30::1"
+      ],
+      "transformations": [],
+      "diagnostics": []
+    },
+    {
+      "name": "config_addresses:huawei/config/isis-ipv6-switchD.cfg",
+      "passed": true,
+      "dialect": "huawei_vrp",
+      "expected": [
+        "fc00:0:0:20::1",
+        "fc00:0:0:30::2"
+      ],
+      "actual": [
+        "fc00:0:0:20::1",
+        "fc00:0:0:30::2"
+      ],
+      "transformations": [],
+      "diagnostics": []
+    },
+    {
+      "name": "config_topology:cisco:isis",
+      "passed": true,
+      "expected_links": 2,
+      "actual_links": 2
+    },
+    {
+      "name": "config_topology:juniper:isis",
+      "passed": true,
+      "expected_links": 1,
+      "actual_links": 1
+    },
+    {
+      "name": "config_topology:juniper:ospf",
+      "passed": true,
+      "expected_links": 1,
+      "actual_links": 1
+    },
+    {
+      "name": "native_routing_config:cisco/config/ospf-r1.cfg",
+      "passed": true,
+      "instances": 1,
+      "bindings": 1
+    },
+    {
+      "name": "native_routing_config:cisco/config/ospf-r2.cfg",
+      "passed": true,
+      "instances": 1,
+      "bindings": 2
+    },
+    {
+      "name": "native_routing_config:cisco/config/ospf-r3.cfg",
+      "passed": true,
+      "instances": 1,
+      "bindings": 1
+    },
+    {
+      "name": "native_routing_config:cisco/config/isis-r1.cfg",
+      "passed": true,
+      "instances": 1,
+      "bindings": 4
+    },
+    {
+      "name": "native_routing_config:cisco/config/isis-r2.cfg",
+      "passed": true,
+      "instances": 1,
+      "bindings": 6
+    },
+    {
+      "name": "native_routing_config:cisco/config/isis-r3.cfg",
+      "passed": true,
+      "instances": 1,
+      "bindings": 4
+    },
+    {
+      "name": "native_routing_config:juniper/config/isis-r1-set.cfg",
+      "passed": true,
+      "instances": 1,
+      "bindings": 4
+    },
+    {
+      "name": "native_routing_config:juniper/config/isis-r2-set.cfg",
+      "passed": true,
+      "instances": 1,
+      "bindings": 4
+    },
+    {
+      "name": "native_routing_config:juniper/config/isis-r1-hierarchy.cfg",
+      "passed": true,
+      "instances": 1,
+      "bindings": 4
+    },
+    {
+      "name": "lsdb_records:huawei/lsdb/ospf-router.txt:0",
+      "passed": true,
+      "expected_records": 1,
+      "actual_records": 1,
+      "blocking_codes": [
+        "unconfirmed_capture"
+      ]
+    },
+    {
+      "name": "partial_view_guard:huawei/lsdb/ospf-router.txt:0",
+      "passed": true
+    },
+    {
+      "name": "lsdb_records:huawei/lsdb/ospf-network.txt:0",
+      "passed": true,
+      "expected_records": 1,
+      "actual_records": 1,
+      "blocking_codes": [
+        "missing_record",
+        "one_way_adjacency",
+        "unconfirmed_capture"
+      ]
+    },
+    {
+      "name": "partial_view_guard:huawei/lsdb/ospf-network.txt:0",
+      "passed": true
+    },
+    {
+      "name": "lsdb_records:huawei/lsdb/ospf-summary.txt:0",
+      "passed": true,
+      "expected_records": 2,
+      "actual_records": 2,
+      "blocking_codes": [
+        "summary_only",
+        "unconfirmed_capture"
+      ]
+    },
+    {
+      "name": "partial_view_guard:huawei/lsdb/ospf-summary.txt:0",
+      "passed": true
+    },
+    {
+      "name": "lsdb_records:huawei/lsdb/isis-old-verbose.txt:1",
+      "passed": true,
+      "expected_records": 2,
+      "actual_records": 2,
+      "blocking_codes": [
+        "missing_record",
+        "one_way_adjacency",
+        "unconfirmed_capture"
+      ]
+    },
+    {
+      "name": "partial_view_guard:huawei/lsdb/isis-old-verbose.txt:1",
+      "passed": true
+    },
+    {
+      "name": "lsdb_records:huawei/lsdb/isis-old-verbose.txt:2",
+      "passed": true,
+      "expected_records": 2,
+      "actual_records": 2,
+      "blocking_codes": [
+        "extended_lsp",
+        "missing_record",
+        "one_way_adjacency",
+        "unconfirmed_capture"
+      ]
+    },
+    {
+      "name": "partial_view_guard:huawei/lsdb/isis-old-verbose.txt:2",
+      "passed": true
+    },
+    {
+      "name": "lsdb_records:huawei/lsdb/isis-ipv6-summary.txt:1",
+      "passed": true,
+      "expected_records": 5,
+      "actual_records": 5,
+      "blocking_codes": [
+        "summary_only",
+        "unconfirmed_capture"
+      ]
+    },
+    {
+      "name": "partial_view_guard:huawei/lsdb/isis-ipv6-summary.txt:1",
+      "passed": true
+    },
+    {
+      "name": "lsdb_records:huawei/lsdb/isis-ipv6-summary.txt:2",
+      "passed": true,
+      "expected_records": 3,
+      "actual_records": 3,
+      "blocking_codes": [
+        "summary_only",
+        "unconfirmed_capture"
+      ]
+    },
+    {
+      "name": "partial_view_guard:huawei/lsdb/isis-ipv6-summary.txt:2",
+      "passed": true
+    },
+    {
+      "name": "lsdb_records:huawei/lsdb/isis-extended-attributes.txt:2",
+      "passed": true,
+      "expected_records": 1,
+      "actual_records": 1,
+      "blocking_codes": [
+        "missing_record",
+        "one_way_adjacency",
+        "parallel_identity_unknown",
+        "unconfirmed_capture"
+      ]
+    },
+    {
+      "name": "partial_view_guard:huawei/lsdb/isis-extended-attributes.txt:2",
+      "passed": true
+    },
+    {
+      "name": "inconsistent_official_sample_is_rejected",
+      "passed": true
+    },
+    {
+      "name": "stub_prefixes_are_not_links",
+      "passed": true
+    },
+    {
+      "name": "network_members_are_zero_metric",
+      "passed": true
+    },
+    {
+      "name": "interlevel_prefix_is_excluded",
+      "passed": true
+    },
+    {
+      "name": "holdtime_zero_is_expired",
+      "passed": true
+    },
+    {
+      "name": "cisco_reference_graph",
+      "passed": true
+    },
+    {
+      "name": "published_route_cost:1.1.1.1:6.0.0.0/8",
+      "passed": true,
+      "published_cost": 74,
+      "calculated_cost": 74,
+      "source_protocol": "Cisco IOS OSPF area 0"
+    },
+    {
+      "name": "published_route_cost:2.2.2.2:4.0.0.0/8",
+      "passed": true,
+      "published_cost": 74,
+      "calculated_cost": 74,
+      "source_protocol": "Cisco IOS OSPF area 0"
+    },
+    {
+      "name": "native_lsdb_records:cisco/lsdb/ospf-r2-router.txt:0",
+      "passed": true,
+      "expected_records": 2,
+      "actual_records": 2
+    },
+    {
+      "name": "native_partial_view_guard:cisco/lsdb/ospf-r2-router.txt:0",
+      "passed": true
+    },
+    {
+      "name": "native_lsdb_records:cisco/lsdb/isis-r2-detail.txt:1",
+      "passed": true,
+      "expected_records": 1,
+      "actual_records": 1
+    },
+    {
+      "name": "native_partial_view_guard:cisco/lsdb/isis-r2-detail.txt:1",
+      "passed": true
+    },
+    {
+      "name": "native_lsdb_records:cisco/lsdb/isis-r2-detail.txt:2",
+      "passed": true,
+      "expected_records": 1,
+      "actual_records": 1
+    },
+    {
+      "name": "native_partial_view_guard:cisco/lsdb/isis-r2-detail.txt:2",
+      "passed": true
+    },
+    {
+      "name": "native_lsdb_records:juniper/lsdb/ospf-detail.txt:0.0.0.1",
+      "passed": true,
+      "expected_records": 5,
+      "actual_records": 5
+    },
+    {
+      "name": "native_partial_view_guard:juniper/lsdb/ospf-detail.txt:0.0.0.1",
+      "passed": true
+    },
+    {
+      "name": "native_lsdb_records:juniper/lsdb/ospf-detail.txt:0.0.0.2",
+      "passed": true,
+      "expected_records": 6,
+      "actual_records": 6
+    },
+    {
+      "name": "native_partial_view_guard:juniper/lsdb/ospf-detail.txt:0.0.0.2",
+      "passed": true
+    },
+    {
+      "name": "native_lsdb_records:juniper/lsdb/isis-detail.txt:1",
+      "passed": true,
+      "expected_records": 1,
+      "actual_records": 1
+    },
+    {
+      "name": "native_partial_view_guard:juniper/lsdb/isis-detail.txt:1",
+      "passed": true
+    },
+    {
+      "name": "native_lsdb_records:juniper/lsdb/isis-detail.txt:2",
+      "passed": true,
+      "expected_records": 1,
+      "actual_records": 1
+    },
+    {
+      "name": "native_partial_view_guard:juniper/lsdb/isis-detail.txt:2",
+      "passed": true
+    },
+    {
+      "name": "native_lsdb_records:juniper/lsdb/isis-extensive.txt:1",
+      "passed": true,
+      "expected_records": 1,
+      "actual_records": 1
+    },
+    {
+      "name": "native_partial_view_guard:juniper/lsdb/isis-extensive.txt:1",
+      "passed": true
+    },
+    {
+      "name": "native_lsdb_records:nokia/lsdb/ospf-database.txt:0",
+      "passed": true,
+      "expected_records": 1,
+      "actual_records": 1
+    },
+    {
+      "name": "native_partial_view_guard:nokia/lsdb/ospf-database.txt:0",
+      "passed": true
+    },
+    {
+      "name": "native_lsdb_records:nokia/lsdb/isis-database.txt:2",
+      "passed": true,
+      "expected_records": 1,
+      "actual_records": 1
+    },
+    {
+      "name": "native_partial_view_guard:nokia/lsdb/isis-database.txt:2",
+      "passed": true
+    },
+    {
+      "name": "native_lsdb_records:nokia/lsdb/isis-ipv6-detail.txt:1",
+      "passed": true,
+      "expected_records": 1,
+      "actual_records": 1
+    },
+    {
+      "name": "native_partial_view_guard:nokia/lsdb/isis-ipv6-detail.txt:1",
+      "passed": true
+    },
+    {
+      "name": "native_published_route_cost:1.1.1.1:6.0.0.0/8",
+      "passed": true,
+      "calculated_cost": 74
+    },
+    {
+      "name": "native_published_route_cost:2.2.2.2:4.0.0.0/8",
+      "passed": true,
+      "calculated_cost": 74
+    },
+    {
+      "name": "unsupported_vendor_guard:cisco/lsdb/isis-r2-detail.txt",
+      "passed": true
+    },
+    {
+      "name": "unsupported_vendor_guard:cisco/lsdb/ospf-r2-router.txt",
+      "passed": true
+    },
+    {
+      "name": "unsupported_vendor_guard:juniper/lsdb/isis-detail.txt",
+      "passed": true
+    },
+    {
+      "name": "unsupported_vendor_guard:juniper/lsdb/isis-extensive.txt",
+      "passed": true
+    },
+    {
+      "name": "unsupported_vendor_guard:juniper/lsdb/ospf-detail.txt",
+      "passed": true
+    },
+    {
+      "name": "unsupported_vendor_guard:nokia/lsdb/isis-database.txt",
+      "passed": true
+    },
+    {
+      "name": "unsupported_vendor_guard:nokia/lsdb/isis-ipv6-detail.txt",
+      "passed": true
+    },
+    {
+      "name": "unsupported_vendor_guard:nokia/lsdb/ospf-database.txt",
+      "passed": true
+    }
+  ],
+  "passed": 123,
+  "failed": 0,
+  "limitation": "Official documentation examples and partial views, not customer-site captures. Native four-vendor adapters cover Standard IPv4 single-area/level SPF; advanced routing semantics remain out of scope."
+}

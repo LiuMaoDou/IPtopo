@@ -1,0 +1,58 @@
+IGP-A> show isis database extensive
+IS-IS level 2 link-state database:
+
+0000.0000.0001.00-00 Sequence: 0x00000001, Checksum: 0x1234, Lifetime: 1100 secs
+ LSP length: 200
+ Speaks: IP
+ Hostname: IGP-S
+ IP address: 10.255.0.1
+ IS extended neighbor: 0000.0000.0002.00, Metric: default 10
+ IS extended neighbor: 0000.0000.0003.00, Metric: default 10
+ IP extended prefix: 10.255.0.1/32 Metric: 0 Internal Up
+
+0000.0000.0002.00-00 Sequence: 0x00000001, Checksum: 0x1234, Lifetime: 1100 secs
+ LSP length: 200
+ Speaks: IP
+ Hostname: IGP-A
+ IP address: 10.255.0.2
+ IS extended neighbor: 0000.0000.0001.00, Metric: default 10
+ IS extended neighbor: 0000.0000.0006.00, Metric: default 20
+ IP extended prefix: 10.255.0.2/32 Metric: 0 Internal Up
+
+0000.0000.0003.00-00 Sequence: 0x00000001, Checksum: 0x1234, Lifetime: 1100 secs
+ LSP length: 200
+ Speaks: IP
+ Hostname: IGP-B
+ IP address: 10.255.0.3
+ IS extended neighbor: 0000.0000.0001.00, Metric: default 10
+ IS extended neighbor: 0000.0000.0004.00, Metric: default 10
+ IS extended neighbor: 0000.0000.0005.00, Metric: default 10
+ IP extended prefix: 10.255.0.3/32 Metric: 0 Internal Up
+
+0000.0000.0004.00-00 Sequence: 0x00000001, Checksum: 0x1234, Lifetime: 1100 secs
+ LSP length: 200
+ Speaks: IP
+ Hostname: IGP-C
+ IP address: 10.255.0.4
+ IS extended neighbor: 0000.0000.0003.00, Metric: default 10
+ IS extended neighbor: 0000.0000.0006.00, Metric: default 10
+ IP extended prefix: 10.255.0.4/32 Metric: 0 Internal Up
+
+0000.0000.0005.00-00 Sequence: 0x00000001, Checksum: 0x1234, Lifetime: 1100 secs
+ LSP length: 200
+ Speaks: IP
+ Hostname: IGP-E
+ IP address: 10.255.0.5
+ IS extended neighbor: 0000.0000.0003.00, Metric: default 10
+ IS extended neighbor: 0000.0000.0006.00, Metric: default 10
+ IP extended prefix: 10.255.0.5/32 Metric: 0 Internal Up
+
+0000.0000.0006.00-00 Sequence: 0x00000001, Checksum: 0x1234, Lifetime: 1100 secs
+ LSP length: 200
+ Speaks: IP
+ Hostname: IGP-D
+ IP address: 10.255.0.6
+ IS extended neighbor: 0000.0000.0002.00, Metric: default 20
+ IS extended neighbor: 0000.0000.0004.00, Metric: default 10
+ IS extended neighbor: 0000.0000.0005.00, Metric: default 10
+ IP extended prefix: 10.255.0.6/32 Metric: 0 Internal Up

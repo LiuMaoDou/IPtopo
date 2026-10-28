@@ -3,6 +3,7 @@
 Python modules use JSON-compatible dictionaries, with Pydantic request validation at the API boundary. All IDs are strings. UTC timestamps ISO8601.
 
 Snapshot data: `{id, project_id, created_at, devices: Device[], interfaces: Interface[], contexts: Context[], source_files: SourceFile[], diagnostics: Diagnostic[], segments: Segment[], links: Link[], unmatched: [], parser_versions: {}}`.
+Optional `routing`: versioned `RoutingFacts` with `schema_version:1`, `adapter_versions`, `adapter_devices`, `instances`, `bindings`, `advertisements`, `issues`. Strict models and reference validation live in `backend/app/routing/model.py`. Old snapshots without routing remain readable. See [routing contract and API](ROUTING.md).
 Device: `{id, hostname, vendor, os, format, site:"", source_file_id, identity_key, parse_status, source_refs:[]}`. Root provides stable device id to parser, based on persisted project filename mapping (filename changes produce new identity, never hostname-only merge).
 Context: `{id, device_id, local_name, kind:"default"|"vrf", rd:null, rt:[], source_refs:[]}`.
 Interface: `{id, device_id, routing_context_id, raw_name, normalized_name, kind, parent_interface_id:null, physical_port_refs:[], aggregate_members:[], encapsulation:null, description:"", admin_state:"enabled"|"disabled"|"unknown", oper_state:"unknown", effective_state:"active"|"inactive"|"unresolved", source_refs:[], addresses: Address[]}`.
@@ -24,6 +25,7 @@ Inference API: `infer(snapshot: dict, domain_settings: dict|None=None) -> dict` 
 Overrides API: `apply_overrides(snapshot: dict, overrides:list, domain_settings:dict|None=None) -> tuple[dict,list]`, return copy of final snapshot and evaluated records; original facts not mutated. Recompute inference after applicable fact/domain mutations; preserve confirm/suppress/rebind behavior with conflicts. Supported operations include confirm_link, suppress_link, force_link, rebind_endpoint, assign_domain, split_segment, override_field, add_device, add_interface, add_note. Use explicit baseline for stale field detection.
 
 HTTP (root implements):
+- POST /api/projects/:id/simulate -> version-checked, read-only IGP simulation; see [routing API](ROUTING.md#api).
 - GET /api/health -> {status,version}
 - GET /api/capabilities -> {dialects,limits,versions}
 - GET /api/projects -> [{id,name,description,version,updated_at,device_count}]
@@ -50,3 +52,7 @@ The project response contains one complete effective snapshot for inspection; ca
 Project `jobs` contains up to 20 summaries with empty `results`; poll the individual job endpoint for per-file results. Snapshot history queries select metadata in SQLite without deserializing historical facts. Derived models are cached for at most two projects by immutable snapshot ID, overrides and domains, independent of view edits/version. Large responses use gzip.
 
 View filter `focus` is an optional device/segment ID. It first applies vendor/search/address family/domain filters, then includes the selected device and direct neighbors, passing through shared segment nodes to member devices as one logical hop. CSV and draw.io use the same filter semantics.
+
+LSDB 观测独立于配置 Snapshot，存放在 `lsdb_observations` 表。项目 JSON v1 新增可选 `lsdb_batches`，其中每个 `Batch.schema_version=1`；手动身份关联独立保存在 `project.settings.lsdb_mappings`。恢复时重建批次 ID、配置快照引用与映射键，来源文件仍按项目隔离。未包含原文的备份可以还原拓扑与路径，来源弹窗会说明原文不可用。详见 [LSDB 契约与 API](LSDB.md)。
+
+RoutingFacts v1 的默认行为补充字段均可省略以兼容旧快照：实例 defaults_profile、forwarding_mode、level_metric_styles、metric_path_limit；绑定 cost_origin 保留 explicit/profile_default/unknown。LSDB Batch v1 新增 vendor、adapter、aliases；旧批次缺省为 Huawei。记录 hostname/addresses 只用于有证据的身份关联，不能把主机名当作跨设备唯一身份。

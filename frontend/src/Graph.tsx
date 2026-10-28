@@ -28,17 +28,22 @@ import {
 import type { GraphData, View, Selection } from "./types";
 import { parallelLinks, placeMissingNodes } from "./graphModel";
 import { segmentIcon, vendorStyle, vendors } from "./vendorIcons";
+import type { SimulationHighlight } from "./routingTypes";
 cytoscape.use(edgehandles);
 cytoscape.use(undoRedo);
 export type GraphHandle = {
   layout: (name: string, selected?: boolean) => void;
   png: () => void;
   fit: () => void;
+  reveal: (ids: string[]) => void;
   capture: () => Partial<View>;
   pin: () => void;
 };
 type Props = {
   data: GraphData;
+  readOnly?: boolean;
+  simulation?: SimulationHighlight | null;
+  emphasis?: { deviceIds: string[]; linkIds: string[] } | null;
   focusId?: string;
   largeGraph?: boolean;
   view: View;
@@ -52,6 +57,9 @@ type Props = {
 export default forwardRef<GraphHandle, Props>(function Graph(
   {
     data,
+    readOnly = false,
+    simulation = null,
+    emphasis = null,
     focusId,
     largeGraph = false,
     view,
@@ -83,12 +91,17 @@ export default forwardRef<GraphHandle, Props>(function Graph(
     zoomFrame = useRef<number | null>(null),
     initialized = useRef(false),
     previousFocus = useRef(focusId),
-    restoredView = useRef(view.id);
+    restoredView = useRef(view.id),
+    skipViewportSave = useRef(false);
   const [zoom, setZoom] = useState(100),
     [busy, setBusy] = useState(false),
     [drawing, setDrawing] = useState(false);
   const [expandedBundles, setExpandedBundles] = useState<Set<string>>(() => new Set());
-  const display = useMemo(() => parallelLinks(data, expandedBundles), [data, expandedBundles]);
+  const display = useMemo(() => {
+    if (readOnly) return { ...data, bundles: new Map<string, GraphData["edges"]>() };
+    const normal = parallelLinks(data, expandedBundles);
+    return simulation ? parallelLinks(data, new Set(normal.bundles.keys())) : normal;
+  }, [data, expandedBundles, simulation, readOnly]);
   const bundleRef = useRef(display.bundles);
   bundleRef.current = display.bundles;
   callbacks.current = { onSelect, onChange, onConnect, onError };
@@ -114,7 +127,7 @@ export default forwardRef<GraphHandle, Props>(function Graph(
     };
   };
   const save = () => {
-    if (suppress.current) return;
+    if (suppress.current || skipViewportSave.current) return;
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(
       () => callbacks.current.onChange(capture()),
@@ -326,6 +339,13 @@ export default forwardRef<GraphHandle, Props>(function Graph(
   useImperativeHandle(ref, () => ({
     layout: runLayout,
     fit: () => cyRef.current?.fit(undefined, 70),
+    reveal: (ids) => {
+      const cy = cyRef.current;
+      if (!cy) return;
+      let targets = cy.collection();
+      for (const id of ids) targets = targets.union(cy.getElementById(id));
+      if (targets.length) { cy.fit(targets, 70); cy.zoom(Math.min(cy.zoom(), 1.3)); cy.center(targets); }
+    },
     capture,
     pin: () => {
       const ns = cyRef.current?.nodes(":selected");
@@ -607,6 +627,23 @@ export default forwardRef<GraphHandle, Props>(function Graph(
           selector: ".eh-preview, .eh-ghost-edge",
           style: { "line-color": "#087f80", "target-arrow-color": "#087f80" },
         },
+        { selector: 'edge[origin="observed"]', style: { "target-arrow-shape": "triangle", "line-color": "#427e9b", "target-arrow-color": "#427e9b" } },
+        { selector: 'edge[status="cost_difference"], edge[status="state_difference"]', style: { "line-color": "#c77722", "target-arrow-color": "#c77722" } },
+        { selector: 'edge[status="config_only"]', style: { "line-style": "dashed", "line-color": "#9ba6ad", "target-arrow-shape": "triangle", "target-arrow-color": "#9ba6ad" } },
+        { selector: 'node[mapping_status="config_only"]', style: { "border-style": "dashed", "opacity": 0.65 } },
+        { selector: ".simulation-muted", style: { opacity: 0.22 } },
+        { selector: "node.simulation-endpoint", style: { "border-width": 4, "border-color": "#087f80", "background-color": "#d6f4ed" } },
+        { selector: "edge.simulation-route", style: {
+          "line-color": "#087f80", "target-arrow-color": "#087f80", "source-arrow-color": "#087f80",
+          width: 4, label: "data(simulationLabel)", "font-size": 12, "min-zoomed-font-size": 0,
+          "text-background-color": "#fff", "text-background-opacity": 1, "text-background-padding": "3px",
+          "source-label": "", "target-label": "", "z-index": 20,
+        } },
+        { selector: "edge.simulation-forward", style: { "target-arrow-shape": "triangle" } },
+        { selector: "edge.simulation-reverse", style: { "source-arrow-shape": "triangle" } },
+        { selector: ".chat-emphasis-muted", style: { opacity: 0.24 } },
+        { selector: "node.chat-entity-focus", style: { "border-color": "#087f80", "border-width": 3, "background-color": "#e2f5f0", "text-opacity": 1 } },
+        { selector: "edge.chat-entity-focus", style: { "line-color": "#087f80", "width": 4, "target-arrow-color": "#087f80" } },
       ],
     });
     cyRef.current = cy;
@@ -636,7 +673,7 @@ export default forwardRef<GraphHandle, Props>(function Graph(
     undo.current.action("positions", apply, apply);
     edges.current = (cy as any).edgehandles({
       canConnect: (a: NodeSingular, b: NodeSingular) =>
-        a.id() !== b.id() &&
+        !readOnly && a.id() !== b.id() &&
         a.data("kind") === "device" &&
         b.data("kind") === "device",
     });
@@ -770,6 +807,7 @@ export default forwardRef<GraphHandle, Props>(function Graph(
           id: n.id,
           label: n.label,
           kind: n.kind,
+          mapping_status: n.mapping_status,
           parent: n.parent ? String(n.parent) : undefined,
           icon:
             n.kind === "device"
@@ -784,7 +822,7 @@ export default forwardRef<GraphHandle, Props>(function Graph(
               ? n.label
               : view.labels.names === false
                 ? ""
-                : n.label,
+                : n.mapping_status === "config_only" ? `${n.label}（仅配置）` : n.label,
         };
         if (node.length) {
           node.data(d);
@@ -815,6 +853,8 @@ export default forwardRef<GraphHandle, Props>(function Graph(
           target: e.target,
           link_id: e.link_id,
           origin: e.origin,
+          status: e.status,
+          cost: e.cost,
           review_state: e.review_state,
           bundle_id: e.bundle_id,
           member_link_ids: e.member_link_ids,
@@ -846,6 +886,53 @@ export default forwardRef<GraphHandle, Props>(function Graph(
       }
     }
   }, [data, display, view.labels, view.groups]);
+  useEffect(() => {
+    const cy = cyRef.current;
+    if (!cy) return;
+    cy.batch(() => {
+      cy.elements().removeClass("simulation-muted simulation-route simulation-forward simulation-reverse simulation-endpoint");
+      if (!simulation) return;
+      cy.elements().addClass("simulation-muted");
+      for (const id of [simulation.source_device_id, simulation.destination_device_id]) {
+        cy.getElementById(id).removeClass("simulation-muted").addClass("simulation-endpoint");
+      }
+      const byLink = new Map<string, typeof simulation.hops>();
+      for (const hop of simulation.hops) for (const id of hop.link_ids) {
+        const group = byLink.get(id) || []; group.push(hop); byLink.set(id, group);
+      }
+      cy.edges().forEach(edge => {
+        const hops = byLink.get(edge.data("link_id") || edge.id());
+        if (!hops) return;
+        const hop = hops[0];
+        const forward = edge.source().id() === hop.source_device_id || edge.target().id() === hop.target_device_id;
+        edge.data("simulationLabel", `${edge.data("origin") === "observed" ? edge.data("cost") : hop.cost} · ${Number(hops.reduce((total, h) => total + h.share_percent, 0).toFixed(2))}%`);
+        edge.removeClass("simulation-muted").addClass(`simulation-route simulation-${forward ? "forward" : "reverse"}`);
+        edge.connectedNodes().removeClass("simulation-muted");
+      });
+    });
+  }, [simulation, data, display]);
+  useEffect(() => {
+    const cy = cyRef.current;
+    if (!cy) return;
+    cy.elements().removeClass("chat-emphasis-muted chat-entity-focus");
+    if (!emphasis) return;
+    const linkIds = new Set(emphasis.linkIds);
+    let targets = cy.collection();
+    for (const id of emphasis.deviceIds) targets = targets.union(cy.getElementById(id));
+    cy.edges().forEach(edge => {
+      const members: string[] = edge.data("member_link_ids") || [];
+      if (linkIds.has(edge.id()) || linkIds.has(edge.data("link_id")) || members.some(id => linkIds.has(id))) targets = targets.union(edge).union(edge.connectedNodes());
+    });
+    if (!targets.length) return;
+    cy.batch(() => {
+      if (!simulation) cy.elements().addClass("chat-emphasis-muted");
+      targets.removeClass("chat-emphasis-muted");
+      if (!simulation) targets.addClass("chat-entity-focus");
+    });
+    skipViewportSave.current = true;
+    cy.fit(targets, 70); cy.zoom(Math.min(cy.zoom(), 1.3)); cy.center(targets);
+    requestAnimationFrame(() => { skipViewportSave.current = false; });
+  }, [emphasis, simulation, data, display]);
   useEffect(() => {
     if (previousFocus.current === focusId) return;
     previousFocus.current = focusId;
@@ -898,11 +985,9 @@ export default forwardRef<GraphHandle, Props>(function Graph(
       {!data.nodes.length && (
         <div className="canvas-empty">
           <Network size={46} />
-          <h2>从配置，还原网络</h2>
-          <p>导入设备配置，查看可追溯的 IP 逻辑关系。</p>
-          <button className="primary" onClick={emptyAction}>
-            导入配置
-          </button>
+          <h2>{readOnly ? "从 LSDB，还原协议拓扑" : "从配置，还原网络"}</h2>
+          <p>{readOnly ? "在右侧导入或选择一个采集批次。" : "导入设备配置，查看可追溯的 IP 逻辑关系。"}</p>
+          {!readOnly && <button className="primary" onClick={emptyAction}>导入配置</button>}
         </div>
       )}
       <div className="graph-actions">
@@ -920,6 +1005,7 @@ export default forwardRef<GraphHandle, Props>(function Graph(
         <button
           title="拖动连接设备，随后选择接口"
           aria-label="手工连线模式"
+          disabled={readOnly}
           className={drawing ? "active" : ""}
           onClick={() => {
             edges.current?.enableDrawMode();
@@ -1000,7 +1086,7 @@ export default forwardRef<GraphHandle, Props>(function Graph(
         {data.nodes.some((n) => n.kind === "segment") && (
           <span>
             <img src={segmentIcon} alt="" />
-            IP 网段
+            {readOnly ? "广播网段 / 伪节点" : "IP 网段"}
           </span>
         )}
       </div>
@@ -1008,15 +1094,15 @@ export default forwardRef<GraphHandle, Props>(function Graph(
         {display.bundles.size > 0 && <span>粗线：多链路 · 双击展开 / 收起</span>}
         <span>
           <i />
-          推断关系
+          {readOnly ? "仅配置" : "推断关系"}
         </span>
         <span>
           <i className="confirmed" />
-          人工确认
+          {readOnly ? "观测 / 最短路径" : "人工确认"}
         </span>
         <span>
-          <i className="manual" />
-          手工连接
+          <i className={readOnly ? "lsdb-difference" : "manual"} />
+          {readOnly ? "配置差异" : "手工连接"}
         </span>
       </div>
       {busy && (

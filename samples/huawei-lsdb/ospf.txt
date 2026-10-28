@@ -1,0 +1,132 @@
+<IGP-S> display ospf 1 lsdb router
+ OSPF Process 1 with Router ID 10.255.0.1
+ Area: 0.0.0.0
+ Link State Database
+
+ Type : Router
+ Ls id : 10.255.0.1
+ Adv rtr : 10.255.0.1
+ Ls age : 100
+ seq# : 80000001
+ chksum : 0x1234
+ Link count : 3
+ Link ID: 10.255.0.1
+ Data : 255.255.255.255
+ Link Type: StubNet
+ Metric : 0
+ Link ID: 10.255.0.2
+ Data : 10.80.1.1
+ Link Type: P-2-P
+ Metric : 10
+ Link ID: 10.255.0.3
+ Data : 10.80.3.1
+ Link Type: P-2-P
+ Metric : 10
+
+ Type : Router
+ Ls id : 10.255.0.2
+ Adv rtr : 10.255.0.2
+ Ls age : 100
+ seq# : 80000001
+ chksum : 0x1234
+ Link count : 3
+ Link ID: 10.255.0.2
+ Data : 255.255.255.255
+ Link Type: StubNet
+ Metric : 0
+ Link ID: 10.255.0.1
+ Data : 10.80.1.2
+ Link Type: P-2-P
+ Metric : 10
+ Link ID: 10.255.0.6
+ Data : 10.80.2.1
+ Link Type: P-2-P
+ Metric : 20
+
+ Type : Router
+ Ls id : 10.255.0.3
+ Adv rtr : 10.255.0.3
+ Ls age : 100
+ seq# : 80000001
+ chksum : 0x1234
+ Link count : 4
+ Link ID: 10.255.0.3
+ Data : 255.255.255.255
+ Link Type: StubNet
+ Metric : 0
+ Link ID: 10.255.0.1
+ Data : 10.80.3.2
+ Link Type: P-2-P
+ Metric : 10
+ Link ID: 10.255.0.4
+ Data : 10.80.4.1
+ Link Type: P-2-P
+ Metric : 10
+ Link ID: 10.255.0.5
+ Data : 10.80.6.1
+ Link Type: P-2-P
+ Metric : 10
+
+ Type : Router
+ Ls id : 10.255.0.4
+ Adv rtr : 10.255.0.4
+ Ls age : 100
+ seq# : 80000001
+ chksum : 0x1234
+ Link count : 3
+ Link ID: 10.255.0.4
+ Data : 255.255.255.255
+ Link Type: StubNet
+ Metric : 0
+ Link ID: 10.255.0.3
+ Data : 10.80.4.2
+ Link Type: P-2-P
+ Metric : 10
+ Link ID: 10.255.0.6
+ Data : 10.80.5.1
+ Link Type: P-2-P
+ Metric : 10
+
+ Type : Router
+ Ls id : 10.255.0.5
+ Adv rtr : 10.255.0.5
+ Ls age : 100
+ seq# : 80000001
+ chksum : 0x1234
+ Link count : 3
+ Link ID: 10.255.0.5
+ Data : 255.255.255.255
+ Link Type: StubNet
+ Metric : 0
+ Link ID: 10.255.0.3
+ Data : 10.80.6.2
+ Link Type: P-2-P
+ Metric : 10
+ Link ID: 10.255.0.6
+ Data : 10.80.7.1
+ Link Type: P-2-P
+ Metric : 10
+
+ Type : Router
+ Ls id : 10.255.0.6
+ Adv rtr : 10.255.0.6
+ Ls age : 100
+ seq# : 80000001
+ chksum : 0x1234
+ Link count : 4
+ Link ID: 10.255.0.6
+ Data : 255.255.255.255
+ Link Type: StubNet
+ Metric : 0
+ Link ID: 10.255.0.2
+ Data : 10.80.2.2
+ Link Type: P-2-P
+ Metric : 20
+ Link ID: 10.255.0.4
+ Data : 10.80.5.2
+ Link Type: P-2-P
+ Metric : 10
+ Link ID: 10.255.0.5
+ Data : 10.80.7.2
+ Link Type: P-2-P
+ Metric : 10

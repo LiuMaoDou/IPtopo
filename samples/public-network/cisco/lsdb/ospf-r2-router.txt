@@ -1,0 +1,115 @@
+ r2.2.2.2#show ip ospf database router 1.1.1.1
+
+       OSPF Router with ID (2.2.2.2) (Process ID 2)
+
+                Router Link States (Area 0)
+
+  LS age: 773
+  Options: (No TOS-capability, DC)
+  LS Type: Router Links
+  Link State ID: 1.1.1.1
+
+  Advertising Router: 1.1.1.1
+
+  LS Seq Number: 80000040
+  Checksum: 0x5A21
+  Length: 48
+   Number of Links: 2
+
+    Link connected to: another Router (point-to-point)
+
+     (Link ID) Neighboring Router ID: 2.2.2.2
+     (Link Data) Router Interface address: 0.0.0.12
+
+      Number of TOS metrics: 0
+       TOS 0 Metrics: 64
+
+    Link connected to: a Stub Network
+
+     (Link ID) Network/subnet number: 4.0.0.0
+     (Link Data) Network Mask: 255.0.0.0
+      Number of TOS metrics: 0
+       TOS 0 Metrics: 10
+
+r2.2.2.2#show ip ospf database router 2.2.2.2
+
+       OSPF Router with ID (2.2.2.2) (Process ID 2)
+
+        Router Link States (Area 0)
+
+  LS age: 789
+  Options: (No TOS-capability, DC)
+  LS Type: Router Links
+  Link State ID: 2.2.2.2
+  Advertising Router: 2.2.2.2
+  LS Seq Number: 80000045
+  Checksum: 0xEE82
+  Length: 48
+  Area Border Router
+
+   Number of Links: 2
+
+    Link connected to: another Router (point-to-point)
+     (Link ID) Neighboring Router ID: 1.1.1.1
+     (Link Data) Router Interface address: 0.0.0.10
+      Number of TOS metrics: 0
+       TOS 0 Metrics: 64
+
+    Link connected to: a Stub Network
+     (Link ID) Network/subnet number: 6.0.0.0
+     (Link Data) Network Mask: 255.0.0.0
+      Number of TOS metrics: 0
+       TOS 0 Metrics: 10
+
+                Router Link States (Area 1)
+
+  LS age: 445
+  Options: (No TOS-capability, DC)
+  LS Type: Router Links
+  Link State ID: 2.2.2.2
+  Advertising Router: 2.2.2.2
+  LS Seq Number: 8000000B
+  Checksum: 0xCA9D
+  Length: 48
+  Area Border Router
+   Number of Links: 2
+
+    Link connected to: another Router (point-to-point)
+     (Link ID) Neighboring Router ID: 3.3.3.3
+     (Link Data) Router Interface address: 200.0.0.2
+      Number of TOS metrics: 0
+       TOS 0 Metrics: 1
+
+    Link connected to: a Stub Network
+     (Link ID) Network/subnet number: 200.0.0.0
+     (Link Data) Network Mask: 255.255.255.0
+      Number of TOS metrics: 0
+       TOS 0 Metrics: 1
+
+r2.2.2.2#show ip ospf database router 3.3.3.3
+
+       OSPF Router with ID (2.2.2.2) (Process ID 2)
+
+                Router Link States (Area 1)
+
+  LS age: 465
+  Options: (No TOS-capability, DC)
+  LS Type: Router Links
+  Link State ID: 3.3.3.3
+  Advertising Router: 3.3.3.3
+  LS Seq Number: 80000006
+  Checksum: 0x71F7
+  Length: 48
+   Number of Links: 2
+
+    Link connected to: another Router (point-to-point)
+     (Link ID) Neighboring Router ID: 2.2.2.2
+     (Link Data) Router Interface address: 200.0.0.3
+      Number of TOS metrics: 0
+       TOS 0 Metrics: 1
+
+    Link connected to: a Stub Network
+     (Link ID) Network/subnet number: 200.0.0.0
+     (Link Data) Network Mask: 255.255.255.0
+      Number of TOS metrics: 0
+       TOS 0 Metrics: 1

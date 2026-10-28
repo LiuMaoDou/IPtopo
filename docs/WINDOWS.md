@@ -1,6 +1,8 @@
 # IPtopo Windows 版
 
-面向 Windows 10/11 x64。无需安装 Python、Node.js 或 Docker。
+[下载 Windows x64 便携包](https://github.com/LiuMaoDou/IPtopo/releases/latest/download/IPtopo-Windows-x64.zip) · [GitHub Releases](https://github.com/LiuMaoDou/IPtopo/releases)
+
+面向 Windows 10/11 x64。拓扑与路径分析无需安装 Python、Node.js 或 Docker；可选 AI 对话需要另行配置 Codex、OpenCode 服务或模型 API。
 
 1. 解压下载包，双击 `IPtopo.exe`。首次启动需要几秒钟解包。
 2. 启动窗口出现后会自动打开默认浏览器；也可以点击“打开工作台”。
@@ -11,9 +13,29 @@
 
 Mac 上原有项目不会自动进入 Windows 包。请在 Mac 工作台导出项目 JSON，然后在 Windows 工作台点击“恢复项目”。需要配置原文时，在导出时勾选包含原配置。
 
-备份：退出程序后复制整个数据目录；或者在工作台导出项目 JSON。启动失败时查看数据目录中的 `desktop.log`。
+备份：退出程序后复制数据目录，排除 `ai\codex-home\auth.json`，不要跟随该认证符号链接；硬链接备份也应排除此文件。也可在工作台导出项目 JSON，其不包含聊天、AI 连接偏好或原生 Agent 登录。项目 JSON 导出 / 恢复默认使用独立的 256 MiB 限额，可通过 `IPTOPO_MAX_RESTORE_BYTES` 调整。启动失败时查看数据目录中的 `desktop.log`。
 
 本构建未进行 Windows 代码签名，下载运行时可能出现发布者提示。支持范围以实际 Windows 构建测试为准；不包含 ARM64 原生版本。
+
+## AI 对话
+
+打开项目后，工具栏进入“AI 对话”，在设置中选择连接方式。Windows EXE 不包含 Codex 或 OpenCode，也不附带任何模型凭据。
+
+- **Codex**：按 [官方 CLI 安装说明](https://learn.chatgpt.com/docs/cli) 安装并使用同一个 Windows 用户完成 `codex login`。程序路径可填 `codex`，也可直接选择原生 `codex.exe`。npm 的 `codex.cmd` 启动器会被解析为相邻的官方原生 EXE，不会交给命令 Shell 执行。安装后需要退出并重新打开 IPtopo，才能读取新 PATH。
+- **OpenCode**：连接单独启动、已配置专用 `iptopo` 只读 Agent 的服务，选择对应 V1/V2 API；服务配置和口令环境变量存在版本差异，详见 [AI 接入说明](AI.md)。
+- **模型 API**：填写模型、基础 URL、协议和凭据环境变量名。环境变量必须由 `IPtopo.exe` 进程继承；修改系统环境后重启应用。
+
+以 Codex 0.163.0 的默认 npm x64 安装为例，原生程序通常位于：
+
+```text
+%APPDATA%\npm\node_modules\@openai\codex-win32-x64\vendor\x86_64-pc-windows-msvc\bin\codex.exe
+```
+
+实际位置随 npm prefix 和版本变化；保留原安装树中的相邻组件，填写路径时不加引号和命令参数。自动定位失败或程序架构不兼容时，设置检测会给出原生 EXE 路径提示。
+
+Codex 会话放在 `%LOCALAPPDATA%\IPtopo\data\ai\codex-home`（设置 `IPTOPO_DATA_DIR` 时使用相应目录）。优先用符号链接复用原生登录；无符号链接权限时尝试同磁盘硬链接。跨盘且没有符号链接权限时会明确失败，可按 [专用目录登录方法](AI.md#codex-原生接入) 单独登录；应用不会通过复制凭据来绕过限制。
+
+桌面启动器使用支持异步子进程的 Windows 事件循环。冻结环境启动外部 CLI 时临时恢复系统 DLL 搜索路径，完成创建后还原应用路径；不会为运行 AI 再启动一个 IPtopo 实例。相关打包行为见 [PyInstaller 外部程序说明](https://pyinstaller.org/en/stable/common-issues-and-pitfalls.html#launching-external-programs-from-the-frozen-application)。
 
 ## 从源码构建
 
