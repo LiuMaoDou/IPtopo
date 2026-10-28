@@ -2,6 +2,7 @@
 import argparse
 import ctypes
 from ctypes import wintypes
+import io
 import json
 import os
 from pathlib import Path
@@ -11,6 +12,7 @@ import sys
 import tempfile
 import time
 import xml.etree.ElementTree as ET
+import zipfile
 
 import httpx
 
@@ -81,6 +83,8 @@ def check_frontend_assets(client):
     assert not re.search(r"@media[^{}]*max-width\s*:\s*(?:760|1000)px", css), "Phone/tablet panel switching CSS was bundled"
     javascript = "\n".join(scripts)
     assert "mobile-nav" not in javascript, "Obsolete phone navigation JavaScript was bundled"
+    for label in ("设为仿真源", "设为仿真目的", "已忽略的配置语义"):
+        assert label in javascript, f"Updated path simulation UI was not bundled: {label}"
     # Vite emits these as lazy chunks; the HTML alone does not reference them.
     for prefix in ("ChatPanel", "layout.worker"):
         names = set(re.findall(re.escape(prefix)+r"-[A-Za-z0-9_-]+\.js", javascript))
@@ -115,6 +119,46 @@ def configuration_path_request(project, protocol):
                        and item["prefix"].endswith("/32") and interfaces[item["interface_id"]]["kind"] == "loopback")
     return {"protocol": protocol, "scope": scope, "source_instance_id": source["id"],
             "destination_advertisement_id": destination["id"]}
+
+
+def check_renamed_zip_merge(client, project_id, repo):
+    """Reimport the same members under new ZIP names through the real parser."""
+    project = checked_json(client.get(f"api/projects/{project_id}"))
+    original_devices = {item["hostname"]: item["id"] for item in project["snapshot"]["devices"]}
+    assert len(original_devices) == 6
+    samples = sorted((repo / "samples" / "multi-vendor-igp").glob("*.cfg"))
+    assert len(samples) == 6, "The six-device mixed-vendor routing fixtures are missing"
+    previous_names = set()
+    for archive_name, add_ignored in (("routing-capture-before.zip", False), ("routing-capture-after.zip", True)):
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            for sample in samples:
+                content = sample.read_bytes()
+                if add_ignored and sample.name == "01-S-cisco-ios.cfg":
+                    content, count = re.subn(rb"(?m)^(router ospf 1)(\r\n|\r|\n)",
+                                            rb"\1\2 timers throttle spf 50 100 1000\2", content, count=1)
+                    assert count == 1, "The Cisco OSPF fixture no longer has the expected process"
+                archive.writestr(sample.name, content)
+        imported = checked_json(client.post(f"api/projects/{project_id}/imports",
+            files=[("files", (archive_name, buffer.getvalue(), "application/zip"))],
+            data={"strategy": "merge", "expected_version": str(project["version"])}))
+        wait_for_import(client, imported["id"])
+        project = checked_json(client.get(f"api/projects/{project_id}"))
+        snapshot = project["snapshot"]
+        assert project["device_count"] == 6, "Renaming a ZIP duplicated its devices"
+        assert {item["hostname"]: item["id"] for item in snapshot["devices"]} == original_devices, "A ZIP merge changed device IDs"
+        current_names = {item["filename"] for item in snapshot["source_files"]}
+        assert len(snapshot["source_files"]) == 6
+        assert current_names == {f"{archive_name}/{sample.name}" for sample in samples}, "Old current source filenames survived a ZIP merge"
+        assert not current_names & previous_names
+        previous_names = current_names
+        instances = snapshot["routing"]["instances"]
+        assert len(instances) == len({item["id"] for item in instances}) == 12, "ZIP reimport duplicated routing instances"
+        assert len({(item["device_id"], item["protocol"], item["routing_context_id"], item["local_name"]) for item in instances}) == 12
+    result = checked_json(client.post(f"api/projects/{project_id}/simulate",
+        json={"version": project["version"], **configuration_path_request(project, "ospf")}))
+    assert_three_way_ecmp(result, "Renamed ZIP with ignored Cisco OSPF statement")
+    assert any(item.get("ignored") is True and item.get("blocking") is False for item in result["diagnostics"]), "Unsupported semantics did not produce a nonblocking ignored diagnostic"
 
 
 def check_routing_and_lsdb(client, project_id, batches):
@@ -298,6 +342,7 @@ def main():
                             routing_project_id = routing["id"]
                             routing_job = checked_json(client.post(f"api/projects/{routing_project_id}/demo?kind=multi-vendor-igp"))
                             wait_for_import(client, routing_job["id"])
+                            check_renamed_zip_merge(client, routing_project_id, repo)
                             # Each endpoint reads a native dataset from the EXE's bundled samples.
                             for vendor in ("huawei", "cisco", "juniper", "nokia"):
                                 for protocol in ("ospf", "isis"):
@@ -358,7 +403,7 @@ def main():
                         except subprocess.TimeoutExpired:
                             process.kill()
                             process.wait()
-            checks = "startup, PC-only frontend and lazy assets, metadata, eight-device multiprocess import, Junos dual-stack inference, four-vendor LACP ownership, six-device four-vendor IGP, OSPF/IS-IS cost30 and 50/25/25 ECMP, eight native LSDB datasets and fused paths, AI settings/session persistence, authenticated read-only MCP tools without a model request, exports, single instance, shutdown and restart persistence"
+            checks = "startup, PC-only frontend and lazy assets, simulation context-menu and ignored-diagnostics UI assets, metadata, eight-device multiprocess import, Junos dual-stack inference, four-vendor LACP ownership, six-device four-vendor IGP, renamed ZIP merge identity and ignored semantics, OSPF/IS-IS cost30 and 50/25/25 ECMP, eight native LSDB datasets and fused paths, AI settings/session persistence, authenticated read-only MCP tools without a model request, exports, single instance, shutdown and restart persistence"
             if args.codex_exe:
                 checks += ", native Codex version/protocol and expected unauthenticated account state"
             print("PASS: "+checks)

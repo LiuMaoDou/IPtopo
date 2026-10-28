@@ -59,7 +59,7 @@ def extract(text,parsed,dialect):
         if s[0]=='level' and len(s)>2 and s[1] in ('1','2'):
             if s[2:] in (['wide-metrics-only'],['wide-metrics-only','true']):p.level_metric_styles[s[1]]='wide';continue
             if s[2:] in (['no','wide-metrics-only'],['wide-metrics-only','false']):p.level_metric_styles[s[1]]='both';continue
-            b.issue(p,'unsupported_protocol_statement','Nokia IS-IS Level 语义尚未适配。',n);continue
+            b.issue(p,'unsupported_protocol_statement','Nokia IS-IS Level 语义尚未适配。',n,statement=s);continue
         if s[0]=='level' and len(s)==2:continue
         if s[0] in ('ecmp','max-ecmp-routes') and len(s)>1:
             value=int(s[1])
@@ -70,7 +70,7 @@ def extract(text,parsed,dialect):
         scope_id=None
         if proto=='ospf':
             if s[0]!='area':
-                if s[0] not in ('reference-bandwidth',):b.issue(p,'unsupported_protocol_statement','Nokia OSPF 高级语义尚未适配。',n)
+                if s[0] not in ('reference-bandwidth',):b.issue(p,'unsupported_protocol_statement','Nokia OSPF 高级语义尚未适配。',n,statement=s)
                 continue
             if len(s)<2:continue
             try:scope_id=area(s[1])
@@ -80,7 +80,7 @@ def extract(text,parsed,dialect):
         if s[0]!='interface':
             if s[:2]==['no','ipv4-routing'] or s[:2]==['ipv4-routing','false']:ipv4_enabled[id(p)]=False
             elif s[0]=='ipv4-routing':ipv4_enabled[id(p)]=True
-            elif s[0] not in ('ipv4-routing','ipv6-routing'):b.issue(p,'unsupported_protocol_statement','Nokia 非普通接口协议语义尚未适配。',n)
+            elif s[0] not in ('ipv4-routing','ipv6-routing'):b.issue(p,'unsupported_protocol_statement','Nokia 非普通接口协议语义尚未适配。',n,statement=s)
             continue
         if len(s)<2:continue
         port=b.port(p,s[1],n)
@@ -110,7 +110,7 @@ def extract(text,parsed,dialect):
         elif rest[0]=='level-capability' and len(rest)>1:port['levels']=['1','2'] if rest[1] in ('level-1/2','1/2') else ['1' if rest[1] in ('level-1','1') else '2']
         elif rest[0] in ('hello-interval','dead-interval') and len(rest)>1:port['hello' if rest[0]=='hello-interval' else 'dead']=int(rest[1])
         elif rest[0] in ('priority','retransmit-interval','transit-delay'):pass
-        else:b.issue(p,'unsupported_protocol_statement','Nokia 接口协议语义尚未适配。',n,name(s[1]))
+        else:b.issue(p,'unsupported_protocol_statement','Nokia 接口协议语义尚未适配。',n,name(s[1]),statement=rest)
     for p in b.processes.values():
         if ipv4_enabled.get(id(p)) is False:p.enabled=False
         if p.enabled and p.protocol=='ospf':

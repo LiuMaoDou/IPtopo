@@ -27,6 +27,7 @@ import Diagnostics from "./Diagnostics";
 import SimulationPanel from "./SimulationPanel";
 import LSDBPanel from "./LSDBPanel";
 import type { SimulationHighlight } from "./routingTypes";
+import { assignSimulationDevice, emptySimulationEndpoints, simulationContextKey, type SimulationEndpointRole } from "./simulationModel";
 import { cardTopology, type CardAction } from "./chat/types";
 const ChatPanel = lazy(() => import("./chat/ChatPanel"));
 import {
@@ -64,6 +65,9 @@ export default function App() {
   const [lsdbView, setLsdbView] = useState<View>(() => blankView("lsdb"));
   const [simulationOpen, setSimulationOpen] = useState(false);
   const [simulation, setSimulation] = useState<SimulationHighlight | null>(null);
+  const [simulationEndpoints, setSimulationEndpoints] = useState(emptySimulationEndpoints);
+  const [simulationEpoch, setSimulationEpoch] = useState(0);
+  const [importStarting, setImportStarting] = useState(false);
   const [projects, setProjects] = useState<Summary[]>([]),
     [project, setProject] = useState<Project | null>(null),
     [capabilities, setCapabilities] = useState<{
@@ -107,15 +111,35 @@ export default function App() {
     saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null),
     modeRef = useRef("device"),
     loadToken = useRef(0),
-    pollToken = useRef(0);
+    pollToken = useRef(0),
+    transientGeneration = useRef(0);
   projectRef.current = project;
   viewRef.current = view;
   modeRef.current = filters.mode;
-  const simulationRevision = `${project?.id}:${project?.snapshot_id}:${JSON.stringify([project?.overrides, project?.domains])}`;
-  useEffect(() => { setSimulation(null); setLsdbGraph(null); setLsdbHighlight(null); setChatHighlight(null); setChatGraph(null); setChatFocus(null); setChatBatchId(""); }, [simulationRevision]);
+  const importing = !!job && ["running", "queued", "pending", "cancelling"].includes(job.status);
+  const contextUpdating = importStarting || importing;
+  const simulationRevision = `${simulationContextKey(project)}:${simulationEpoch}`;
+  const resetTransientContext = useCallback(() => {
+    transientGeneration.current++;
+    setSimulationEpoch(value => value + 1);
+    setSimulationEndpoints(emptySimulationEndpoints());
+    setSimulation(null); setSelection(null); setSource(null); setHistory(null);
+    setLsdbGraph(null); setLsdbHighlight(null); setLsdbBatchId(""); setLsdbView(blankView("lsdb"));
+    setChatHighlight(null); setChatGraph(null); setChatFocus(null); setChatBatchId("");
+    setFilters(previous => previous.focus ? { ...previous, focus: "" } : previous);
+  }, []);
+  const chooseSimulationEndpoint = useCallback((role: SimulationEndpointRole, deviceId: string) => {
+    const current = projectRef.current;
+    if (contextUpdating || !current?.snapshot?.devices.some(device => device.id === deviceId)) return;
+    setSimulationEndpoints(previous => assignSimulationDevice(previous, role, deviceId));
+    setSimulation(null); setChatHighlight(null); setChatFocus(null); setChatGraph(null); setChatBatchId("");
+    setSelection({ kind: "device", id: deviceId });
+    setChatOpen(false); setLsdbOpen(false); setSimulationOpen(true);
+  }, [contextUpdating]);
   const displayedLsdbGraph = chatOpen && chatGraph ? chatGraph : lsdbGraph;
   const clearChatHighlight = () => { setChatHighlight(null); setChatFocus(null); };
   const chatAction = ({ card, context, action }: CardAction) => {
+    if (contextUpdating) { setError("项目正在更新，请完成后重新查询。"); return; }
     if (!project || context.project_id !== project.id || (context.snapshot_id || null) !== (project.snapshot_id || null)
       || context.revision && project.effective_revision && context.revision !== project.effective_revision) {
       setError("项目数据已变化，请重新提问后查看当前结果。"); return;
@@ -139,6 +163,7 @@ export default function App() {
     setTimeout(() => setToast(""), 3500);
   };
   const updateProject = (p: Project) => {
+    if (simulationContextKey(projectRef.current) !== simulationContextKey(p)) resetTransientContext();
     projectRef.current = p;
     setProject(p);
     setProjects((prev) =>
@@ -164,6 +189,7 @@ export default function App() {
   };
   const loadProject = async (id: string, mode?: string) => {
     const token = ++loadToken.current;
+    if (projectRef.current?.id !== id) resetTransientContext();
     setBusy(true);
     setError("");
     try {
@@ -189,13 +215,13 @@ export default function App() {
       const running = p.jobs?.find((j) =>
         ["running", "queued", "pending", "cancelling"].includes(j.status),
       );
-      if (running) setJob(running);
+      if (running) { resetTransientContext(); setJob(running); }
       else setJob(null);
       setSaved(true);
     } catch (e) {
-      setError(String(e));
+      if (token === loadToken.current) setError(String(e));
     } finally {
-      setBusy(false);
+      if (token === loadToken.current) setBusy(false);
     }
   };
   useEffect(() => {
@@ -370,7 +396,6 @@ export default function App() {
       try {
         const j = await api<Job>(`/api/imports/${job.id}`);
         if (token !== pollToken.current) return;
-        setJob(j);
         if (
           [
             "completed",
@@ -383,19 +408,27 @@ export default function App() {
             "conflict",
           ].includes(j.status)
         ) {
-          if (projectRef.current?.id === id) {
-            const p = await api<Project>(
-              `/api/projects/${id}?mode=${modeRef.current}`,
-            );
-            updateProject(p);
-            notify(
-              j.status === "failed" ? "导入失败，请查看结果" : "导入处理完成",
-            );
-          }
+          setImportStarting(true);
+          resetTransientContext();
+          setJob(j);
+          try {
+            if (projectRef.current?.id === id) {
+              const p = await api<Project>(
+                `/api/projects/${id}?mode=${modeRef.current}`,
+              );
+              if (token !== pollToken.current || projectRef.current?.id !== id) return;
+              updateProject(p);
+              notify(
+                j.status === "failed" ? "导入失败，请查看结果" : "导入处理完成",
+              );
+            }
+          } finally { setImportStarting(false); }
           return;
         }
+        setJob(j);
         timer = setTimeout(poll, 800);
       } catch (e) {
+        if (token !== pollToken.current) return;
         showError(e);
         timer = setTimeout(poll, 2500);
       }
@@ -407,14 +440,17 @@ export default function App() {
     };
   }, [job?.id]);
   const openSource = async (r: Ref) => {
-    if (!project) return;
+    if (!project || contextUpdating) return;
+    const token = transientGeneration.current;
+    const context = simulationContextKey(project);
     try {
       const text = await api<{ filename: string; text: string }>(
         `/api/projects/${project.id}/sources/${r.source_file_id}`,
       );
-      setSource({ ...text, line: r.line, endLine: r.end_line });
+      if (token === transientGeneration.current && simulationContextKey(projectRef.current) === context)
+        setSource({ ...text, line: r.line, endLine: r.end_line });
     } catch (e) {
-      showError(e);
+      if (token === transientGeneration.current) showError(e);
     }
   };
   const submit = async (
@@ -422,7 +458,7 @@ export default function App() {
     v: Record<string, string>,
     files: File[],
   ) => {
-    if (["project", "restore", "import"].includes(a.type)) await flushView();
+    if (["project", "restore"].includes(a.type)) await flushView();
     if (a.type === "project") {
       const p = await api<Project>("/api/projects", {
         method: "POST",
@@ -436,22 +472,27 @@ export default function App() {
       return;
     }
     if (a.type === "import") {
-      const p = await ensureProject();
-      await queue.current.catch(() => {});
-      const f = new FormData();
-      files.forEach((file) => f.append("files", file));
-      if (v.dialect) f.append("dialect", v.dialect);
-      f.append("strategy", v.strategy);
-      f.append(
-        "expected_version",
-        String(projectRef.current?.version || p.version),
-      );
-      setJob(
-        await api<Job>(`/api/projects/${p.id}/imports`, {
+      resetTransientContext();
+      setImportStarting(true);
+      try {
+        await flushView();
+        const p = await ensureProject();
+        const token = transientGeneration.current;
+        await queue.current.catch(() => {});
+        const f = new FormData();
+        files.forEach((file) => f.append("files", file));
+        if (v.dialect) f.append("dialect", v.dialect);
+        f.append("strategy", v.strategy);
+        f.append(
+          "expected_version",
+          String(projectRef.current?.version || p.version),
+        );
+        const imported = await api<Job>(`/api/projects/${p.id}/imports`, {
           method: "POST",
           body: f,
-        }),
-      );
+        });
+        if (token === transientGeneration.current && projectRef.current?.id === p.id) setJob(imported);
+      } finally { setImportStarting(false); }
       return;
     }
     if (a.type === "restore") {
@@ -552,6 +593,7 @@ export default function App() {
   };
   const demo = async () => {
     try {
+      resetTransientContext(); setImportStarting(true);
       setBusy(true);
       const p = await ensureProject();
       setJob(
@@ -563,6 +605,7 @@ export default function App() {
     } catch (e) {
       showError(e);
     } finally {
+      setImportStarting(false);
       setBusy(false);
     }
   };
@@ -571,13 +614,14 @@ export default function App() {
   };
   const igpDemo = async () => {
     try {
+      resetTransientContext(); setImportStarting(true);
       setBusy(true);
       const p = await api<Project>("/api/projects", { method: "POST", body: JSON.stringify({ name: "四厂商 IGP 仿真示例", description: "合成六设备网络，验证三条等价路径的 50% / 25% / 25% 分担。" }) });
       await loadProject(p.id);
       setSimulationOpen(true);
       setJob(await api<Job>(`/api/projects/${p.id}/demo?kind=multi-vendor-igp`, { method: "POST", body: "{}" }));
     } catch (e) { showError(e); }
-    finally { setBusy(false); }
+    finally { setBusy(false); setImportStarting(false); }
   };
   const topologyIndex = useMemo(
     () =>
@@ -631,11 +675,13 @@ export default function App() {
     }
   };
   const compareHistory = async (id: string) => {
-    if (!project?.snapshot) return;
+    if (!project?.snapshot || contextUpdating) return;
+    const token = transientGeneration.current;
     try {
       const result = await api<Snapshot & { snapshot?: Snapshot }>(
         `/api/projects/${project.id}/snapshots/${id}`,
       );
+      if (token !== transientGeneration.current) return;
       const prev = result.snapshot || result,
         current = project.snapshot;
       const items = (
@@ -661,12 +707,9 @@ export default function App() {
       });
       setHistory({ title: "配置快照与当前比较", items });
     } catch (e) {
-      showError(e);
+      if (token === transientGeneration.current) showError(e);
     }
   };
-  const importing =
-    !!job &&
-    ["running", "queued", "pending", "cancelling"].includes(job.status);
   const activeViewOptions = project?.views.some((v) => v.id === view.id)
     ? project.views
     : [view, ...(project?.views || [])];
@@ -1091,6 +1134,7 @@ export default function App() {
             }
             emptyAction={() => openAction({ type: "import" })}
             onError={setError}
+            onSimulationEndpoint={!lsdbOpen && !contextUpdating && !busy ? chooseSimulationEndpoint : undefined}
           />
           {project && !project.snapshot && !lsdbOpen && (
             <button
@@ -1103,8 +1147,8 @@ export default function App() {
             </button>
           )}
         </section>
-        {project && lsdbOpen && <div style={{ display: chatOpen ? "none" : "contents" }}>
-          <LSDBPanel key={project.id} project={project} selection={selection} revision={simulationRevision} busy={busy || importing}
+        {project && lsdbOpen && !contextUpdating && <div style={{ display: chatOpen ? "none" : "contents" }}>
+          <LSDBPanel key={`${project.id}:${simulationEpoch}`} project={project} selection={selection} revision={simulationRevision} busy={busy || contextUpdating}
             onBatch={setLsdbBatchId}
             onGraph={(data, highlight) => { setLsdbGraph(data); setLsdbHighlight(highlight); }}
             onVersion={version => { const current = projectRef.current; if (current?.id === project.id) updateProject({ ...current, version }); }}
@@ -1113,11 +1157,11 @@ export default function App() {
         </div>}
         {project && chatOpen ? <Suspense fallback={<aside className="inspector chat-panel"><div className="chat-empty" role="status">正在载入 AI 对话…</div></aside>}>
           <ChatPanel key={project.id} project={project} selection={selection} revision={project.effective_revision || simulationRevision}
-            canvasMode={lsdbOpen ? "lsdb" : "config"} lsdbBatchId={chatGraph ? chatBatchId : lsdbBatchId} importing={importing}
+            canvasMode={lsdbOpen ? "lsdb" : "config"} lsdbBatchId={chatGraph ? chatBatchId : lsdbBatchId} importing={contextUpdating}
             onSource={reference => void openSource(reference)} onAction={chatAction} onClearHighlight={clearChatHighlight}
             onClose={() => { setChatOpen(false); clearChatHighlight(); setChatGraph(null); setChatBatchId(""); }} />
         </Suspense> : project && lsdbOpen ? null : project && simulationOpen ? (
-          <SimulationPanel key={simulationRevision} project={project} busy={busy || importing}
+          <SimulationPanel key={simulationRevision} project={project} endpoints={simulationEndpoints} onEndpoints={setSimulationEndpoints} busy={busy || contextUpdating}
             onHighlight={setSimulation} onSource={(r) => void openSource(r)}
             onClose={() => { setSimulationOpen(false); setSimulation(null); }}
             onReveal={() => { setFilters({ ...initialFilters, mode: filters.mode }); }}

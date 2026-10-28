@@ -5,6 +5,7 @@ import io
 import os
 import stat
 import zipfile
+from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import PurePosixPath
 from charset_normalizer import from_bytes
@@ -55,7 +56,7 @@ def ingest_uploads(uploads: list[tuple[str, bytes]]) -> IngestResult:
         out.results.append({"filename": name, "parse_status": status, "status": status,
                             "diagnostics": [{"severity": "error" if status == "failed" else "info", "code": "import_input", "message": message}], "message": message})
 
-    def visit(name: str, data: bytes, depth=0):
+    def visit(name: str, data: bytes, depth=0, identity_path: str | None = None):
         try:
             name = safe_name(name)
             out.entries += 1
@@ -88,14 +89,17 @@ def ingest_uploads(uploads: list[tuple[str, bytes]]) -> IngestResult:
                             out.total_bytes += len(payload)
                             if out.total_bytes > MAX_TOTAL_BYTES:
                                 raise ValueError("实际解压数据超过总量限制")
-                            visit(child, payload, depth + 1)
+                            # Only the outer archive is a transport container.
+                            # Nested archives/directories remain part of the
+                            # device's relative input identity.
+                            relative = safe_name(info.filename)
+                            inner_identity = relative if depth == 0 else f"{identity_path}/{relative}"
+                            visit(child, payload, depth + 1, inner_identity)
                         except (ValueError, RuntimeError, NotImplementedError, zipfile.BadZipFile) as exc:
                             fail(child, str(exc))
                         if out.entries > MAX_FILES * 2 or out.total_bytes >= MAX_TOTAL_BYTES:
                             break
                 return
-            if len(out.files) >= MAX_FILES:
-                raise ValueError(f"配置文件数超过 {MAX_FILES} 限制")
             if len(data) > MAX_FILE_BYTES:
                 raise ValueError(f"单文件超过 {MAX_FILE_BYTES // 1024 // 1024} MiB 限制")
             if depth == 0:
@@ -107,17 +111,36 @@ def ingest_uploads(uploads: list[tuple[str, bytes]]) -> IngestResult:
                 fail(name, "空文件已跳过", "skipped")
                 return
             digest = hashlib.sha256(data).hexdigest()
-            if digest in out.hashes:
+            if digest in out.hashes and name in out.names:
                 fail(name, "相同内容已在此批次处理", "skipped")
                 return
             if name in out.names:
                 raise ValueError("同批次文件名重复，请分别导入或使用目录区分")
             out.hashes.add(digest)
             out.names.add(name)
-            out.files.append({"filename": name, "content": content, "encoding": encoding, "hash": digest})
+            out.files.append({"filename": name, "identity_path": identity_path or name,
+                              "content": content, "encoding": encoding, "hash": digest})
         except (ValueError, RuntimeError, NotImplementedError, zipfile.BadZipFile, UnicodeError) as exc:
             fail(name, str(exc))
 
     for filename, content in uploads:
         visit(filename, content)
+    # Decide identity ambiguity before content deduplication: two archives may
+    # contain independent devices at the same relative path, even when their
+    # configuration bytes happen to be identical. Never collapse those inputs.
+    counts = Counter(item["identity_path"] for item in out.files)
+    candidates, out.files = out.files, []
+    seen = set()
+    for item in candidates:
+        item["identity_ambiguous"] = counts[item["identity_path"]] > 1
+        if item["hash"] in seen and not item["identity_ambiguous"]:
+            fail(item["filename"], "相同内容已在此批次处理", "skipped")
+            continue
+        if len(out.files) >= MAX_FILES:
+            fail(item["filename"], f"配置文件数超过 {MAX_FILES} 限制")
+            continue
+        out.files.append(item)
+        seen.add(item["hash"])
+    out.hashes = {item["hash"] for item in out.files}
+    out.names = {item["filename"] for item in out.files}
     return out

@@ -2,8 +2,9 @@
 from dataclasses import dataclass,field
 import ipaddress
 import re
-from ..model import RoutingFacts,Instance,Binding,Advertisement,Issue,SourceRef,identity
+from ..model import RoutingFacts,Instance,Binding,Advertisement,Issue,SourceRef,identity,IGNORED_SEMANTIC_CODES
 from .defaults import PROFILES, Defaults
+from .semantics import classify_statement
 
 
 def area(value):
@@ -35,6 +36,7 @@ class Process:
     default_costs:dict=field(default_factory=dict)
     enabled:bool=True
     source_lines:list=field(default_factory=list)
+    automatic_cost:bool=False
 
 
 class Builder:
@@ -55,7 +57,9 @@ class Builder:
         # Junos omits unit .0 in some protocol exports.
         if key in self.interfaces and not self.interfaces[key].get('addresses') and key+'.0' in self.interfaces:key+='.0'
         return p.ports.setdefault(key,{'line':line,'costs':{},'levels':None})
-    def issue(self,p,code,message,line,interface=None):
+    def issue(self,p,code,message,line,interface=None,statement=None):
+        if statement is not None and code in IGNORED_SEMANTIC_CODES:
+            code,message=classify_statement(statement,code,message)
         self.pending_issues.append((p,code,message,line,interface))
     def net(self,p,value,line):
         compact=value.replace('.','').lower()
@@ -125,6 +129,7 @@ class Builder:
                     # unknowns rather than guessing from the interface's name.
                     if p.protocol=='isis':
                         default_cost=self.defaults.loop_cost(p.protocol,ikey) if loop else 0 if passive_zero else self.defaults.isis_active_cost
+                        if p.automatic_cost and not loop and not passive_zero:default_cost=None
                     else:
                         default_cost=self.defaults.loop_cost(p.protocol,ikey) if loop else None
                     value=configured[0] if configured else default_cost
@@ -146,5 +151,5 @@ class Builder:
         for p,code,message,line,ikey in self.pending_issues:
             iface=self.interfaces.get(ikey) if ikey else None
             facts.issues.append(Issue(code=code,message=message,device_id=self.device,instance_id=instances[id(p)].id if p and id(p) in instances else None,
-                protocol=p.protocol if p else None,interface_id=iface['id'] if iface else None,source_refs=[self.ref(line)]))
+                protocol=p.protocol if p else None,interface_id=iface['id'] if iface else None,blocking=code not in IGNORED_SEMANTIC_CODES,source_refs=[self.ref(line)]))
         return facts

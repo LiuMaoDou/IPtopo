@@ -29,6 +29,7 @@ import type { GraphData, View, Selection } from "./types";
 import { parallelLinks, placeMissingNodes } from "./graphModel";
 import { segmentIcon, vendorStyle, vendors } from "./vendorIcons";
 import type { SimulationHighlight } from "./routingTypes";
+import type { SimulationEndpointRole } from "./simulationModel";
 cytoscape.use(edgehandles);
 cytoscape.use(undoRedo);
 export type GraphHandle = {
@@ -53,6 +54,7 @@ type Props = {
   onConnect: (a: string, b: string) => void;
   emptyAction: () => void;
   onError: (s: string) => void;
+  onSimulationEndpoint?: (role: SimulationEndpointRole, deviceId: string) => void;
 };
 export default forwardRef<GraphHandle, Props>(function Graph(
   {
@@ -69,12 +71,13 @@ export default forwardRef<GraphHandle, Props>(function Graph(
     onConnect,
     emptyAction,
     onError,
+    onSimulationEndpoint,
   },
   ref,
 ) {
   const container = useRef<HTMLDivElement>(null),
     cyRef = useRef<Core | null>(null),
-    callbacks = useRef({ onSelect, onChange, onConnect, onError }),
+    callbacks = useRef({ onSelect, onChange, onConnect, onError, onSimulationEndpoint }),
     viewRef = useRef(view),
     worker = useRef<Worker | null>(null),
     layoutRef = useRef<Layouts | null>(null),
@@ -97,6 +100,8 @@ export default forwardRef<GraphHandle, Props>(function Graph(
     [busy, setBusy] = useState(false),
     [drawing, setDrawing] = useState(false);
   const [expandedBundles, setExpandedBundles] = useState<Set<string>>(() => new Set());
+  const [contextMenu, setContextMenu] = useState<{ deviceId: string; label: string; x: number; y: number } | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const display = useMemo(() => {
     if (readOnly) return { ...data, bundles: new Map<string, GraphData["edges"]>() };
     const normal = parallelLinks(data, expandedBundles);
@@ -104,8 +109,19 @@ export default forwardRef<GraphHandle, Props>(function Graph(
   }, [data, expandedBundles, simulation, readOnly]);
   const bundleRef = useRef(display.bundles);
   bundleRef.current = display.bundles;
-  callbacks.current = { onSelect, onChange, onConnect, onError };
+  callbacks.current = { onSelect, onChange, onConnect, onError, onSimulationEndpoint };
   viewRef.current = view;
+  useEffect(() => {
+    if (!contextMenu) return;
+    menuRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+    const dismiss = (event: PointerEvent) => { if (!menuRef.current?.contains(event.target as Node)) setContextMenu(null); };
+    const escape = (event: KeyboardEvent) => { if (event.key === "Escape") setContextMenu(null); };
+    document.addEventListener("pointerdown", dismiss);
+    document.addEventListener("keydown", escape);
+    return () => { document.removeEventListener("pointerdown", dismiss); document.removeEventListener("keydown", escape); };
+  }, [contextMenu]);
+  const canChooseEndpoint = !!onSimulationEndpoint;
+  useEffect(() => { setContextMenu(null); }, [data, canChooseEndpoint]);
   const capture = (): Partial<View> => {
     const cy = cyRef.current;
     if (!cy) return {};
@@ -690,6 +706,18 @@ export default forwardRef<GraphHandle, Props>(function Graph(
           id: e.target.id(),
         });
     });
+    cy.on("cxttap", "node", (event) => {
+      if (event.target.data("kind") !== "device" || !callbacks.current.onSimulationEndpoint) return;
+      event.originalEvent?.preventDefault();
+      edges.current?.disableDrawMode(); setDrawing(false);
+      const position = event.renderedPosition || event.target.renderedPosition();
+      const width = container.current?.clientWidth || 0;
+      const height = container.current?.clientHeight || 0;
+      callbacks.current.onSelect({ kind: "device", id: event.target.id() });
+      setContextMenu({ deviceId: event.target.id(), label: String(event.target.data("label") || event.target.id()),
+        x: Math.max(8, Math.min(position.x, width - 240)), y: Math.max(8, Math.min(position.y, height - 144)) });
+    });
+    cy.on("tapstart pan zoom", () => setContextMenu(null));
     cy.on("onetap", "edge", (e) => {
       if (e.target.data("link_count")) {
         callbacks.current.onSelect({
@@ -980,8 +1008,13 @@ export default forwardRef<GraphHandle, Props>(function Graph(
     }
   }, [selection, display]);
   return (
-    <div className="graph-wrap">
+    <div className="graph-wrap" onContextMenu={event => { if (onSimulationEndpoint) event.preventDefault(); }}>
       <div ref={container} className="graph" aria-label="可交互 IP 拓扑画布" />
+      {contextMenu && onSimulationEndpoint && <div className="graph-context-menu" ref={menuRef} role="menu" aria-label={`${contextMenu.label} 仿真端点`} style={{ left: contextMenu.x, top: contextMenu.y }}>
+        <strong>{contextMenu.label}</strong>
+        <button role="menuitem" onClick={() => { onSimulationEndpoint("source", contextMenu.deviceId); setContextMenu(null); }}>设为仿真源</button>
+        <button role="menuitem" onClick={() => { onSimulationEndpoint("destination", contextMenu.deviceId); setContextMenu(null); }}>设为仿真目的</button>
+      </div>}
       {!data.nodes.length && (
         <div className="canvas-empty">
           <Network size={46} />

@@ -95,14 +95,14 @@ def extract(text,parsed,dialect):
                 elif s in ('circuit-type level-1','circuit-type level-2-only'):port['levels']=['1' if 'level-1' in s else '2']
                 elif s=='circuit-type level-1-2':port['levels']=['1','2']
                 elif m:=re.fullmatch(r'(hello-interval|dead-interval)\s+(\d+)',s):port['hello' if m[1]=='hello-interval' else 'dead']=int(m[2])
-                elif s not in ('!','address-family ipv4 unicast','address-family ipv6 unicast') and not s.startswith('description '):b.issue(p,'unsupported_protocol_statement','此 Cisco 协议接口语义尚未适配。',n,name(xr_iface))
+                elif s not in ('!','address-family ipv4 unicast','address-family ipv6 unicast') and not s.startswith('description '):b.issue(p,'unsupported_protocol_statement','此 Cisco 协议接口语义尚未适配。',n,name(xr_iface),statement=s)
             elif proto=='ospf' and dialect=='cisco_xr' and re.match(r'(?:cost|hello-interval|dead-interval|network|network-type|passive)\b',s):
                 settings=xr_defaults.setdefault((context,xr_area),{'line':n,'costs':{},'levels':None})
                 apply_options(b,p,settings,[(n,s)],None)
                 p.source_lines.append(n)
             elif proto=='isis' and (m:=re.fullmatch(r'metric\s+(\d+)(?:\s+level(?:-|\s+)([12]))?',s)):b.cost(p,None,m[1],n,m[2])
             elif s in ('!','log adjacency changes','address-family ipv4 unicast','address-family ipv6 unicast') or SAFE_PROCESS.match(s):pass
-            else:b.issue(p,'unsupported_protocol_statement','此 Cisco 协议语义尚未适配，配置仿真已保守停止。',n)
+            else:b.issue(p,'unsupported_protocol_statement','此 Cisco 协议语义尚未适配。',n,statement=s)
         if dialect=='cisco_xr' and proto=='ospf':
             # Resolve after reading the complete native hierarchy, so order of
             # sibling declarations does not change effective inheritance.
@@ -167,4 +167,4 @@ def apply_options(b,p,port,options,ikey):
         elif s in ('passive disable','no passive'):port['passive']=False
         elif s=='network frame-relay':port['network_type']='unsupported'
         elif s.startswith(('priority ','mtu-ignore','enable')):pass
-        else:b.issue(p,'unsupported_protocol_statement','此 Cisco 接口协议语义尚未适配。',n,ikey)
+        else:b.issue(p,'unsupported_protocol_statement','此 Cisco 接口协议语义尚未适配。',n,ikey,statement=s)

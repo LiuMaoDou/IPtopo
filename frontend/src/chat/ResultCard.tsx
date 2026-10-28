@@ -26,7 +26,8 @@ function ResultCard({ card, context, current, onSource, onAction, deviceNames }:
   const device = object(data.device);
   const interfaces = rows(data.interfaces);
   const paths = rows(data.paths);
-  const diagnostics = rows(data.diagnostics);
+  const diagnostics = rows(data.diagnostics).filter(item => !item.ignored);
+  const ignored = rows(data.diagnostics).filter(item => item.ignored);
   const comparisons = rows(data.comparisons);
   const batch = object(data.batch);
   const instances = rows(data.instances);
@@ -72,10 +73,11 @@ function ResultCard({ card, context, current, onSource, onAction, deviceNames }:
       {(instances.length > 0 || topologyNodes.length > 0) && <details open><summary>可选源设备 / 实例 · {instances.length || topologyNodes.length}</summary>{(instances.length ? instances : topologyNodes).slice(0, 12).map((item, index) => <p className="chat-card-note" key={index}>{text(item.hostname || item.label || item.device_id || item.id)}{item.local_name ? ` · 实例 ${text(item.local_name)}` : ""}{item.protocol_id ? ` · ${text(item.protocol_id)}` : ""}</p>)}</details>}
       {advertisements.length > 0 && <details open><summary>可选目的前缀 · {advertisements.length}</summary>{advertisements.slice(0, 12).map((item, index) => <p className="chat-card-note" key={index}>{text(item.hostname || item.origin, name(item.device_id || item.node_id))} · {text(item.prefix || item.address)}</p>)}</details>}
       {sourceLines.length > 0 && <><p className="chat-card-note">{text(data.filename, "来源片段")} · 已脱敏</p><pre className="chat-source-lines">{sourceLines.slice(0, 100).map(item => `${text(item.line, "")}  ${text(item.text, "")}`).join("\n")}</pre></>}
-      {!instances.length && !topologyNodes.length && !advertisements.length && !sourceLines.length && !diagnostics.length && <p className="chat-card-note">此查询暂无可用数据，请查看回答中的诊断或补充配置。</p>}
+      {!instances.length && !topologyNodes.length && !advertisements.length && !sourceLines.length && !diagnostics.length && !ignored.length && <p className="chat-card-note">此查询暂无可用数据，请查看回答中的诊断或补充配置。</p>}
     </>}
     {comparisons.length > 0 && <details open><summary>配置与观测对比 · {comparisons.length}</summary>{comparisons.slice(0, 12).map((item, index) => <p className="chat-card-note" key={index}><b>{name(item.source)} → {name(item.target)}</b><br />{comparisonStates[text(item.status)] || text(item.status)} · 配置 {text(item.config_cost)} / 观测 {text(item.observed_cost)}</p>)}</details>}
     {diagnostics.length > 0 && <details open={state !== "ok" || card.kind === "diagnostics"}><summary>诊断 · {diagnostics.length}</summary>{diagnostics.slice(0, 12).map((item, index) => <p key={index} className="chat-card-note">{item.blocking ? "需补齐：" : ""}{text(item.message || item.code)}</p>)}</details>}
+    {ignored.length > 0 && <details><summary>已忽略的配置语义 · {ignored.length}</summary>{ignored.slice(0, 12).map((item, index) => <p key={index} className="chat-card-note">{text(item.message || item.code)}</p>)}</details>}
     {card.kind === "summary" && Boolean(data.vendors) && <p className="chat-card-note">厂商：{Array.isArray(data.vendors) ? data.vendors.map(value => text(value)).join("、") : Object.entries(object(data.vendors)).map(([key, value]) => `${key} ${text(value)}`).join("、")}</p>}
     <div className="chat-card-actions">
       {(card.device_ids?.length > 0 || card.link_ids?.length > 0) && <button disabled={!current} onClick={() => locate()}><LocateFixed size={13} />定位</button>}

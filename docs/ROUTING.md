@@ -43,7 +43,7 @@
 
 默认行为按厂商与方言分别建模；已核实的 IS-IS 普通成本通常为 10，NX-OS 平台差异和额外 Loopback 等无法确定的值保留未知。IOS/XE 和 XR 的窄度量、NX-OS 的宽度量、Junos/SR OS 的双编码分别记录。显式按 Level 配置优先。SR OS System ID 按显式 system-id、IS-IS router-id、router router-id、system IPv4 地址的优先级获取，派生使用每个 IPv4 八位组补齐三位十进制。没有可验证身份时保持缺失，不按主机名猜测。
 
-未知语义、无效数值、未展开协议继承会保留来源诊断，阻止受影响配置路径。这里的“支持”覆盖表中普通 IPv4 内部路由语义，不表示所有 OS 版本、认证、策略和扩展功能均已实现。
+未建模的高级配置语义默认忽略，保留警告和来源，继续按已解析的基础 IPv4 图计算。无效基础数值、未展开且可能包含基础协议字段的继承、缺失事实仍会限制计算。这里的“支持”覆盖表中普通 IPv4 内部路由语义，不表示所有 OS 版本、认证、策略和扩展功能均已实现。
 
 [混合配置样例](../samples/multi-vendor-igp/README.md) 的 6 台设备、12 个协议实例通过同一计算引擎；S→D 总开销 30、三路径分担 50% / 25% / 25%。反向 OSPF D→S 为 31，因为目的 Loopback 显式开销为 1；IS-IS 反向为 30。
 
@@ -57,7 +57,28 @@
 | IS-IS 接口 | `isis enable [process-id]`；`isis cost [level-1/level-2]`；`isis circuit-level`；`isis circuit-type p2p`；`isis silent` |
 | 连接 | 编号的 IPv4 P2P、兼容广播网段、并行三层链路；聚合口参与三层计算，物理成员不重复计入 |
 
-源配置需包含明确接口与进程上下文，增量配置、命令历史及任意缩写不在验收范围。认证、策略、重分发、汇总、Stub / NSSA、Overload、FRR、TE 等尚未适配的协议配置会给出诊断，并保守阻止受影响范围的计算。
+源配置需包含明确接口与进程上下文，增量配置、命令历史及任意缩写不在验收范围。认证、策略、重分发、汇总、Stub / NSSA、Overload、Flex-Algo、FRR、TE、SPF 调度或 LSP 生成定时器等未建模语义不再一律阻止基础路径。它们作为忽略警告与来源返回，结果明确说明未模拟相应效果；未知认证情况下仍假设认证与候选邻接正常，没有新增认证匹配推断。
+
+### 忽略语义与事实不足
+
+默认行为固定为忽略扩展语义，无需额外开关。诊断中的 `ignored=true`、`blocking=false`、`severity=warning` 表示“按基础 IPv4 图计算，未模拟该语义”。仍保留原问题代码、描述、设备 / 接口关联及来源行，且不复制可能含密钥的配置正文。
+
+| 问题类型 | 基础 IPv4 计算行为 |
+| --- | --- |
+| `unsupported_protocol_command`、`unsupported_interface_command` | 忽略未建模扩展，保留警告 |
+| `unsupported_protocol_statement`、`unsupported_area_statement` | 同上；不能据此断言高级策略与真实路由行为一致 |
+| `unsupported_interface_statement`、`unsupported_area_command` | 兼容通用扩展命令 / statement 诊断，按同一忽略策略处理 |
+| `unknown_protocol_command`、`unknown_protocol_statement` | 兼容旧快照的通用协议语义诊断，按同一忽略策略处理 |
+| `unknown_interface_command`、`unknown_interface_statement` | 兼容旧快照的通用接口语义诊断，按同一忽略策略处理 |
+| `unknown_area_command`、`unknown_area_statement` | 兼容旧快照的通用 Area 语义诊断，按同一忽略策略处理 |
+| `unmodeled_authentication` | 不模拟认证；明确以认证与邻接正常为假设 |
+| 未知 / 无效开销、未知显式网络类型、NET 或接口 / 实例缺失、重复目的或标识、配置截断、未展开基础协议继承 | 保留具体事实不足诊断，不能补造开销、身份或连接 |
+| 已知 Hello / Dead、网络类型或 IS-IS L1 Area 不匹配 | 不建立相应候选邻接；没有其他路径时不可达 |
+| 未确定的窄 / 宽编码互通、超出当前计算规模 | 继续返回 `unsupported` |
+
+旧快照中保存的通用语义诊断即使仍标记 `blocking=true`，计算时也采用上述忽略策略，无须为了消除这类阻塞而重导入。原快照不被改写。新导入会把无法解析的显式成本、网络类型、编码、身份等基础问题归入独立问题代码，避免错误套用默认值。
+
+成功结果仍只是基础图的静态 SPF。忽略重分发、汇总、Stub / NSSA、Overload 或 Flex-Algo 等语义，可能使结果与设备实际选路不同；需要验证这些效果时应提供相应运行态证据，而不是把 `ok` 当成实时邻接或硬件 FIB 证明。
 
 OSPF 只计算所选 Area 内的路径，IS-IS 只计算选定 Level 内的路径。L1 要求邻接两端有共同 Area 地址，L2 不要求 Area 相同。双 Level 实例可单独分析一个 Level，结果不包含跨 Level 泄漏、缺省路由或 L1 / L2 路由竞争。IS-IS narrow / wide / both 按所选 Level 记录。收发编码策略不能唯一确定互通行为时返回 unsupported，不把编码字段当成物理邻接状态。静态 / BGP / 其他协议选路、ACL、硬件转发策略及收敛时间不参与计算。
 
@@ -67,7 +88,8 @@ OSPF 只计算所选 Area 内的路径，IS-IS 只计算选定 Level 内的路�
 
 - OSPF transit Cost 未显式配置时保持未知，不根据接口名称猜测链路带宽。OSPF Loopback 默认成本：VRP / Junos / Nokia system 为 0，IOS/XE 为 1；XR、NX-OS 和其他未核实情形保持未知。P2P / Broadcast 常见默认 10 / 40，Cisco Dead 随有效 Hello 取四倍。
 - IS-IS 使用已记录的 VRP 默认：Level-1-2、narrow、普通接口开销 10、Loopback 开销 0。显式接口开销优先于进程开销，再使用默认值。
-- 未提供 NET、未知 / 无效开销、重复 Router ID / System ID、未适配语义等产生诊断。已知不匹配的网络类型、OSPF 定时器、IS-IS L1 Area 不建立候选邻接。
+- 未提供 NET、未知 / 无效开销、重复 Router ID / System ID 等保留具体事实诊断；未建模扩展语义按忽略警告处理。已知不匹配的网络类型、OSPF 定时器、IS-IS L1 Area 不建立候选邻接。
+- Junos IS-IS 显式配置 `reference-bandwidth` 后，缺少显式接口开销和可靠带宽证据的 transit 接口保留未知，不能继续使用默认 10；已有显式开销优先，也可使用临时 Scenario 的未知开销假设。依据见 [Junos reference-bandwidth](https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/statement/reference-bandwidth-edit-protocols-isis.html)。
 - 运行态仍为 unknown，仿真假设候选链路正常；人工确认不能当成运行态观察。
 
 来源：[Huawei OSPF Cost](https://info.support.huawei.com/enterprise/en/doc/EDOC1100214494/c1494b74/ospf-cost)、[OSPF 启用方式](https://info.support.huawei.com/network/ptmngsys/Web/tsrev_s/cn/content/s/22_OSPF_Neighbors_Failing_to_Be_Established/edesk_OSPF_Neighbors_Failing_to_Be_Established_edesk003.html)、[IS-IS 默认参数](https://info.support.huawei.com/hedex/api/pages/EDOC1100334321/AEM1020X/07/resources/dc/display_default-parameter_isis.html)、[IS-IS 接口 Level](https://info.support.huawei.com/hedex/api/pages/EDOC1100334321/AEM1020X/08/resources/dc/dc_cfg_isisv6_0008.html)、[IS-IS 命令参考](https://info.support.huawei.com/enterprise/en/doc/EDOC1100381010/4e0b2b50/is-is-configuration-commands)。
@@ -114,7 +136,7 @@ IS-IS scope 为 `1` 或 `2`，OSPF 为规范点分十进制 Area。metric_overri
 
 回归覆盖逐跳分担、方向性开销、并行链路、路径截断、未知开销、接口退出、ECMP 上限、厂商元数据独立性及导入 / 合并 / 替换 / 恢复。前端验收面向 PC 桌面浏览器，验证路径高亮、场景调整清除旧结果与三栏布局。
 
-算法正确性使用合成样例验收，另对本机既有项目的 9 台华为设备配置做了只读解析抽查。实际配置包含大量 Tunnel、Flex-Algo、认证和重分发等高级语义，仍会保守阻止相关范围的仿真；未修改或重新导入这些原项目。尚无对应路由表 / LSDB 对照，不宣称真实设备选路一致性已验证。
+算法正确性使用合成样例验收，另对本机既有项目的 9 台华为设备配置做过只读解析抽查。实际配置包含 Tunnel、Flex-Algo、认证和重分发等语义：高级扩展现按上述策略忽略，无法确定网络类型、开销或基础协议范围的部分仍保留限制；未修改或重新导入这些原项目。尚无对应路由表 / LSDB 对照，不宣称真实设备选路一致性已验证。
 
 ## LSDB 观测输入
 

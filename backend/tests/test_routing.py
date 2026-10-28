@@ -195,7 +195,8 @@ def test_global_isis_system_id_command_is_not_a_process_declaration():
 def test_unsupported_authentication_is_diagnosed_without_exposing_secret():
     config = (SAMPLES / "01-S.cfg").read_text(encoding="utf-8").replace(" area 0.0.0.0", " area 0.0.0.0\n  authentication-mode md5 1 cipher PRIVATE-SECRET", 1)
     parsed = parse_config(config, "r.cfg", "source", "device")
-    assert parsed["routing"]["issues"][0]["code"] == "unsupported_protocol_command"
+    assert parsed["routing"]["issues"][0]["code"] == "unmodeled_authentication"
+    assert parsed["routing"]["issues"][0]["blocking"] is False
     assert "PRIVATE-SECRET" not in str(parsed["routing"])
 
 

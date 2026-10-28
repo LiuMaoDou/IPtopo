@@ -34,5 +34,5 @@ export type SimulationResult = SimulationHighlight & {
   path_count: string; paths_truncated: boolean; forwarding_status: string;
   paths: { hops: string[]; device_ids: string[]; total_cost: number; share_percent: number }[];
   assumptions: string[];
-  diagnostics: { code: string; message: string; source_refs?: Ref[]; interface_id?: string }[];
+  diagnostics: { code: string; message: string; source_refs?: Ref[]; interface_id?: string; ignored?: boolean; blocking?: boolean }[];
 };

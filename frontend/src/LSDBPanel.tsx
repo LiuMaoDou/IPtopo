@@ -130,6 +130,8 @@ export default function LSDBPanel(props: Props) {
   const refs = (items: Ref[] | undefined, label: string) => items?.[0] ? <button className="text-button" onClick={() => callbacks.current.onSource(items[0])}>{label}</button> : null;
   const comparisons = analysis?.comparisons.filter(c => !differencesOnly || c.status !== "consistent") || [];
   const sim = analysis?.simulation;
+  const ignoredSemantics = [...new Map([...(sim?.diagnostics || []), ...(analysis?.config_simulation?.diagnostics || [])]
+    .filter(d => d.ignored).map(d => [`${d.code}:${d.message}`, d])).values()];
   return <aside className="inspector simulation-panel lsdb-panel" aria-label="LSDB 拓扑面板">
     <div className="simulation-heading"><Database size={20} /><div><h2>LSDB 拓扑</h2><small>Huawei · Cisco · Juniper · Nokia</small></div><button aria-label="关闭 LSDB" onClick={props.onClose}><X size={16} /></button></div>
     <div className="simulation-content">
@@ -173,7 +175,8 @@ export default function LSDBPanel(props: Props) {
             {sim.paths_truncated && <p className="simulation-note">路径列表已截断；计数与占比仍按完整路径集合计算。</p>}
             <details><summary>逐跳开销与分担</summary>{sim.hops.filter(h => selectedPath === null || sim.paths[selectedPath].hops.includes(h.id)).map(h => <div className="simulation-hop" key={h.id}><b>{name(h.source_device_id)} → {name(h.target_device_id)}</b><div>{h.interface_name || "出口端口未关联"} · {h.next_hop || "下一跳 IP 未知"}</div><div>开销 {h.cost} · 流量 {percent(h.share_percent)} · 本机 {percent(h.local_share_percent)}{refs(h.source_refs,"LSDB 来源")}</div></div>)}</details>
           </> : <p className="simulation-warning">{{ incomplete: "数据不足，未生成路径", unsupported: "当前模型不能确定路径", unreachable: "所选范围内不可达" }[sim.status]}</p>}
-          <details><summary>路径诊断与假设</summary>{sim.diagnostics.map((d,i) => <p key={i}>{d.message}</p>)}{sim.assumptions.map((s,i) => <p key={`a${i}`}>{s}</p>)}</details>
+          <details><summary>路径诊断与假设</summary>{sim.diagnostics.filter(d => !d.ignored).map((d,i) => <p key={i}>{d.message}</p>)}{sim.assumptions.map((s,i) => <p key={`a${i}`}>{s}</p>)}</details>
+          {ignoredSemantics.length > 0 && <details><summary>已忽略的配置语义 · {ignoredSemantics.length}</summary>{ignoredSemantics.map((d,i) => <p key={i}>{d.message}{refs(d.source_refs, "查看来源")}</p>)}</details>}
         </div>}
         {mode === "fused" && <>
           <details className="lsdb-comparisons" open><summary>配置与观测对比 · {analysis.comparisons.length}</summary><label className="lsdb-check"><input type="checkbox" checked={differencesOnly} onChange={e => setDifferencesOnly(e.target.checked)} />仅看差异</label>

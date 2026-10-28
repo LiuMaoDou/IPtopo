@@ -19,6 +19,14 @@ OSPF 广播/P2P 的默认 Hello / Dead 通常为 10 / 40，但 Cisco 在只改 H
 
 普通 OSPF 接口开销依赖参考带宽和实际接口带宽。缺少可靠带宽证据时保持 unknown，允许用户在独立 Scenario 中给定假设。接口名称、配置地址、人工确认均不证明协商速率或运行态。动态 Router ID 选择依赖运行条件时也保留未知，不假定某个配置地址就是当前 Router ID。
 
+## 未建模语义的默认处理
+
+路径仿真默认忽略尚未建模的协议 / 接口 / Area 扩展语义，继续按已解析的基础 IPv4 图计算，并返回 `ignored=true`、`blocking=false` 的来源警告。认证未建模时假设认证与候选邻接正常；策略、重分发、汇总、Stub / NSSA、Overload、FRR、TE、Flex-Algo 和 SPF / LSP 调度定时器等效果不参与静态 SPF。此行为也适用于旧快照的通用 `unknown_*` / `unsupported_*` 命令类诊断，不要求重导入；仅限 [明确列出的语义问题代码](ROUTING.md#忽略语义与事实不足)，不按整个前缀放宽。
+
+忽略语义不会把缺少或非法的基础事实变为默认值。未知开销、未知显式网络类型或编码、NET / 实例 / 接口缺失、配置截断和未展开基础协议继承等仍按原状态报告。已知邻接条件不匹配时仍移除对应候选连接；不补造边，也不声称真实认证成功。
+
+Junos IS-IS 配置 `reference-bandwidth` 时，默认成本依赖实际接口带宽。显式接口 metric 保留优先级；无显式值且没有可靠带宽证据时，transit cost 保留 unknown，不落回 10。用户可用既有 Scenario 显式提供未知开销假设，结果会注明假设。参考 [Junos 原生命令说明](https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/statement/reference-bandwidth-edit-protocols-isis.html)。
+
 ## 协议路径与默认 FIB 分开
 
 Junos 通用默认行为是选择一个下一跳安装 FIB。明确、无条件的 forwarding-table export 策略含 load-balance per-flow / per-packet 时，才能记录多下一跳转发意图；复杂、缺失或继承策略保留 unknown。

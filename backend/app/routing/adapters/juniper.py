@@ -67,11 +67,13 @@ def extract(text,parsed,dialect):
         elif s[0]=='level' and len(s)>=3 and s[1] in ('1','2'):
             if s[2]=='disable':p.levels=[v for v in p.levels if v!=s[1]]
             elif s[2]=='wide-metrics-only':p.level_metric_styles[s[1]]='wide'
-            else:b.issue(p,'unsupported_protocol_statement','Junos IS-IS Level 语义尚未适配。',n)
-        elif s[0]=='export' or s[0] in ('import','overload','traffic-engineering','spf-options','lsp-lifetime'):b.issue(p,'unsupported_protocol_statement','Junos 策略或高级协议语义尚未适配。',n)
-        elif s[0]=='reference-bandwidth' and p.protocol=='isis':b.issue(p,'unsupported_protocol_statement','IS-IS 自动带宽开销需要额外带宽证据。',n)
+            else:b.issue(p,'unsupported_protocol_statement','Junos IS-IS Level 语义尚未适配。',n,statement=s)
+        elif s[0]=='export' or s[0] in ('import','overload','traffic-engineering','spf-options','lsp-lifetime'):b.issue(p,'unsupported_protocol_statement','Junos 策略或高级协议语义尚未适配。',n,statement=s)
+        elif s[0]=='reference-bandwidth' and p.protocol=='isis':
+            p.automatic_cost=True;p.source_lines.append(n)
+            b.issue(p,'unsupported_protocol_statement','IS-IS 自动带宽开销未计算；没有显式开销的接口保留未知。',n)
         elif s[0] in ('traceoptions','reference-bandwidth'):pass
-        else:b.issue(p,'unsupported_protocol_statement','Junos 协议语义尚未适配。',n)
+        else:b.issue(p,'unsupported_protocol_statement','Junos 协议语义尚未适配。',n,statement=s)
     for tokens,n,disabled in records:
         context,t=scoped(tokens)
         if len(t)<3 or t[0]!='protocols' or t[1] not in ('ospf','isis') or off(tokens,disabled):continue
@@ -84,7 +86,7 @@ def extract(text,parsed,dialect):
             except ValueError:b.issue(p,'invalid_area','OSPF Area 无效。',n);continue
             s=s[2:]
             if s[:1]!=['interface']:
-                b.issue(p,'unsupported_area_statement','Junos Area 的非普通接口语义尚未适配。',n);continue
+                b.issue(p,'unsupported_area_statement','Junos Area 的非普通接口语义尚未适配。',n,statement=s);continue
         if s[:1]!=['interface'] or len(s)<2:continue
         port=b.port(p,s[1],n)
         if scope:port['scope']=scope
@@ -100,11 +102,11 @@ def extract(text,parsed,dialect):
             if rest[2]=='disable':port['levels']=[v for v in (port['levels'] if port.get('levels') is not None else ['1','2']) if v!=level]
             elif rest[2]=='metric' and len(rest)>3:b.cost(p,port,rest[3],n,level)
             elif rest[2]=='passive':port['passive']=True
-            else:b.issue(p,'unsupported_protocol_statement','Junos 接口 Level 语义尚未适配。',n,name(s[1]))
+            else:b.issue(p,'unsupported_protocol_statement','Junos 接口 Level 语义尚未适配。',n,name(s[1]),statement=rest)
         elif rest[:1]==['level'] and len(rest)==2:continue
         elif rest[:1] in (['hello-interval'],['dead-interval']) and len(rest)>1:port['hello' if rest[0]=='hello-interval' else 'dead']=int(rest[1])
         elif rest[0] in ('priority','te-metric','no-advertise-adjacency-segment'):pass
-        else:b.issue(p,'unsupported_protocol_statement','Junos 接口协议语义尚未适配。',n,name(s[1]))
+        else:b.issue(p,'unsupported_protocol_statement','Junos 接口协议语义尚未适配。',n,name(s[1]),statement=rest)
     for p in b.processes.values():
         # Routing-instance forwarding-table export can reference a global
         # policy-options definition. Do not inherit the default instance's

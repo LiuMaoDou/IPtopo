@@ -37,7 +37,7 @@ from .lsdb.model import Batch as LSDBBatch
 from .ai.api import register as register_ai, facts_revision
 
 ROOT = Path(__file__).resolve().parents[2]
-VERSION = "1.4.0"
+VERSION = "1.4.1"
 DEFAULT_DOMAINS = {"domains": [{"id": "default", "name": "默认地址域", "confirmed": True}], "mappings": {}, "interface_mappings": {}, "segment_splits": {}}
 ACTIVE_JOBS = {"queued", "running", "cancelling"}
 MAX_RESTORE_BYTES = int(os.getenv("IPTOPO_MAX_RESTORE_BYTES", str(256 * 1024 * 1024)))

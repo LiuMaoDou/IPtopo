@@ -5,6 +5,20 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
+# Exact legacy codes, not an "unsupported_*" prefix rule: missing base facts,
+# invalid metrics, unknown network/metric encodings and truncated input remain
+# blocking. Runtime classification also applies to already saved snapshots.
+IGNORED_SEMANTIC_CODES = frozenset({
+    "unsupported_protocol_command", "unsupported_protocol_statement",
+    "unsupported_interface_command", "unsupported_interface_statement",
+    "unsupported_area_command", "unsupported_area_statement",
+    "unknown_protocol_command", "unknown_protocol_statement",
+    "unknown_interface_command", "unknown_interface_statement",
+    "unknown_area_command", "unknown_area_statement",
+    "unmodeled_authentication",
+})
+
+
 def identity(*parts: str) -> str:
     return "igp_" + sha256("\0".join(parts).encode()).hexdigest()[:24]
 

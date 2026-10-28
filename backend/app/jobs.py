@@ -1,6 +1,6 @@
 """Persisted import jobs executed in a separate spawned process."""
 from __future__ import annotations
-from collections import Counter
+from collections import Counter, defaultdict
 from copy import deepcopy
 from pathlib import Path
 import json
@@ -20,6 +20,18 @@ def empty_snapshot(project_id: str) -> dict:
             "devices": [], "interfaces": [], "contexts": [], "source_files": [],
             "diagnostics": [], "segments": [], "links": [], "unmatched": [], "parser_versions": {},
             "routing": RoutingFacts().model_dump()}
+
+
+def _source_identity_path(source: dict) -> str:
+    """Read the stable identity, including a conservative legacy ZIP fallback."""
+    if source.get("identity_path"):
+        return source["identity_path"]
+    filename = source["filename"]
+    parts = filename.split("/")
+    for index, part in enumerate(parts[:-1]):
+        if part.lower().endswith(".zip"):
+            return "/".join(parts[index + 1:])
+    return filename
 
 
 def import_worker(data_dir: str, job_id: str):
@@ -65,8 +77,13 @@ def import_worker(data_dir: str, job_id: str):
         result["domain_settings"] = deepcopy(settings.get("domains", {}))
         identities = settings.get("identities", {})
         previous_files = {f["filename"]: f for f in old_data.get("source_files", []) if f.get("parse_status") != "failed" and f.get("device_id")}
+        previous_paths = defaultdict(list)
+        for source in previous_files.values():
+            previous_paths[_source_identity_path(source)].append(source)
+        input_paths = Counter(_source_identity_path(upload) for upload in job_data.get("uploads", []))
         devices_old = {d["id"]: d for d in old_data.get("devices", [])}
         replacements, failures = set(), set()
+        assigned_devices = set()
         parsed_devices = []
         source_rows = []
         total = len(job_data.get("uploads", []))
@@ -88,8 +105,24 @@ def import_worker(data_dir: str, job_id: str):
                             j.updated_at = now()
                     return
             filename = upload["filename"]
+            identity_path = _source_identity_path(upload)
+            candidates = previous_paths.get(identity_path, [])
+            # Historical flags describe that snapshot's retained inputs. Use
+            # the actual current candidates here so an earlier explicit replace
+            # can resolve ambiguity permanently, including older saved flags.
+            ambiguous = bool(upload.get("identity_ambiguous") or input_paths[identity_path] > 1
+                             or len(candidates) > 1)
+            previous_file = previous_files.get(filename)
+            if previous_file is None and not ambiguous and len(candidates) == 1:
+                previous_file = candidates[0]
+            previous_filename = previous_file["filename"] if previous_file else filename
             source_id = uid("src_")
-            device_id = identities.get(filename, uid("dev_"))
+            device_id = previous_file.get("device_id") if previous_file else identities.get(filename)
+            # An old display filename may remain an alias after a ZIP rename.
+            # Do not reuse it for a second input while its current source is
+            # being kept, nor allow two sources to share an active identity.
+            if not device_id or device_id in assigned_devices or (previous_file is None and device_id in devices_old):
+                device_id = uid("dev_")
             raw = read_source_text(store.root / "uploads" / job_id / upload["storage_key"])
             try:
                 parsed = parse_config(raw, filename, source_id, device_id, job_data.get("dialect") or None)
@@ -104,10 +137,18 @@ def import_worker(data_dir: str, job_id: str):
                     parsed["status"] = "partial" if parsed.get("status") != "failed" else "failed"
                     if parsed.get("device"):
                         parsed["device"]["parse_status"] = parsed["status"]
+                if ambiguous:
+                    parsed.setdefault("diagnostics", []).append({"id": uid("diag_"), "code": "ambiguous_import_identity", "severity": "warning", "source_file_id": source_id,
+                        "message": f"相对路径 {identity_path} 在本批次或现有来源中对应多个独立输入，已按完整来源路径保留独立设备身份；未自动覆盖其他同路径设备。"})
+                    if parsed.get("status") != "failed":
+                        parsed["status"] = "partial"
+                        if parsed.get("device"):
+                            parsed["device"]["parse_status"] = "partial"
                 status = parsed.get("status", "failed")
                 interfaces = parsed.get("interfaces", [])
                 addresses = [a for itf in interfaces for a in itf.get("addresses", [])]
-                meta = {"id": source_id, "filename": filename, "hash": upload["hash"], "encoding": upload["encoding"],
+                meta = {"id": source_id, "filename": filename, "identity_path": identity_path,
+                    "identity_ambiguous": ambiguous, "hash": upload["hash"], "encoding": upload["encoding"],
                     "parse_status": status, "status": status, "vendor": parsed.get("vendor", "unknown"), "os": parsed.get("os", "unknown"),
                     "format": parsed.get("format", "unknown"), "device_id": device_id if parsed.get("device") else None,
                     "hostname": (parsed.get("device") or {}).get("hostname", ""), "interface_count": len(interfaces),
@@ -117,7 +158,8 @@ def import_worker(data_dir: str, job_id: str):
                 meta["warning_count"] = len(meta["diagnostics"])
                 result["diagnostics"].extend(meta["diagnostics"])
                 if status != "failed" and parsed.get("device"):
-                    replacements.add(filename)
+                    replacements.update((filename, previous_filename))
+                    assigned_devices.add(device_id)
                     identities[filename] = device_id
                     result["devices"].append(parsed["device"])
                     result["interfaces"].extend(interfaces)
@@ -131,12 +173,13 @@ def import_worker(data_dir: str, job_id: str):
                     result["parser_versions"].update(parsed.get("parser_versions", {}))
                     parsed_devices.append(parsed["device"])
                 else:
-                    failures.add(filename)
+                    failures.add(previous_filename)
                     result["source_files"].append(meta)
             except Exception as exc:
                 # Do not expose raw config or exception strings that may contain credentials.
-                failures.add(filename)
-                meta = {"id": source_id, "filename": filename, "parse_status": "failed", "status": "failed", "diagnostics": [
+                failures.add(previous_filename)
+                meta = {"id": source_id, "filename": filename, "identity_path": identity_path,
+                    "identity_ambiguous": ambiguous, "parse_status": "failed", "status": "failed", "diagnostics": [
                     {"id": uid("diag_"), "code": "parser_exception", "severity": "error", "source_file_id": source_id,
                      "message": f"解析器异常 ({type(exc).__name__})；其他文件仍会继续处理。"}]}
                 result["source_files"].append(meta)
@@ -159,6 +202,14 @@ def import_worker(data_dir: str, job_id: str):
         for key in ["devices", "interfaces", "contexts"]:
             result[key] = [obj for obj in old_data.get(key, []) if (obj.get("id") if key == "devices" else obj.get("device_id")) in keep_device_ids] + result[key]
         result["source_files"] = [f for f in old_data.get("source_files", []) if f["id"] in keep_sources] + result["source_files"]
+        # Matching may have been ambiguous against the old snapshot even when
+        # replace leaves just one valid source. Persist only ambiguity that
+        # remains in the actual resulting facts; failed attempts are evidence,
+        # not additional active device identities.
+        current_paths = Counter(_source_identity_path(source) for source in result["source_files"]
+                                if source.get("parse_status") != "failed" and source.get("device_id"))
+        for source in result["source_files"]:
+            source["identity_ambiguous"] = current_paths[_source_identity_path(source)] > 1
         result["diagnostics"] = [d for d in old_data.get("diagnostics", []) if d.get("source_file_id") in keep_sources] + result["diagnostics"]
         result["parser_versions"] = {**old_data.get("parser_versions", {}), **result["parser_versions"]}
         duplicate_names = {name for name, n in Counter(d["hostname"] for d in result["devices"]).items() if n > 1}

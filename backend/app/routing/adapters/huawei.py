@@ -1,4 +1,4 @@
-"""Huawei VRP IPv4 IGP adapter; unsupported semantics remain explicit blockers.
+"""Huawei VRP IPv4 IGP adapter with explicit ignored-extension diagnostics.
 
 Defaults are limited to documented VRP behavior, not guessed operational speed.
 See docs/ROUTING.md for command references and accepted configuration scope.
@@ -6,7 +6,8 @@ See docs/ROUTING.md for command references and accepted configuration scope.
 import ipaddress
 import re
 
-from ..model import Advertisement, Binding, Instance, Issue, RoutingFacts, SourceRef, identity
+from ..model import Advertisement, Binding, Instance, Issue, RoutingFacts, SourceRef, identity, IGNORED_SEMANTIC_CODES
+from .semantics import classify_statement
 
 VERSION = "1.0.0"
 
@@ -33,11 +34,13 @@ def extract(text: str, parsed: dict) -> RoutingFacts:
     def ref(n):
         return SourceRef(source_file_id=source, line=n)
 
-    def issue(code, message, n, instance=None, interface=None, protocol=None):
+    def issue(code, message, n, instance=None, interface=None, protocol=None, statement=None):
+        if statement is not None and code in IGNORED_SEMANTIC_CODES:
+            code,message=classify_statement(statement,code,message)
         facts.issues.append(Issue(code=code, message=message, device_id=device,
                                  instance_id=instance.id if instance else None,
                                  protocol=instance.protocol if instance else protocol,
-                                 interface_id=interface["id"] if interface else None, source_refs=[ref(n)]))
+                                 interface_id=interface["id"] if interface else None, blocking=code not in IGNORED_SEMANTIC_CODES, source_refs=[ref(n)]))
 
     instances, configs = {}, {}
     for n, header, lines in blocks:
@@ -115,7 +118,7 @@ def extract(text: str, parsed: dict) -> RoutingFacts:
             elif line.startswith(("description ", "bandwidth-reference ")) or line == "opaque-capability enable":
                 pass
             else:
-                issue("unsupported_protocol_command", f"{protocol.upper()} 存在尚未支持的配置语义，请查看来源行。", ln, inst)
+                issue("unsupported_protocol_command", f"{protocol.upper()} 存在尚未支持的配置语义，请查看来源行。", ln, inst, statement=line)
         if protocol == "isis" and not inst.router_id:
             issue("missing_net", "IS-IS 缺少有效 network-entity。", n, inst)
         if protocol == "isis":
@@ -134,7 +137,7 @@ def extract(text: str, parsed: dict) -> RoutingFacts:
                     area = str(ipaddress.IPv4Address(int(m[2]) if m[2].isdigit() else m[2]))
                     explicit_ospf = (m[1] or "1", area, ln)
                 except ValueError:
-                    unsupported["ospf"].append(ln)
+                    issue("invalid_area", "显式 OSPF 接口 Area 无效。", ln, interface=iface, protocol="ospf")
             elif m := re.fullmatch(r"ospf cost\s+(\d+)", line):
                 options["ospf"]["cost"] = (int(m[1]), ln)
             elif m := re.fullmatch(r"ospf network-type\s+(\S+)", line):
@@ -153,9 +156,9 @@ def extract(text: str, parsed: dict) -> RoutingFacts:
             elif line == "isis silent":
                 options["isis"]["passive"] = True
             elif line.startswith(("ospf ", "undo ospf ")):
-                unsupported["ospf"].append(ln)
+                unsupported["ospf"].append((ln,line))
             elif line.startswith(("isis ", "undo isis ")):
-                unsupported["isis"].append(ln)
+                unsupported["isis"].append((ln,line))
 
         selected = []
         context = iface["routing_context_id"]
@@ -195,8 +198,11 @@ def extract(text: str, parsed: dict) -> RoutingFacts:
 
         for proto in ("ospf", "isis"):
             if not any(inst.protocol == proto for inst, _, _ in selected):
-                for badline in unsupported[proto]:
-                    issue("unresolved_protocol_interface", f"{proto.upper()} 接口语义无法关联到协议实例。", badline, interface=iface, protocol=proto)
+                for badline,statement in unsupported[proto]:
+                    if re.match(r"(?:undo )?(?:ospf|isis) enable\b",statement):
+                        issue("unresolved_protocol_interface", f"{proto.upper()} 接口启用配置无法关联到协议实例。", badline, interface=iface, protocol=proto)
+                    else:
+                        issue("unsupported_interface_command", f"{proto.upper()} 接口扩展语义未参与基础图计算。", badline, interface=iface, protocol=proto,statement=statement)
 
         for inst, scope, ln in selected:
             proto, cfg = inst.protocol, configs[inst.id]
@@ -228,8 +234,8 @@ def extract(text: str, parsed: dict) -> RoutingFacts:
                               dead=opt.get("dead", 40) if proto == "ospf" else None,
                               source_refs=list({r.line: r for r in [ref(ln), ref(cost_line), ref(type_line)]}.values()))
             facts.bindings.append(binding)
-            for badline in unsupported[proto]:
-                issue("unsupported_interface_command", f"{proto.upper()} 接口存在尚未支持的配置语义。", badline, inst, iface)
+            for badline,statement in unsupported[proto]:
+                issue("unsupported_interface_command", f"{proto.upper()} 接口存在尚未支持的配置语义。", badline, inst, iface, statement=statement)
             for address in iface["addresses"]:
                 if address.get("family") != 4 or not address.get("address") or address.get("role") in ("virtual", "anycast", "link_local"):
                     continue

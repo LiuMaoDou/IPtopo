@@ -7,10 +7,10 @@ from collections import defaultdict, deque
 import ipaddress
 from itertools import combinations, product
 
-from .model import SimulationRequest, identity, validate_snapshot_routing
+from .model import SimulationRequest, identity, validate_snapshot_routing, IGNORED_SEMANTIC_CODES
 from .spf import calculate
 
-ENGINE_VERSION = "1.1.0"
+ENGINE_VERSION = "1.2.0"
 
 
 def simulate(snapshot: dict, request: SimulationRequest) -> dict:
@@ -181,12 +181,25 @@ def simulate(snapshot: dict, request: SimulationRequest) -> dict:
     if boundaries:
         diag("unparsed_peer", "候选连接的对端缺少统一路由事实；请重新导入支持的完整配置。", device_ids=sorted(boundaries))
         blocking = True
+    ignored_semantics = False
+    unsupported_encoding = False
     for item in facts.issues:
         relevant = item.instance_id in component or (item.instance_id is None and item.device_id in component_devices)
-        if relevant and item.blocking and item.protocol in (None, request.protocol):
+        if not relevant or item.protocol not in (None, request.protocol):
+            continue
+        if item.code in IGNORED_SEMANTIC_CODES:
+            description = item.message.replace("配置仿真已保守停止", "该扩展未参与基础图计算")
+            diag(item.code, description + " 按基础 IPv4 图计算，未模拟该语义。", device_id=item.device_id,
+                 interface_id=item.interface_id, source_refs=[r.model_dump() for r in item.source_refs],
+                 ignored=True, blocking=False, severity="warning", original_message=item.message)
+            ignored_semantics = True
+        elif item.blocking:
             diag(item.code, item.message, device_id=item.device_id, interface_id=item.interface_id,
                  source_refs=[r.model_dump() for r in item.source_refs])
             blocking = True
+            unsupported_encoding = unsupported_encoding or item.code == "unknown_metric_encoding"
+    if ignored_semantics:
+        result["assumptions"].append("已忽略未建模配置语义，仅按已解析的基础 IPv4 图计算；认证与邻接正常作为假设，高级策略效果未模拟。")
     for arc in arcs:
         if arc["source"] in component and (arc["cost"] is None or arc["cost"] <= 0):
             diag("unknown_cost", "邻接出口开销未知；请配置显式开销或填写场景中的未知开销假设。", interface_id=arc["interface_id"])
@@ -213,7 +226,7 @@ def simulate(snapshot: dict, request: SimulationRequest) -> dict:
             diag("duplicate_destination", "目的地址由多台设备发布，无法作为唯一设备地址计算。")
             blocking = True
     if blocking:
-        result["status"] = "incomplete"
+        result["status"] = "unsupported" if unsupported_encoding else "incomplete"
         return result
     if not active(target_binding):
         diag("destination_inactive", "目的 Loopback 被关闭、归属已改变或在场景中退出。")
